@@ -1,0 +1,91 @@
+---
+alwaysApply: true
+---
+
+### **Rules for Writing Good Go Code for CLI Tools**
+
+#### 1. **Readability and Clarity**
+
+- Code must be easy to read and understand by other developers.
+- Use descriptive variable, function, and package names. Avoid abbreviations unless widely recognized (`ctx` for `context` is acceptable).
+- Keep functions small and focused; ideally, each function does one thing only.
+
+#### 2. **Project Structure**
+
+- Follow idiomatic Go project structure:
+
+  ```
+  /cmd        # main CLI entry points
+  /internal   # internal packages not exposed publicly
+  /pkg        # reusable packages
+  /configs    # configuration files
+  /docs       # documentation
+  /test       # tests
+  ```
+
+- Keep `main.go` minimal; delegate logic to packages.
+
+#### 3. **Error Handling**
+
+- Always check and handle errors explicitly.
+- Use `fmt.Errorf` or `errors.Wrap` (if using `pkg/errors`) to add context to errors.
+- Avoid panic unless it’s unrecoverable and clearly documented.
+
+#### 4. **CLI Best Practices**
+
+- Use a standard CLI library like `cobra` or `urfave/cli`.
+- Provide clear help messages and usage instructions.
+- Support common CLI flags (`--help`, `--version`).
+- Follow consistent flag naming conventions (e.g., `--config` instead of `-c` unless shorthand is common).
+
+#### 5. **Logging and Output**
+
+- Use `log` or structured logging libraries like `zap` or `logrus`.
+- Keep CLI output user-friendly; use plain messages for standard output and structured logs for debugging.
+- Do not mix standard output and logging messages.
+
+#### 6. **Testing**
+
+- Write unit tests for all non-trivial functions.
+- Use table-driven tests for readability and maintainability.
+- Test CLI commands using integration tests (e.g., invoking the binary in a controlled environment).
+
+#### 7. **Code Style and Formatting**
+
+- Follow `gofmt` strictly. No custom indentation rules.
+- Keep lines under 100–120 characters for readability.
+- Use Go naming conventions:
+
+  - `CamelCase` for exported functions/types.
+  - `camelCase` for private functions/variables.
+
+- Avoid global variables unless absolutely necessary.
+
+#### 8. **Dependencies**
+
+- Minimize external dependencies. Only use well-maintained, stable libraries.
+- Use Go modules (`go.mod`) and pin versions to avoid breaking changes.
+
+#### 9. **Performance and Efficiency**
+
+- Avoid premature optimization; focus on readability first.
+- Use efficient data structures (`map`, `slice`) appropriately.
+- For CLI tools, ensure operations are non-blocking when possible and provide progress feedback for long-running tasks.
+
+#### 10. **Documentation**
+
+- Add comments for all exported functions, types, and packages.
+- Keep README clear with installation, usage, and example commands.
+- Document assumptions, limitations, and error cases for each command.
+
+#### 11. **Security and Safety**
+
+- Sanitize inputs from the user.
+- Avoid unsafe operations unless necessary.
+- Validate file paths, environment variables, and network inputs carefully.
+
+#### 12. **Version Control Best Practices**
+
+- Follow semantic versioning (`v1.0.0`).
+- Keep commits small, clear, and descriptive.
+- Include CHANGELOG for public releases.
