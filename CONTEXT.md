@@ -43,17 +43,18 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 
 ### 6. **Data Flow**
 
-- **V1**: User runs tests within GUI, tool executes test command
+- **V1**: User runs all tests, tool executes test command and groups results
 - **Future**: File watching, selective test runs, incremental results
 - **Input**: JSON from test frameworks (RSpec, Minitest)
 - **Output**: Grouped failures in TUI
+- **No Caching**: V1 keeps it simple - fresh run every time
 
 ### 7. **Error Handling**
 
 - **JSON Parsing**: Graceful handling of missing fields
 - **Git Integration**: Degrade gracefully if not in git repo
 - **Test Execution**: Clear error messages for command failures
-- **Cache**: Handle missing/corrupt cache files
+- **No Cache**: Simple approach - no cache files to handle
 
 ## Technical Implementation Details
 
@@ -145,7 +146,7 @@ wing_commander/
 
 - Groups 100-1000 test failures efficiently (<1s)
 - Responsive TUI navigation
-- Cache loads instantly on subsequent runs
 - Recently changed files highlighted correctly
 - Can open files in editor at correct line
 - Can re-run specific test groups
+- Simple workflow: run tests → see grouped failures

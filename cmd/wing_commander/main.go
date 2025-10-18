@@ -13,14 +13,14 @@ func main() {
 	fmt.Println("🚀 Wing Commander - Test Failure Analyzer")
 	fmt.Println("==========================================")
 	fmt.Println()
-	
+
 	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		fmt.Printf("❌ Error loading config: %v\n", err)
 		return
 	}
-	
+
 	// Handle basic commands
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -42,7 +42,7 @@ func main() {
 				parseAndDisplayJSON(os.Args[1], cfg)
 				return
 			}
-			
+
 			fmt.Printf("Unknown command: %s\n", os.Args[1])
 			fmt.Println("Available commands: run, version, config")
 			fmt.Println("Or provide a JSON file path to parse test results")
@@ -142,17 +142,17 @@ func showConfig(cfg *config.Config) {
 	fmt.Println("📋 Wing Commander Configuration")
 	fmt.Println("===============================")
 	fmt.Println()
-	
+
 	fmt.Printf("Test Framework: %s\n", cfg.TestFramework)
 	fmt.Printf("Test Command:   %s\n", cfg.TestCommand)
 	fmt.Println()
-	
+
 	fmt.Println("Exclude Patterns:")
 	for _, pattern := range cfg.ExcludePatterns {
 		fmt.Printf("  - %s\n", pattern)
 	}
 	fmt.Println()
-	
+
 	fmt.Println("Configuration file: .wing_commander/config.yml")
 	fmt.Println("Create this file to customize settings.")
 }

@@ -49,7 +49,7 @@ func DefaultConfig() *Config {
 // LoadConfig loads configuration from .wing_commander/config.yml
 func LoadConfig() (*Config, error) {
 	configPath := ".wing_commander/config.yml"
-	
+
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// Return default config with warning
@@ -57,19 +57,19 @@ func LoadConfig() (*Config, error) {
 		fmt.Println("Using default configuration. Create config file to customize settings.")
 		return DefaultConfig(), nil
 	}
-	
+
 	// Read config file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
-	
+
 	// Parse YAML
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
-	
+
 	// Validate and set defaults for missing fields
 	if config.TestFramework == "" {
 		config.TestFramework = FrameworkUnknown
@@ -80,7 +80,7 @@ func LoadConfig() (*Config, error) {
 	if len(config.ExcludePatterns) == 0 {
 		config.ExcludePatterns = DefaultConfig().ExcludePatterns
 	}
-	
+
 	return &config, nil
 }
 
@@ -91,20 +91,20 @@ func SaveConfig(config *Config) error {
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
-	
+
 	configPath := filepath.Join(configDir, "config.yml")
-	
+
 	// Marshal to YAML
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
-	
+
 	// Write to file
 	if err := os.WriteFile(configPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
-	
+
 	return nil
 }
 

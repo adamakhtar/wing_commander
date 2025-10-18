@@ -179,4 +179,3 @@ func parseStackFrame(frameStr string) types.StackFrame {
 		Function: function,
 	}
 }
-

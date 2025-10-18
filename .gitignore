@@ -32,7 +32,6 @@ ehthumbs.db
 Thumbs.db
 
 # Wing Commander specific
-.wing_commander/cache.json
 .wing_commander/logs/
 .wing_commander/config.yml
 testdata/fixtures/*.json
