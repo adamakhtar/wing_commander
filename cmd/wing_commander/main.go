@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/adamakhtar/wing_commander/pkg/types"
+	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
 func main() {

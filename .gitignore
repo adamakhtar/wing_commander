@@ -1,0 +1,43 @@
+# Development builds
+/bin/
+/dist/
+/build/
+wing_commander
+wing-commander
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Wing Commander specific
+.wing_commander/cache.json
+.wing_commander/logs/
+testdata/fixtures/*.json
+!testdata/fixtures/example.json
+
+# Temporary files
+*.tmp
+*.temp
+*.log
