@@ -35,7 +35,7 @@ Minitest JSON Output Schema (via custom reporter):
   "tests": [
     {
       "name": "test_user_creation",
-      "status": "failed", 
+      "status": "failed",
       "message": "Expected User to be valid",
       "backtrace": [
         "app/models/user.rb:42:in `create_user'",
@@ -61,7 +61,7 @@ Alternative: Array of Tests (simpler format):
   {
     "name": "User should be valid",
     "status": "failed",
-    "message": "Expected User to be valid", 
+    "message": "Expected User to be valid",
     "backtrace": [
       "app/models/user.rb:42:in `create_user'",
       "spec/models/user_spec.rb:15:in `block (2 levels) in <top (required)>'"
@@ -87,7 +87,7 @@ Backtrace Frame Formats Supported:
 Status Values Supported:
 
 - "pass", "passed", "success" → StatusPass
-- "fail", "failed", "failure" → StatusFail  
+- "fail", "failed", "failure" → StatusFail
 - "skip", "skipped", "pending" → StatusSkip
 - Unknown values → StatusFail (default)
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/parser"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
@@ -12,6 +13,13 @@ func main() {
 	fmt.Println("🚀 Wing Commander - Test Failure Analyzer")
 	fmt.Println("==========================================")
 	fmt.Println()
+	
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		fmt.Printf("❌ Error loading config: %v\n", err)
+		return
+	}
 	
 	// Handle basic commands
 	if len(os.Args) > 1 {
@@ -25,20 +33,23 @@ func main() {
 			fmt.Println("🚧 Test runner not implemented yet!")
 			fmt.Println("This will be added in Step 8 of the implementation plan.")
 			return
+		case "config":
+			showConfig(cfg)
+			return
 		default:
 			// Check if it's a JSON file path
 			if isJSONFile(os.Args[1]) {
-				parseAndDisplayJSON(os.Args[1])
+				parseAndDisplayJSON(os.Args[1], cfg)
 				return
 			}
 			
 			fmt.Printf("Unknown command: %s\n", os.Args[1])
-			fmt.Println("Available commands: run, version")
+			fmt.Println("Available commands: run, version, config")
 			fmt.Println("Or provide a JSON file path to parse test results")
 			return
 		}
 	}
-	
+
 	// Default welcome message
 	fmt.Println("Welcome to Wing Commander!")
 	fmt.Println()
@@ -49,22 +60,26 @@ func main() {
 	fmt.Println("Commands:")
 	fmt.Println("  run         - Run tests and analyze failures (coming soon)")
 	fmt.Println("  version     - Show version information")
+	fmt.Println("  config      - Show current configuration")
 	fmt.Println()
 	fmt.Println("JSON Files:")
 	fmt.Println("  Parse test results from JSON files")
 	fmt.Println("  Example: wing_commander testdata/fixtures/rspec_failures.json")
 	fmt.Println()
-	
+	fmt.Printf("📋 Current framework: %s\n", cfg.TestFramework)
+	fmt.Printf("📋 Test command: %s\n", cfg.TestCommand)
+	fmt.Println()
+
 	// Demonstrate that our types work
 	frame := types.NewStackFrame("app/models/user.rb", 42, "create_user")
 	fmt.Printf("Sample StackFrame: %+v\n", frame)
-	
+
 	test := types.NewTestResult("User creation test", types.StatusFail)
 	fmt.Printf("Sample TestResult: %+v\n", test)
-	
+
 	group := types.NewFailureGroup("abc123", "Validation failed")
 	fmt.Printf("Sample FailureGroup: %+v\n", group)
-	
+
 	fmt.Println()
 	fmt.Println("✅ Core types loaded successfully!")
 	fmt.Println("📋 Next step: Implement JSON parser")
@@ -76,20 +91,20 @@ func isJSONFile(arg string) bool {
 }
 
 // parseAndDisplayJSON parses a JSON file and displays the results
-func parseAndDisplayJSON(filePath string) {
+func parseAndDisplayJSON(filePath string, cfg *config.Config) {
 	fmt.Printf("📄 Parsing JSON file: %s\n", filePath)
 	fmt.Println()
-	
+
 	result, err := parser.ParseFile(filePath)
 	if err != nil {
 		fmt.Printf("❌ Error parsing file: %v\n", err)
 		return
 	}
-	
+
 	fmt.Printf("✅ Successfully parsed %d test results\n", len(result.Tests))
-	fmt.Printf("🔍 Detected framework: %s\n", result.Framework)
+	fmt.Printf("🔍 Framework: %s\n", cfg.TestFramework)
 	fmt.Println()
-	
+
 	// Show summary
 	fmt.Println("📊 Test Summary:")
 	fmt.Printf("  Total:   %d\n", result.Summary.Total)
@@ -97,7 +112,7 @@ func parseAndDisplayJSON(filePath string) {
 	fmt.Printf("  Failed:  %d\n", result.Summary.Failed)
 	fmt.Printf("  Skipped: %d\n", result.Summary.Skipped)
 	fmt.Println()
-	
+
 	// Show failed tests
 	failedTests := 0
 	for _, test := range result.Tests {
@@ -113,11 +128,31 @@ func parseAndDisplayJSON(filePath string) {
 			fmt.Println()
 		}
 	}
-	
+
 	if failedTests == 0 {
 		fmt.Println("🎉 No failed tests found!")
 	} else {
 		fmt.Printf("🔍 Found %d failed tests\n", failedTests)
 		fmt.Println("📋 Next step: Implement backtrace grouping")
 	}
+}
+
+// showConfig displays the current configuration
+func showConfig(cfg *config.Config) {
+	fmt.Println("📋 Wing Commander Configuration")
+	fmt.Println("===============================")
+	fmt.Println()
+	
+	fmt.Printf("Test Framework: %s\n", cfg.TestFramework)
+	fmt.Printf("Test Command:   %s\n", cfg.TestCommand)
+	fmt.Println()
+	
+	fmt.Println("Exclude Patterns:")
+	for _, pattern := range cfg.ExcludePatterns {
+		fmt.Printf("  - %s\n", pattern)
+	}
+	fmt.Println()
+	
+	fmt.Println("Configuration file: .wing_commander/config.yml")
+	fmt.Println("Create this file to customize settings.")
 }

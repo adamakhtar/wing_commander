@@ -62,7 +62,6 @@ func TestParseJSON_RSpec(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
-	assert.Equal(t, FrameworkRSpec, result.Framework)
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
@@ -103,7 +102,6 @@ func TestParseJSON_Minitest(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
-	assert.Equal(t, FrameworkMinitest, result.Framework)
 	assert.Equal(t, 1, result.Summary.Total)
 	assert.Equal(t, 1, result.Summary.Failed)
 	assert.Len(t, result.Tests, 1)
@@ -165,49 +163,6 @@ func TestParseStackFrame(t *testing.T) {
 	}
 }
 
-func TestDetectFramework(t *testing.T) {
-	tests := []struct {
-		name  string
-		tests []InputTestResult
-		want  TestFramework
-	}{
-		{
-			name: "RSpec indicators",
-			tests: []InputTestResult{
-				{Name: "User should be valid"},
-				{Name: "expect user to exist"},
-			},
-			want: FrameworkRSpec,
-		},
-		{
-			name: "Minitest indicators",
-			tests: []InputTestResult{
-				{Name: "test_user_creation"},
-				{Name: "assert_user_valid"},
-			},
-			want: FrameworkMinitest,
-		},
-		{
-			name: "No clear indicators",
-			tests: []InputTestResult{
-				{Name: "some random test"},
-			},
-			want: FrameworkUnknown,
-		},
-		{
-			name: "Empty tests",
-			tests: []InputTestResult{},
-			want: FrameworkUnknown,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := detectFramework(tt.tests)
-			assert.Equal(t, tt.want, result)
-		})
-	}
-}
 
 func TestConvertToTestResult(t *testing.T) {
 	tests := []struct {

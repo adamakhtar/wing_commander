@@ -9,14 +9,6 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
-// TestFramework represents different test frameworks
-type TestFramework string
-
-const (
-	FrameworkRSpec    TestFramework = "rspec"
-	FrameworkMinitest TestFramework = "minitest"
-	FrameworkUnknown  TestFramework = "unknown"
-)
 
 // InputTestResult represents a test result from JSON input
 type InputTestResult struct {
@@ -42,9 +34,8 @@ type InputTestSuite struct {
 
 // ParseResult contains parsed test results and metadata
 type ParseResult struct {
-	Tests     []types.TestResult
-	Framework TestFramework
-	Summary   TestSummary
+	Tests   []types.TestResult
+	Summary TestSummary
 }
 
 // TestSummary contains test run statistics
@@ -68,7 +59,7 @@ func ParseFile(filePath string) (*ParseResult, error) {
 // ParseJSON parses JSON test results data
 func ParseJSON(data []byte) (*ParseResult, error) {
 	var suite InputTestSuite
-	
+
 	// Try to parse as complete test suite first
 	if err := json.Unmarshal(data, &suite); err != nil {
 		// If that fails, try parsing as array of tests
@@ -79,12 +70,8 @@ func ParseJSON(data []byte) (*ParseResult, error) {
 		suite.Tests = tests
 	}
 
-	// Detect framework based on content
-	framework := detectFramework(suite.Tests)
-
 	// Convert to our domain types
 	result := &ParseResult{
-		Framework: framework,
 		Summary: TestSummary{
 			Total:   suite.Summary.Total,
 			Passed:  suite.Summary.Passed,
@@ -145,7 +132,7 @@ func parseStackFrame(frameStr string) types.StackFrame {
 	// "app/models/user.rb:42:in `create_user'"
 	// "app/models/user.rb:42"
 	// "File \"app/models/user.rb\", line 42, in create_user"
-	
+
 	// Handle Python format first
 	if strings.HasPrefix(frameStr, "File \"") {
 		return types.StackFrame{
@@ -154,25 +141,25 @@ func parseStackFrame(frameStr string) types.StackFrame {
 			Function: "",
 		}
 	}
-	
+
 	parts := strings.Split(frameStr, ":")
 	if len(parts) < 2 {
 		return types.StackFrame{File: frameStr}
 	}
 
 	file := parts[0]
-	
+
 	// Try to extract line number
 	var line int
 	var function string
-	
+
 	if len(parts) >= 2 {
 		// Parse line number
 		if _, err := fmt.Sscanf(parts[1], "%d", &line); err != nil {
 			return types.StackFrame{File: file}
 		}
 	}
-	
+
 	// Try to extract function name
 	if len(parts) >= 3 {
 		funcPart := parts[2]
@@ -193,29 +180,3 @@ func parseStackFrame(frameStr string) types.StackFrame {
 	}
 }
 
-// detectFramework attempts to detect the test framework from the test data
-func detectFramework(tests []InputTestResult) TestFramework {
-	if len(tests) == 0 {
-		return FrameworkUnknown
-	}
-
-	// Check for RSpec-specific patterns
-	for _, test := range tests {
-		if strings.Contains(test.Name, "should") || 
-		   strings.Contains(test.Name, "expect") ||
-		   strings.Contains(test.Name, "describe") ||
-		   strings.Contains(test.Name, "it ") {
-			return FrameworkRSpec
-		}
-	}
-
-	// Check for Minitest-specific patterns
-	for _, test := range tests {
-		if strings.Contains(test.Name, "test_") ||
-		   strings.Contains(test.Name, "assert_") {
-			return FrameworkMinitest
-		}
-	}
-
-	return FrameworkUnknown
-}
