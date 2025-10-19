@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/adamakhtar/wing_commander/internal/config"
+	"github.com/adamakhtar/wing_commander/internal/grouper"
 	"github.com/adamakhtar/wing_commander/internal/parser"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
@@ -105,6 +106,18 @@ func parseAndDisplayJSON(filePath string, cfg *config.Config) {
 	fmt.Printf("🔍 Framework: %s\n", cfg.TestFramework)
 	fmt.Println()
 
+	// Normalize backtraces using config exclude patterns
+	normalizer := grouper.NewNormalizer(cfg)
+	normalizedResults := normalizer.NormalizeTestResults(result.Tests)
+
+	// Show filtering statistics
+	totalFrames, filteredFrames := grouper.CountFilteredFrames(normalizedResults)
+	fmt.Printf("🔧 Backtrace Filtering:\n")
+	fmt.Printf("  Total frames:   %d\n", totalFrames)
+	fmt.Printf("  Project frames: %d\n", filteredFrames)
+	fmt.Printf("  Filtered out:   %d\n", totalFrames-filteredFrames)
+	fmt.Println()
+
 	// Show summary
 	fmt.Println("📊 Test Summary:")
 	fmt.Printf("  Total:   %d\n", result.Summary.Total)
@@ -115,7 +128,7 @@ func parseAndDisplayJSON(filePath string, cfg *config.Config) {
 
 	// Show failed tests
 	failedTests := 0
-	for _, test := range result.Tests {
+	for _, test := range normalizedResults {
 		if test.Status == types.StatusFail {
 			failedTests++
 			fmt.Printf("❌ %s\n", test.Name)
@@ -123,7 +136,10 @@ func parseAndDisplayJSON(filePath string, cfg *config.Config) {
 				fmt.Printf("   Error: %s\n", test.ErrorMessage)
 			}
 			if len(test.FullBacktrace) > 0 {
-				fmt.Printf("   Backtrace: %d frames\n", len(test.FullBacktrace))
+				fmt.Printf("   Full backtrace: %d frames\n", len(test.FullBacktrace))
+			}
+			if len(test.FilteredBacktrace) > 0 {
+				fmt.Printf("   Project frames: %d frames\n", len(test.FilteredBacktrace))
 			}
 			fmt.Println()
 		}
@@ -133,7 +149,7 @@ func parseAndDisplayJSON(filePath string, cfg *config.Config) {
 		fmt.Println("🎉 No failed tests found!")
 	} else {
 		fmt.Printf("🔍 Found %d failed tests\n", failedTests)
-		fmt.Println("📋 Next step: Implement backtrace grouping")
+		fmt.Println("📋 Next step: Implement failure grouping")
 	}
 }
 
