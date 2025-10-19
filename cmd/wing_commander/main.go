@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -19,7 +20,7 @@ func main() {
 	fmt.Println()
 
 	// Load configuration
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadConfig("")
 	if err != nil {
 		fmt.Printf("❌ Error loading config: %v\n", err)
 		return
@@ -33,7 +34,7 @@ func main() {
 			fmt.Println("Built with Go")
 			return
 		case "run":
-			runTests(cfg)
+			runCommand(os.Args[2:])
 			return
 		case "config":
 			showConfig(cfg)
@@ -61,6 +62,7 @@ func main() {
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  run         - Run tests and analyze failures")
+	fmt.Println("             --config PATH    Specify config file path (default: .wing_commander/config.yml)")
 	fmt.Println("  version     - Show version information")
 	fmt.Println("  config      - Show current configuration")
 	fmt.Println()
@@ -172,6 +174,29 @@ func showConfig(cfg *config.Config) {
 
 	fmt.Println("Configuration file: .wing_commander/config.yml")
 	fmt.Println("Create this file to customize settings.")
+}
+
+// runCommand handles the "run" command with flag parsing
+func runCommand(args []string) {
+	// Create flag set for run command
+	runFlags := flag.NewFlagSet("run", flag.ExitOnError)
+	configPath := runFlags.String("config", ".wing_commander/config.yml", "Path to config file")
+
+	// Parse flags
+	if err := runFlags.Parse(args); err != nil {
+		fmt.Printf("❌ Error parsing flags: %v\n", err)
+		return
+	}
+
+	// Load configuration with specified path
+	cfg, err := config.LoadConfig(*configPath)
+	if err != nil {
+		fmt.Printf("❌ Error loading config: %v\n", err)
+		return
+	}
+
+	// Execute tests
+	runTests(cfg)
 }
 
 // runTests executes tests using the TestRunner service and launches TUI

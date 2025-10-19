@@ -21,7 +21,7 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestLoadConfig_MissingFile(t *testing.T) {
 	// Test with non-existent config file
-	config, err := LoadConfig()
+	config, err := LoadConfig("")
 
 	// Should return default config without error
 	assert.NoError(t, err)
@@ -52,7 +52,7 @@ exclude_patterns:
 		os.Remove(configDir)
 	}()
 
-	config, err := LoadConfig()
+	config, err := LoadConfig("")
 	require.NoError(t, err)
 	require.NotNil(t, config)
 
@@ -85,7 +85,7 @@ invalid: yaml: content`
 		os.Remove(configDir)
 	}()
 
-	config, err := LoadConfig()
+	config, err := LoadConfig("")
 	assert.Error(t, err)
 	assert.Nil(t, config)
 }
@@ -114,7 +114,7 @@ func TestSaveConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Load and verify content
-	loadedConfig, err := LoadConfig()
+	loadedConfig, err := LoadConfig("")
 	require.NoError(t, err)
 	assert.Equal(t, config.TestFramework, loadedConfig.TestFramework)
 	assert.Equal(t, config.TestCommand, loadedConfig.TestCommand)
@@ -190,7 +190,7 @@ exclude_patterns:
 		os.Remove(configDir)
 	}()
 
-	config, err := LoadConfig()
+	config, err := LoadConfig("")
 	require.NoError(t, err)
 	require.NotNil(t, config)
 

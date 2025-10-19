@@ -46,9 +46,12 @@ func DefaultConfig() *Config {
 	}
 }
 
-// LoadConfig loads configuration from .wing_commander/config.yml
-func LoadConfig() (*Config, error) {
-	configPath := ".wing_commander/config.yml"
+// LoadConfig loads configuration from the specified path or .wing_commander/config.yml if empty
+func LoadConfig(configPath string) (*Config, error) {
+	// Use default path if none provided
+	if configPath == "" {
+		configPath = ".wing_commander/config.yml"
+	}
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
