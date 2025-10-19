@@ -108,7 +108,11 @@ type FailureGroup struct {
 - **3 Panes**: Groups | Tests | Backtrace
 - **Navigation**: Tab/Shift+Tab between panes, arrows within panes
 - **Keybindings**: f (toggle frames), o (open file), r (re-run), q (quit)
-- **Highlighting**: Recently changed files marked with `[*]`
+- **Highlighting**: Line-level change detection with 3 intensity levels:
+  - **Intensity 3**: Bright highlight for uncommitted changes
+  - **Intensity 2**: Medium highlight for last commit changes
+  - **Intensity 1**: Weak highlight for previous commit changes
+  - **Intensity 0**: No highlight for unchanged lines
 
 ## Current Implementation Status
 
