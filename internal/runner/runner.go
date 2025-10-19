@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/adamakhtar/wing_commander/internal/config"
@@ -58,8 +59,29 @@ func (r *TestRunner) ExecuteTests() (*TestExecutionResult, error) {
 
 // executeTestCommand runs the configured test command and returns the output
 func (r *TestRunner) executeTestCommand() (string, error) {
+	// Parse the test command template
+	cmdTemplate, err := template.New("testCommand").Parse(r.config.TestCommand)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse test command template: %w", err)
+	}
+
+	// Prepare template data for interpolation
+	templateData := struct {
+		Paths string // For now, empty - will be used for specific test paths in future
+	}{
+		Paths: "", // Empty by default to run all tests
+	}
+
+	// Execute template to get the final command
+	var cmdBuilder strings.Builder
+	if err := cmdTemplate.Execute(&cmdBuilder, templateData); err != nil {
+		return "", fmt.Errorf("failed to execute test command template: %w", err)
+	}
+
+	finalCommand := cmdBuilder.String()
+
 	// Split the command into parts
-	parts := strings.Fields(r.config.TestCommand)
+	parts := strings.Fields(finalCommand)
 	if len(parts) == 0 {
 		return "", fmt.Errorf("no test command configured")
 	}
@@ -67,8 +89,17 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 	// Create command
 	cmd := exec.Command(parts[0], parts[1:]...)
 
-	// Set working directory to current directory
-	cmd.Dir = "."
+	// Set working directory to project path
+	if r.config.ProjectPath != "" {
+		cmd.Dir = r.config.ProjectPath
+	} else {
+		// Fallback to current working directory
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("failed to get current working directory: %w", err)
+		}
+		cmd.Dir = cwd
+	}
 
 	// Execute command and capture output
 	output, err := cmd.CombinedOutput()
@@ -141,7 +172,7 @@ func (r *TestRunner) ValidateConfig() error {
 	}
 
 	if r.config.TestCommand == "" {
-		return fmt.Errorf("test_command not specified in config")
+		return fmt.Errorf("test_command must be specified either via CLI option --test-command or in config file")
 	}
 
 	// Check if test framework is supported

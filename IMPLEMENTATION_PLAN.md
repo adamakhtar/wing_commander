@@ -24,12 +24,14 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - CLI integration for XML file parsing
 - Framework detection removed (user specifies in config)
 
-### ✅ **Step 3: Configuration System** (COMPLETED)
+### ✅ **Step 3: Configuration System - CLI-First Design** (COMPLETED)
 
-- YAML-based configuration system
+- YAML-based configuration system with CLI-first approach
+- **Priority System**: CLI options > Config file > Sensible defaults
+- **CLI Options**: `--project-path`, `--test-command`, `--config` flags
+- **Template Interpolation**: Go `text/template` syntax for test commands
 - Support for multiple test frameworks (RSpec, Minitest, Pytest, Jest)
 - User-configurable exclude patterns
-- Default test commands per framework
 - CLI config command
 - Clean file organization (test files in `testdata/`)
 
@@ -76,6 +78,49 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
   - `dummy/minitest/Rakefile`: Test execution with XML output
   - Generates JUnit XML reports in `test/reports/` directory
   - Runnable with `bundle install` and `bundle exec rake test`
+
+## ✅ **CLI-First Configuration System** (NEWLY COMPLETED)
+
+### **Configuration Priority System**
+
+1. **CLI Options** (Highest Priority)
+
+   - `--project-path PATH`: Project directory for test execution
+   - `--test-command CMD`: Test runner command with template interpolation
+   - `--config PATH`: Custom config file location
+
+2. **Config File** (Medium Priority)
+
+   - `.wing_commander/config.yml` (default location)
+   - YAML format with `project_path`, `test_framework`, `test_command`, `exclude_patterns`
+
+3. **Sensible Defaults** (Lowest Priority)
+   - Project path: Current working directory
+   - Test framework: Minitest (supported framework)
+   - Test command: Must be specified (no hardcoded default)
+
+### **Template Interpolation System**
+
+- **Engine**: Go's `text/template` package
+- **Syntax**: `{{.Paths}}` for test paths (empty by default)
+- **Future Ready**: Extensible for specific test file selection
+- **Example**: `rails test {{.Paths}} --output junit`
+
+### **Usage Examples**
+
+```bash
+# CLI-first approach - override everything via command line
+wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output junit"
+
+# Mix CLI and config - project path from CLI, test command from config
+wing_commander run --project-path /path/to/project
+
+# Custom config file with CLI overrides
+wing_commander run --config custom-config.yml --test-command "pytest {{.Paths}} --junit-xml=results.xml"
+
+# Traditional approach - everything from config file
+wing_commander run
+```
 
 ## Remaining Implementation Steps
 
@@ -171,12 +216,16 @@ exclude_patterns:
   - "/vendor/bundle/"
 ```
 
-### **CLI Configuration Support**
+### **CLI Configuration Support - CLI-First Design**
 
-- **Default Location**: `.wing_commander/config.yml`
-- **Custom Location**: `wing_commander run --config /path/to/config.yml`
+- **Priority System**: CLI options > Config file > Sensible defaults
+- **CLI Options**:
+  - `--project-path PATH`: Project directory (default: current working directory)
+  - `--test-command CMD`: Test runner with interpolation (e.g., `rails test {{.Paths}} --output junit`)
+  - `--config PATH`: Config file path (default: `.wing_commander/config.yml`)
+- **Template Interpolation**: Uses Go `text/template` syntax for command interpolation
 - **Backward Compatibility**: Existing usage without flags continues to work
-- **Help Documentation**: `wing_commander run --help` shows flag usage
+- **Help Documentation**: `wing_commander run --help` shows all flag usage
 
 ### **Grouping Strategy**
 
@@ -204,6 +253,9 @@ make test
 
 # Run CLI
 make run
+
+# Run with CLI options (CLI-first approach)
+./bin/wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output junit"
 
 # Run with custom config
 ./bin/wing_commander run --config /path/to/config.yml

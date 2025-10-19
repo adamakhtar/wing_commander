@@ -25,15 +25,18 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - **Test Files**: `testdata/` directory for fixtures and sample configs
 - **Rationale**: Keep project root clean, signal internal vs public packages
 
-### 3. **Configuration Approach**
+### 3. **Configuration Approach - CLI-First Design**
 
-- **V1**: User creates config file manually
-- **Future**: Tool can generate config file on request
-- **Format**: YAML with test_framework, test_command, and exclude_patterns
+- **Priority System**: CLI options > Config file > Sensible defaults
+- **CLI Options**:
+  - `--project-path PATH`: Project directory (default: current working directory)
+  - `--test-command CMD`: Test runner with interpolation support (e.g., `rails test {{.Paths}} --output junit`)
+  - `--config PATH`: Config file path (default: `.wing_commander/config.yml`)
+- **Template Interpolation**: Uses Go `text/template` syntax (`{{.Paths}}` for test paths)
+- **Format**: YAML with `project_path`, `test_framework`, `test_command`, and `exclude_patterns`
 - **Framework Support**: RSpec, Minitest, Pytest, Jest
 - **Default Patterns**: `/gems/`, `/lib/ruby/`, `/vendor/bundle/`, etc.
-- **Config Location**: Default `.wing_commander/config.yml`, configurable via `--config` flag
-- **CLI Support**: `wing_commander run --config /path/to/config.yml`
+- **CLI Support**: `wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output junit"`
 
 ### 4. **Build System**
 
@@ -103,6 +106,47 @@ type FailureGroup struct {
 }
 ```
 
+### CLI-First Configuration Implementation
+
+```go
+// Config struct with CLI-first design
+type Config struct {
+    ProjectPath     string        `yaml:"project_path"`
+    TestFramework   TestFramework `yaml:"test_framework"`
+    TestCommand     string        `yaml:"test_command"`
+    ExcludePatterns []string      `yaml:"exclude_patterns"`
+}
+
+// CLI options loading with priority system
+func loadConfigWithCLIOptions(configPath, projectPath, testCommand string) (*Config, error) {
+    // 1. Load base config from file
+    cfg, err := config.LoadConfig(configPath)
+
+    // 2. Override with CLI options (highest priority)
+    if projectPath != "" {
+        cfg.ProjectPath = resolveAbsolutePath(projectPath)
+    } else {
+        cfg.ProjectPath = getCurrentWorkingDirectory()
+    }
+
+    if testCommand != "" {
+        cfg.TestCommand = testCommand
+    }
+
+    return cfg, nil
+}
+
+// Template interpolation in test runner
+func (r *TestRunner) executeTestCommand() (string, error) {
+    cmdTemplate, err := template.New("testCommand").Parse(r.config.TestCommand)
+    templateData := struct{ Paths string }{Paths: ""} // Empty by default
+    var cmdBuilder strings.Builder
+    cmdTemplate.Execute(&cmdBuilder, templateData)
+    finalCommand := cmdBuilder.String()
+    // Execute command in project directory...
+}
+```
+
 ### Backtrace Normalization Rules
 
 - Remove frames matching exclude patterns from config
@@ -139,7 +183,7 @@ type FailureGroup struct {
 - **Step 8**: Basic Bubbletea TUI with 3-pane layout and demo command
 - **Build System**: Makefile configured, clean development workflow
 - **CLI**: Basic commands working (version, config, JSON parsing, run, demo)
-- **CLI Flags**: `--config` flag for run command to specify custom config file location
+- **CLI Flags**: `--config`, `--project-path`, `--test-command` flags for run command
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
 
@@ -165,6 +209,9 @@ make run
 
 # Test TUI with demo data
 ./bin/wing_commander demo
+
+# Run with CLI options
+./bin/wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output junit"
 
 # Run with custom config
 ./bin/wing_commander run --config /path/to/config.yml

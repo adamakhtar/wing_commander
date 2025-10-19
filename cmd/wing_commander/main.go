@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/adamakhtar/wing_commander/internal/config"
@@ -40,7 +41,13 @@ func main() {
 			demoCommand(os.Args[2:])
 			return
 		case "config":
-			showConfig(cfg)
+			// Load config with CLI options to show the actual project path
+			configWithCLI, err := loadConfigWithCLIOptions("", "", "")
+			if err != nil {
+				fmt.Printf("❌ Error loading config: %v\n", err)
+				return
+			}
+			showConfig(configWithCLI)
 			return
 		default:
 			// Check if it's an XML file path
@@ -65,7 +72,9 @@ func main() {
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  run         - Run tests and analyze failures")
-	fmt.Println("             --config PATH    Specify config file path (default: .wing_commander/config.yml)")
+	fmt.Println("             --config PATH         Specify config file path (default: .wing_commander/config.yml)")
+	fmt.Println("             --project-path PATH   Path to project directory (default: current working directory)")
+	fmt.Println("             --test-command CMD    Test runner command with interpolation (e.g., 'rails test {{.Paths}} --output junit')")
 	fmt.Println("  demo        - Launch TUI with demo data")
 	fmt.Println("  version     - Show version information")
 	fmt.Println("  config      - Show current configuration")
@@ -166,6 +175,7 @@ func showConfig(cfg *config.Config) {
 	fmt.Println("===============================")
 	fmt.Println()
 
+	fmt.Printf("Project Path:   %s\n", cfg.ProjectPath)
 	fmt.Printf("Test Framework: %s\n", cfg.TestFramework)
 	fmt.Printf("Test Command:   %s\n", cfg.TestCommand)
 	fmt.Println()
@@ -185,6 +195,8 @@ func runCommand(args []string) {
 	// Create flag set for run command
 	runFlags := flag.NewFlagSet("run", flag.ExitOnError)
 	configPath := runFlags.String("config", ".wing_commander/config.yml", "Path to config file")
+	projectPath := runFlags.String("project-path", "", "Path to the project whose tests are being observed (default: current working directory)")
+	testCommand := runFlags.String("test-command", "", "Test runner command with interpolation support (e.g., 'rails test {{.Paths}} --output junit')")
 
 	// Parse flags
 	if err := runFlags.Parse(args); err != nil {
@@ -192,8 +204,8 @@ func runCommand(args []string) {
 		return
 	}
 
-	// Load configuration with specified path
-	cfg, err := config.LoadConfig(*configPath)
+	// Load configuration with CLI options taking precedence
+	cfg, err := loadConfigWithCLIOptions(*configPath, *projectPath, *testCommand)
 	if err != nil {
 		fmt.Printf("❌ Error loading config: %v\n", err)
 		return
@@ -201,6 +213,41 @@ func runCommand(args []string) {
 
 	// Execute tests
 	runTests(cfg)
+}
+
+// loadConfigWithCLIOptions loads configuration with CLI options taking precedence over config file
+func loadConfigWithCLIOptions(configPath, projectPath, testCommand string) (*config.Config, error) {
+	// Load base configuration from file
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	// Override with CLI options if provided
+	if projectPath != "" {
+		// Convert to absolute path if relative
+		if !filepath.IsAbs(projectPath) {
+			absPath, err := filepath.Abs(projectPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to resolve project path: %w", err)
+			}
+			projectPath = absPath
+		}
+		cfg.ProjectPath = projectPath
+	} else {
+		// Default to current working directory
+		cwd, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current working directory: %w", err)
+		}
+		cfg.ProjectPath = cwd
+	}
+
+	if testCommand != "" {
+		cfg.TestCommand = testCommand
+	}
+
+	return cfg, nil
 }
 
 // runTests executes tests using the TestRunner service and launches TUI

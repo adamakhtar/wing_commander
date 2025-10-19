@@ -1,17 +1,25 @@
 # Wing Commander Configuration Example
 # This file shows how to configure Wing Commander for different test frameworks
+#
+# CLI-First Design: CLI options override config file settings
+# Priority: CLI options > Config file > Sensible defaults
+
+# Project path (can be overridden with --project-path CLI option)
+# Default: current working directory
+project_path: ""
 
 # Test framework (rspec, minitest, pytest, jest)
 test_framework: rspec
 
-# Command to run tests and output JUnit XML format
-# RSpec: requires rspec_junit_formatter gem
-test_command: "bundle exec rspec --format RspecJunitFormatter --out results.xml"
+# Command to run tests with template interpolation support
+# Use {{.Paths}} placeholder for test paths (empty by default)
+# Can be overridden with --test-command CLI option
+test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out results.xml"
 
-# Alternative commands for other frameworks:
-# Minitest: "bundle exec rake test TESTOPTS='--junit --junit-filename=results.xml'"
-# Pytest: "pytest --junit-xml=results.xml"
-# Jest: "npx jest --reporters=jest-junit"
+# Alternative commands for other frameworks with interpolation:
+# Minitest: "bundle exec rake test {{.Paths}} TESTOPTS='--junit --junit-filename=results.xml'"
+# Pytest: "pytest {{.Paths}} --junit-xml=results.xml"
+# Jest: "npx jest {{.Paths}} --reporters=jest-junit"
 
 # Patterns to exclude from backtrace analysis
 exclude_patterns:

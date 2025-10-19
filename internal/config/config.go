@@ -21,6 +21,7 @@ const (
 
 // Config represents the Wing Commander configuration
 type Config struct {
+	ProjectPath     string        `yaml:"project_path"`
 	TestFramework   TestFramework `yaml:"test_framework"`
 	TestCommand     string        `yaml:"test_command"`
 	ExcludePatterns []string      `yaml:"exclude_patterns"`
@@ -29,7 +30,8 @@ type Config struct {
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	return &Config{
-		TestFramework: FrameworkUnknown,
+		ProjectPath:   "", // Will be set to current working directory by CLI
+		TestFramework: FrameworkMinitest, // Use a supported framework by default
 		TestCommand:   "bundle exec rspec --format RspecJunitFormatter --out results.xml",
 		ExcludePatterns: []string{
 			"/gems/",
@@ -74,8 +76,11 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	// Validate and set defaults for missing fields
+	if config.ProjectPath == "" {
+		config.ProjectPath = "" // Will be set by CLI or default to current working directory
+	}
 	if config.TestFramework == "" {
-		config.TestFramework = FrameworkUnknown
+		config.TestFramework = FrameworkMinitest
 	}
 	if config.TestCommand == "" {
 		config.TestCommand = "bundle exec rspec --format RspecJunitFormatter --out results.xml"

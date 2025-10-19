@@ -12,7 +12,7 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 
-	assert.Equal(t, FrameworkUnknown, config.TestFramework)
+	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 	assert.Equal(t, "bundle exec rspec --format RspecJunitFormatter --out results.xml", config.TestCommand)
 	assert.NotEmpty(t, config.ExcludePatterns)
 	assert.Contains(t, config.ExcludePatterns, "/gems/")
@@ -26,7 +26,7 @@ func TestLoadConfig_MissingFile(t *testing.T) {
 	// Should return default config without error
 	assert.NoError(t, err)
 	assert.NotNil(t, config)
-	assert.Equal(t, FrameworkUnknown, config.TestFramework)
+	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 }
 
 func TestLoadConfig_ValidFile(t *testing.T) {

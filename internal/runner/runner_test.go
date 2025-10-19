@@ -58,7 +58,7 @@ func TestTestRunner_ValidateConfig(t *testing.T) {
 				TestFramework: "rspec",
 			},
 			expectError: true,
-			errorMsg:    "test_command not specified in config",
+			errorMsg:    "test_command must be specified either via CLI option --test-command or in config file",
 		},
 		{
 			name: "Unsupported test framework",
