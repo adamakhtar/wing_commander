@@ -1,14 +1,18 @@
 require 'rake/testtask'
 
+# Create reports directory
+directory 'test/reports'
+
 Rake::TestTask.new do |t|
   t.libs << 'test'
   t.libs << 'lib'
   t.test_files = FileList['test/**/*_test.rb']
   t.verbose = true
+  t.options = '--ci-reporter'
 end
 
 desc 'Run tests with JUnit XML output'
-task :test do
+task :test => 'test/reports' do
   ENV['CI_REPORTS'] = 'test/reports'
   Rake::Task['test'].invoke
 end

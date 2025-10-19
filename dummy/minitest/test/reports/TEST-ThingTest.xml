@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="ThingTest" filepath="test/thing_test.rb" skipped="0" failures="0" errors="2" tests="2" assertions="0" time="8.299993351101875e-05">
+    <testcase name="test_boom_first_case" lineno="5" classname="ThingTest" assertions="0" time="5.5999960750341415e-05" file="test/thing_test.rb">
+    <error type="RuntimeError" message="RuntimeError: boom...">
+Failure:
+test_boom_first_case(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest/lib/thing.rb:3]:
+RuntimeError: boom
+    lib/thing.rb:3:in `boom'
+    test/thing_test.rb:6:in `test_boom_first_case'
+    </error>
+    </testcase>
+    <testcase name="test_boom_second_case" lineno="9" classname="ThingTest" assertions="0" time="2.6999972760677338e-05" file="test/thing_test.rb">
+    <error type="RuntimeError" message="RuntimeError: boom...">
+Failure:
+test_boom_second_case(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest/lib/thing.rb:3]:
+RuntimeError: boom
+    lib/thing.rb:3:in `boom'
+    test/thing_test.rb:10:in `test_boom_second_case'
+    </error>
+    </testcase>
+  </testsuite>
+</testsuites>
