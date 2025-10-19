@@ -47,6 +47,11 @@ alwaysApply: true
 #### 6. **Testing**
 
 - Write unit tests for all non-trivial functions.
+- Test behavior, not implementation - Focus on what the code does, not how it does it
+- Test public interfaces only - Only test functions/methods that other packages will use
+- Test the contract - Verify inputs produce expected outputs
+- Avoid testing private methods - Let them be tested indirectly through public methods
+- Focus on user value - Test what matters to the consumers of the code
 - Use table-driven tests for readability and maintainability.
 - Test CLI commands using integration tests (e.g., invoking the binary in a controlled environment).
 
