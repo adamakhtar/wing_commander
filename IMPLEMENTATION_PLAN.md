@@ -4,7 +4,7 @@
 
 A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
 
-## Current Status: Steps 1-7 Complete ✅
+## Current Status: Steps 1-9 Complete ✅
 
 ### ✅ **Step 1: Project Foundation + Core Types** (COMPLETED)
 
@@ -148,22 +148,34 @@ wing_commander run
 
 ---
 
-### 🔄 **Step 9: Advanced UI Features** (NEXT)
+### ✅ **Step 9: Advanced UI Features** (COMPLETED)
 
-**Goal**: Add tests pane and backtrace pane
+**Goal**: Add keybindings for actions (toggle frames, open file, re-run tests)
 
-**Files to create**:
+**Files implemented**:
+- `internal/editor/editor.go`: File opening functionality with editor detection
+- `internal/editor/editor_test.go`: Comprehensive tests for editor functionality
+- Updated `internal/ui/model.go`: Enhanced UI model with new keybindings
+- Updated `cmd/wing_commander/main.go`: Pass TestRunner to UI model
+- Updated `Makefile`: Added `dev-minitest` command for development testing
 
-- `internal/ui/views.go`: 3-pane layout rendering
-- Update `models.go`: Track active pane, selections per pane
+**UI Features implemented**:
+- `f`: Toggle full/filtered frames display
+- `o`: Open selected file in external editor at specific line
+- `r`: Re-run tests for selected group
+- Async message handling for file opening and test re-running
+- Updated status bar with all available keybindings
 
-**UI Updates**: `Tab` switches panes, each pane navigable
+**Development workflow**:
+- `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
+- Real test execution with JUnit XML generation
+- Interactive TUI with actual test failures (not demo data)
 
-**Checkpoint**: Full 3-pane navigation working
+**Checkpoint**: Complete interactive TUI with file opening and test re-running capabilities
 
 ---
 
-### 🔄 **Step 10: Advanced UI Features**
+### 🔄 **Step 10: Advanced UI Features** (NEXT)
 
 **Goal**: Add keybindings for actions (toggle, open file, re-run)
 
