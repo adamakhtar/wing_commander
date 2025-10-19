@@ -66,6 +66,17 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - Comprehensive test coverage
 - Ready for GUI integration
 
+### ✅ **Dummy Projects Setup** (COMPLETED)
+
+- **Minitest Dummy Project**: Complete Ruby project for testing minitest support
+  - `dummy/minitest/lib/thing.rb`: Simple class with `boom` method that raises error
+  - `dummy/minitest/test/thing_test.rb`: Two failing test cases
+  - `dummy/minitest/Gemfile`: Dependencies (minitest, ci_reporter_minitest)
+  - `dummy/minitest/test/test_helper.rb`: JUnit XML reporting configuration
+  - `dummy/minitest/Rakefile`: Test execution with XML output
+  - Generates JUnit XML reports in `test/reports/` directory
+  - Runnable with `bundle install` and `bundle exec rake test`
+
 ## Remaining Implementation Steps
 
 ### 🔄 **Step 8: Basic Bubbletea UI - Single Pane** (NEXT)
@@ -219,6 +230,15 @@ wing_commander/
 ├── testdata/
 │   ├── fixtures/       # Test JSON files
 │   └── config/         # Sample configs
+├── dummy/
+│   └── minitest/       # Test framework dummy projects
+│       ├── lib/
+│       │   └── thing.rb
+│       ├── test/
+│       │   ├── test_helper.rb
+│       │   └── thing_test.rb
+│       ├── Gemfile
+│       └── Rakefile
 ├── Makefile
 ├── go.mod
 ├── go.sum

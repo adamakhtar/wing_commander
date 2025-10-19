@@ -59,7 +59,16 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - **Output**: Grouped failures in TUI
 - **No Caching**: V1 keeps it simple - fresh run every time
 
-### 7. **Error Handling**
+### 7. **Test Framework Support**
+
+- **Dummy Projects**: `dummy/` directory contains test projects for each supported framework
+- **Minitest**: Complete Ruby project with failing tests and JUnit XML reporting
+  - Uses `ci_reporter_minitest` gem for JUnit XML format output
+  - Two failing test cases calling `Thing.new.boom` method
+  - Reports generated in `test/reports/` directory
+  - Runnable with `bundle install` and `bundle exec rake test`
+
+### 8. **Error Handling**
 
 - **JSON Parsing**: Graceful handling of missing fields
 - **Git Integration**: Degrade gracefully if not in git repo
@@ -184,6 +193,15 @@ wing_commander/
 │   │   └── minitest_failures.json
 │   └── config/
 │       └── sample_config.yml
+├── dummy/
+│   └── minitest/          # Test framework dummy projects
+│       ├── lib/
+│       │   └── thing.rb   # Simple class with boom method
+│       ├── test/
+│       │   ├── test_helper.rb
+│       │   └── thing_test.rb
+│       ├── Gemfile
+│       └── Rakefile
 ├── Makefile
 ├── go.mod
 ├── go.sum
