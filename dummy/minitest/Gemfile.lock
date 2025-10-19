@@ -1,0 +1,25 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    builder (3.3.0)
+    ci_reporter (2.1.0)
+      builder (>= 2.1.2)
+      rexml
+    ci_reporter_minitest (1.0.0)
+      ci_reporter (~> 2.0)
+      minitest (~> 5.0)
+    minitest (5.26.0)
+    rake (13.3.0)
+    rexml (3.4.4)
+
+PLATFORMS
+  arm64-darwin-23
+  ruby
+
+DEPENDENCIES
+  ci_reporter_minitest
+  minitest
+  rake
+
+BUNDLED WITH
+   2.6.9

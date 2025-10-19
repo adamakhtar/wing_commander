@@ -92,6 +92,7 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 **CLI Update**: Added `demo` command to launch TUI with XML fixture data
 
 **Features implemented**:
+
 - 3-pane layout (Groups | Tests | Backtrace)
 - Arrow key navigation within panes
 - Tab/Shift+Tab to switch between panes

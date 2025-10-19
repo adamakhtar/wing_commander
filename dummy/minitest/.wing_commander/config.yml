@@ -1,0 +1,7 @@
+test_framework: minitest
+test_command: bundle exec rake test
+exclude_patterns:
+  - "/gems/"
+  - "/lib/ruby/"
+  - "/vendor/bundle/"
+  - "/.asdf/"
