@@ -36,6 +36,9 @@ func main() {
 		case "run":
 			runCommand(os.Args[2:])
 			return
+		case "demo":
+			demoCommand(os.Args[2:])
+			return
 		case "config":
 			showConfig(cfg)
 			return
@@ -63,6 +66,7 @@ func main() {
 	fmt.Println("Commands:")
 	fmt.Println("  run         - Run tests and analyze failures")
 	fmt.Println("             --config PATH    Specify config file path (default: .wing_commander/config.yml)")
+	fmt.Println("  demo        - Launch TUI with demo data")
 	fmt.Println("  version     - Show version information")
 	fmt.Println("  config      - Show current configuration")
 	fmt.Println()
@@ -251,6 +255,59 @@ func runTests(cfg *config.Config) {
 
 	// Create UI model
 	model := ui.NewModel(result)
+
+	// Create and run the TUI program
+	program := tea.NewProgram(model, tea.WithAltScreen())
+	if _, err := program.Run(); err != nil {
+		fmt.Printf("❌ Error running TUI: %v\n", err)
+		return
+	}
+}
+
+// demoCommand launches the TUI with demo data from XML fixtures
+func demoCommand(args []string) {
+	fmt.Println("🎭 Launching TUI with demo data...")
+	fmt.Println()
+
+	// Load configuration
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		fmt.Printf("❌ Error loading config: %v\n", err)
+		return
+	}
+
+	// Parse the XML fixture
+	result, err := parser.ParseFile("testdata/fixtures/minitest_failures.xml")
+	if err != nil {
+		fmt.Printf("❌ Error parsing XML: %v\n", err)
+		return
+	}
+
+	// Normalize backtraces
+	normalizer := grouper.NewNormalizer(cfg)
+	normalizedResults := normalizer.NormalizeTestResults(result.Tests)
+
+	// Group failures
+	strategy := grouper.NewErrorLocationStrategy()
+	grouperInstance := grouper.NewGrouper(strategy)
+	failureGroups := grouperInstance.GroupFailures(normalizedResults)
+
+	// Create execution result
+	executionResult := &runner.TestExecutionResult{
+		TestResults:   normalizedResults,
+		FailureGroups: failureGroups,
+	}
+
+	// Display summary
+	fmt.Printf("✅ Parsed %d test results\n", len(normalizedResults))
+	fmt.Printf("🔍 Found %d failure groups\n", len(failureGroups))
+	fmt.Println()
+	fmt.Println("🚀 Launching TUI...")
+	fmt.Println("Use arrow keys to navigate, 'q' to quit")
+	fmt.Println()
+
+	// Create UI model
+	model := ui.NewModel(executionResult)
 
 	// Create and run the TUI program
 	program := tea.NewProgram(model, tea.WithAltScreen())
