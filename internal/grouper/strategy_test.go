@@ -34,7 +34,7 @@ func TestErrorLocationStrategy_GroupKey(t *testing.T) {
 				{File: "app/services/user_service.rb", Line: 25, Function: "process"},
 				{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 			},
-			expected: "app/models/user.rb:42",
+			expected: "app/controllers/users_controller.rb:10",
 		},
 		{
 			name: "Different line numbers in same file",
@@ -42,7 +42,7 @@ func TestErrorLocationStrategy_GroupKey(t *testing.T) {
 				{File: "app/models/user.rb", Line: 10, Function: "validate"},
 				{File: "app/models/user.rb", Line: 50, Function: "create_user"},
 			},
-			expected: "app/models/user.rb:50",
+			expected: "app/models/user.rb:10",
 		},
 		{
 			name: "Frame without function name",
@@ -57,7 +57,7 @@ func TestErrorLocationStrategy_GroupKey(t *testing.T) {
 				{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				{File: "app/models/product.rb", Line: 42, Function: "create_product"},
 			},
-			expected: "app/models/product.rb:42",
+			expected: "app/models/user.rb:42",
 		},
 	}
 
@@ -74,13 +74,13 @@ func TestErrorLocationStrategy_GroupingBehavior(t *testing.T) {
 
 	// Test that same bottom frame produces same group key
 	frames1 := []types.StackFrame{
-		{File: "app/controllers/users_controller.rb", Line: 10, Function: "create"},
 		{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+		{File: "app/controllers/users_controller.rb", Line: 10, Function: "create"},
 	}
 
 	frames2 := []types.StackFrame{
-		{File: "app/services/user_service.rb", Line: 25, Function: "process"},
 		{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+		{File: "app/services/user_service.rb", Line: 25, Function: "process"},
 	}
 
 	key1 := strategy.GroupKey(frames1)

@@ -104,7 +104,19 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 	// Execute command and capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("test command failed: %w\nOutput: %s", err, string(output))
+		// Check if it's a command not found error
+		if execErr, ok := err.(*exec.Error); ok && execErr.Err == exec.ErrNotFound {
+			return "", fmt.Errorf("test command not found: %s (make sure it's installed and in PATH)", parts[0])
+		}
+		
+		// Check if it's a permission error
+		if execErr, ok := err.(*exec.Error); ok && execErr.Err == os.ErrPermission {
+			return "", fmt.Errorf("permission denied running test command: %s", finalCommand)
+		}
+		
+		// Generic test command failure with output
+		return "", fmt.Errorf("test command failed (exit code %d): %w\nCommand: %s\nOutput: %s", 
+			cmd.ProcessState.ExitCode(), err, finalCommand, string(output))
 	}
 
 	return string(output), nil
@@ -112,13 +124,31 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 
 // parseTestOutput parses the XML output from the test command
 func (r *TestRunner) parseTestOutput(output string) ([]types.TestResult, error) {
+	// Check if output is empty
+	if strings.TrimSpace(output) == "" {
+		return nil, fmt.Errorf("test command produced no output - check if tests are configured correctly")
+	}
+
 	// Parse the output using the existing parser
 	result, err := parser.ParseXML([]byte(output))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse XML output: %w", err)
+		return nil, fmt.Errorf("failed to parse XML output: %w\nOutput preview: %s", err, truncateString(output, 200))
+	}
+
+	// Check if we got any test results
+	if len(result.Tests) == 0 {
+		return nil, fmt.Errorf("no test results found in XML output - check if test framework is generating JUnit XML correctly")
 	}
 
 	return result.Tests, nil
+}
+
+// truncateString truncates a string to the specified length and adds ellipsis
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }
 
 // TestExecutionResult represents the complete result of a test execution

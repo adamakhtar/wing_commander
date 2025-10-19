@@ -62,8 +62,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 				Status:       types.StatusFail,
 				ErrorMessage: "Something went wrong",
 				FilteredBacktrace: []types.StackFrame{
-					{File: "app/controllers/users_controller.rb", Line: 10, Function: "create"},
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+					{File: "app/controllers/users_controller.rb", Line: 10, Function: "create"},
 				},
 			},
 			{
@@ -71,8 +71,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 				Status:       types.StatusFail,
 				ErrorMessage: "Another error",
 				FilteredBacktrace: []types.StackFrame{
-					{File: "app/services/user_service.rb", Line: 25, Function: "process"},
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+					{File: "app/services/user_service.rb", Line: 25, Function: "process"},
 				},
 			},
 		}

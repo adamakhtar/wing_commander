@@ -22,6 +22,14 @@ func NewEditor() *Editor {
 
 // OpenFile opens a file in the configured editor at the specified line
 func (e *Editor) OpenFile(filePath string, line int) error {
+	// Validate inputs
+	if filePath == "" {
+		return fmt.Errorf("file path cannot be empty")
+	}
+	if line < 1 {
+		return fmt.Errorf("line number must be positive, got %d", line)
+	}
+
 	// Convert to absolute path
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
@@ -31,11 +39,18 @@ func (e *Editor) OpenFile(filePath string, line int) error {
 	// Check if file exists
 	if _, err := os.Stat(absPath); os.IsNotExist(err) {
 		return fmt.Errorf("file does not exist: %s", absPath)
+	} else if err != nil {
+		return fmt.Errorf("failed to check if file exists %s: %w", absPath, err)
+	}
+
+	// Check if editor command exists
+	if _, err := exec.LookPath(e.editorCommand); err != nil {
+		return fmt.Errorf("editor command not found: %s (error: %w)", e.editorCommand, err)
 	}
 
 	// Build command arguments
 	var args []string
-
+	
 	// Handle different editor commands
 	switch {
 	case strings.Contains(e.editorCommand, "vim") || strings.Contains(e.editorCommand, "nvim"):
@@ -59,7 +74,11 @@ func (e *Editor) OpenFile(filePath string, line int) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to open file %s:%d in editor %s: %w", absPath, line, e.editorCommand, err)
+	}
+
+	return nil
 }
 
 // getDefaultEditor determines the default editor to use
