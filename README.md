@@ -5,12 +5,14 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 ## Quick Start
 
 ### Development Testing
+
 ```bash
 # Build dev version and launch TUI against dummy minitest app
 make dev-minitest
 ```
 
 ### Production Usage
+
 ```bash
 # Run tests and analyze failures
 wing_commander run --project-path /path/to/project --test-command "rails test --output junit"
