@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/grouper"
 	"github.com/adamakhtar/wing_commander/internal/parser"
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/adamakhtar/wing_commander/internal/ui"
 )
 
 func main() {
@@ -172,7 +174,7 @@ func showConfig(cfg *config.Config) {
 	fmt.Println("Create this file to customize settings.")
 }
 
-// runTests executes tests using the TestRunner service and displays results
+// runTests executes tests using the TestRunner service and launches TUI
 func runTests(cfg *config.Config) {
 	fmt.Println("🏃 Running tests...")
 	fmt.Println()
@@ -203,7 +205,7 @@ func runTests(cfg *config.Config) {
 		return
 	}
 
-	// Display results
+	// Display summary before launching TUI
 	summary := result.GetSummary()
 	fmt.Println("📊 Test Results:")
 	fmt.Printf("  Total:   %d\n", summary.TotalTests)
@@ -218,27 +220,17 @@ func runTests(cfg *config.Config) {
 		return
 	}
 
-	// Display failure groups
-	fmt.Println("🔍 Failure Groups:")
+	// Launch TUI
+	fmt.Println("🚀 Launching interactive UI...")
 	fmt.Println()
-	for i, group := range result.FailureGroups {
-		fmt.Printf("%d. %s (%d failures)\n", i+1, group.Hash, group.Count)
-		fmt.Printf("   Error: %s\n", group.ErrorMessage)
 
-		// Show change intensities for frames
-		if len(group.NormalizedBacktrace) > 0 {
-			fmt.Printf("   Backtrace:\n")
-			for j, frame := range group.NormalizedBacktrace {
-				intensity := ""
-				if frame.ChangeIntensity > 0 {
-					intensity = fmt.Sprintf(" [%d]", frame.ChangeIntensity)
-				}
-				fmt.Printf("     %d. %s:%d%s\n", j+1, frame.File, frame.Line, intensity)
-			}
-		}
-		fmt.Println()
+	// Create UI model
+	model := ui.NewModel(result)
+
+	// Create and run the TUI program
+	program := tea.NewProgram(model, tea.WithAltScreen())
+	if _, err := program.Run(); err != nil {
+		fmt.Printf("❌ Error running TUI: %v\n", err)
+		return
 	}
-
-	fmt.Printf("✅ Test execution completed at %s\n", result.ExecutionTime.Format("15:04:05"))
-	fmt.Println("📋 Next step: Implement TUI for interactive exploration")
 }

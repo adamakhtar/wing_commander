@@ -32,6 +32,8 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - **Format**: YAML with test_framework, test_command, and exclude_patterns
 - **Framework Support**: RSpec, Minitest, Pytest, Jest
 - **Default Patterns**: `/gems/`, `/lib/ruby/`, `/vendor/bundle/`, etc.
+- **Config Location**: Default `.wing_commander/config.yml`, configurable via `--config` flag
+- **CLI Support**: `wing_commander run --config /path/to/config.yml`
 
 ### 4. **Build System**
 
@@ -127,6 +129,7 @@ type FailureGroup struct {
 - **Step 7**: Test runner service for GUI-driven test execution
 - **Build System**: Makefile configured, clean development workflow
 - **CLI**: Basic commands working (version, config, JSON parsing, run)
+- **CLI Flags**: `--config` flag for run command to specify custom config file location
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
 
@@ -151,6 +154,9 @@ make test
 
 # Run CLI
 make run
+
+# Run with custom config
+./bin/wing_commander run --config /path/to/config.yml
 
 # Clean up
 make clean

@@ -61,7 +61,8 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - TestRunner service for GUI-driven test execution
 - Execute test commands from config and parse JSON output
 - Complete workflow integration (parse → normalize → group → detect changes)
-- CLI `run` command implementation
+- CLI `run` command implementation with `--config` flag support
+- Config file path customization via command line flags
 - Comprehensive test coverage
 - Ready for GUI integration
 
@@ -152,6 +153,13 @@ exclude_patterns:
   - "/vendor/bundle/"
 ```
 
+### **CLI Configuration Support**
+
+- **Default Location**: `.wing_commander/config.yml`
+- **Custom Location**: `wing_commander run --config /path/to/config.yml`
+- **Backward Compatibility**: Existing usage without flags continues to work
+- **Help Documentation**: `wing_commander run --help` shows flag usage
+
 ### **Grouping Strategy**
 
 - Group by ErrorLocation strategy (bottom frame only: file:line)
@@ -178,6 +186,9 @@ make test
 
 # Run CLI
 make run
+
+# Run with custom config
+./bin/wing_commander run --config /path/to/config.yml
 
 # Clean up
 make clean
