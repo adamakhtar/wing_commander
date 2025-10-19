@@ -17,14 +17,15 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 
 - **Types Location**: `internal/types/` (not `pkg/`) - internal use only
 - **Config Location**: `.wing_commander/config.yml` (not root)
-- **Cache Location**: `.wing_commander/cache.json` (not root)
+- **Test Files**: `testdata/` directory for fixtures and sample configs
 - **Rationale**: Keep project root clean, signal internal vs public packages
 
 ### 3. **Configuration Approach**
 
 - **V1**: User creates config file manually
 - **Future**: Tool can generate config file on request
-- **Format**: YAML with exclude_patterns and test_command
+- **Format**: YAML with test_framework, test_command, and exclude_patterns
+- **Framework Support**: RSpec, Minitest, Pytest, Jest
 - **Default Patterns**: `/gems/`, `/lib/ruby/`, `/vendor/bundle/`, etc.
 
 ### 4. **Build System**
@@ -33,13 +34,15 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - **Removed**: dev.sh (redundant wrapper)
 - **Build Locations**: `bin/` (dev), `dist/` (production)
 - **Commands**: `make dev`, `make test`, `make run`, `make clean`
+- **Clean Development**: No development files cluttering production code
 
 ### 5. **Dependencies**
 
 - **TUI**: Bubbletea (not gocui) - more modern and flexible
 - **Testing**: testify - comprehensive assertions
-- **Config**: gopkg.in/yaml.v3 (added by go mod tidy)
+- **Config**: gopkg.in/yaml.v3 - YAML parsing
 - **Styling**: lipgloss (will add in Step 9)
+- **No Framework Detection**: User specifies framework in config (simpler)
 
 ### 6. **Data Flow**
 
@@ -98,21 +101,32 @@ type FailureGroup struct {
 - **Keybindings**: f (toggle frames), o (open file), r (re-run), q (quit)
 - **Highlighting**: Recently changed files marked with `[*]`
 
-## Current State (Step 1 Complete)
+## Current Implementation Status
 
-- ✅ Go module initialized
-- ✅ Core types defined and tested
-- ✅ Basic CLI working
-- ✅ Build system (Makefile) configured
-- ✅ Git repository clean
-- ✅ All tests passing
+### ✅ **Completed (Steps 1-3)**
 
-## Next Steps
+- **Step 1**: Go module initialized, core types defined and tested
+- **Step 2**: JSON parser with RSpec/Minitest support, comprehensive tests
+- **Step 3**: Configuration system with YAML support, framework specification
+- **Build System**: Makefile configured, clean development workflow
+- **CLI**: Basic commands working (version, config, JSON parsing)
+- **Testing**: All unit tests passing, comprehensive test coverage
+- **Project Structure**: Clean organization, proper gitignore
 
-- **Step 2**: JSON Parser (accept file path, parse test results)
-- **Step 3**: Configuration System (load .wing_commander/config.yml)
-- **Step 4**: Backtrace Normalizer (filter using config patterns)
-- **Step 5**: Failure Grouper (group by normalized signature)
+### 🔄 **Next Steps (Steps 4-8)**
+
+- **Step 4**: Backtrace normalizer (filter using config exclude patterns)
+- **Step 5**: Failure grouper (group by normalized backtrace signature)
+- **Step 6**: Git integration (identify recently changed files)
+- **Step 7**: Test runner (execute test command from config)
+- **Step 8**: Basic Bubbletea UI (single pane, then multi-pane)
+
+### 🎯 **Future Steps (Steps 9-12)**
+
+- **Step 9**: Advanced UI features (keybindings, file opening, re-run)
+- **Step 10**: Multi-pane UI (groups, tests, backtrace panes)
+- **Step 11**: Polish & documentation (README, help screens)
+- **Step 12**: Production release (error handling, final testing)
 
 ## Development Workflow
 
@@ -133,13 +147,28 @@ make clean
 ```
 wing_commander/
 ├── cmd/wing_commander/main.go
-├── internal/types/
-│   ├── types.go
-│   └── types_test.go
+├── internal/
+│   ├── types/
+│   │   ├── types.go
+│   │   └── types_test.go
+│   ├── parser/
+│   │   ├── parser.go
+│   │   ├── parser_test.go
+│   │   └── schema.go
+│   └── config/
+│       ├── config.go
+│       └── config_test.go
+├── testdata/
+│   ├── fixtures/
+│   │   ├── rspec_failures.json
+│   │   └── minitest_failures.json
+│   └── config/
+│       └── sample_config.yml
 ├── Makefile
 ├── go.mod
 ├── go.sum
-└── .gitignore
+├── .gitignore
+└── CONTEXT.md
 ```
 
 ## Success Criteria
