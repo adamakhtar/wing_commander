@@ -7,6 +7,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/grouper"
 	"github.com/adamakhtar/wing_commander/internal/parser"
+	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
@@ -30,9 +31,7 @@ func main() {
 			fmt.Println("Built with Go")
 			return
 		case "run":
-			fmt.Println()
-			fmt.Println("🚧 Test runner not implemented yet!")
-			fmt.Println("This will be added in Step 8 of the implementation plan.")
+			runTests(cfg)
 			return
 		case "config":
 			showConfig(cfg)
@@ -59,7 +58,7 @@ func main() {
 	fmt.Println("  wing_commander <json-file>")
 	fmt.Println()
 	fmt.Println("Commands:")
-	fmt.Println("  run         - Run tests and analyze failures (coming soon)")
+	fmt.Println("  run         - Run tests and analyze failures")
 	fmt.Println("  version     - Show version information")
 	fmt.Println("  config      - Show current configuration")
 	fmt.Println()
@@ -171,4 +170,75 @@ func showConfig(cfg *config.Config) {
 
 	fmt.Println("Configuration file: .wing_commander/config.yml")
 	fmt.Println("Create this file to customize settings.")
+}
+
+// runTests executes tests using the TestRunner service and displays results
+func runTests(cfg *config.Config) {
+	fmt.Println("🏃 Running tests...")
+	fmt.Println()
+
+	// Create test runner
+	testRunner := runner.NewTestRunner(cfg)
+
+	// Validate configuration
+	if err := testRunner.ValidateConfig(); err != nil {
+		fmt.Printf("❌ Configuration error: %v\n", err)
+		return
+	}
+
+	// Check if test command exists
+	if err := testRunner.CheckTestCommandExists(); err != nil {
+		fmt.Printf("❌ Test command error: %v\n", err)
+		return
+	}
+
+	// Execute tests
+	fmt.Printf("📋 Framework: %s\n", cfg.TestFramework)
+	fmt.Printf("📋 Command: %s\n", cfg.TestCommand)
+	fmt.Println()
+
+	result, err := testRunner.ExecuteTests()
+	if err != nil {
+		fmt.Printf("❌ Test execution failed: %v\n", err)
+		return
+	}
+
+	// Display results
+	summary := result.GetSummary()
+	fmt.Println("📊 Test Results:")
+	fmt.Printf("  Total:   %d\n", summary.TotalTests)
+	fmt.Printf("  Passed:  %d\n", summary.PassedTests)
+	fmt.Printf("  Failed:  %d\n", summary.FailedTests)
+	fmt.Printf("  Skipped: %d\n", summary.SkippedTests)
+	fmt.Printf("  Groups:  %d\n", summary.FailureGroups)
+	fmt.Println()
+
+	if summary.FailedTests == 0 {
+		fmt.Println("🎉 All tests passed!")
+		return
+	}
+
+	// Display failure groups
+	fmt.Println("🔍 Failure Groups:")
+	fmt.Println()
+	for i, group := range result.FailureGroups {
+		fmt.Printf("%d. %s (%d failures)\n", i+1, group.Hash, group.Count)
+		fmt.Printf("   Error: %s\n", group.ErrorMessage)
+
+		// Show change intensities for frames
+		if len(group.NormalizedBacktrace) > 0 {
+			fmt.Printf("   Backtrace:\n")
+			for j, frame := range group.NormalizedBacktrace {
+				intensity := ""
+				if frame.ChangeIntensity > 0 {
+					intensity = fmt.Sprintf(" [%d]", frame.ChangeIntensity)
+				}
+				fmt.Printf("     %d. %s:%d%s\n", j+1, frame.File, frame.Line, intensity)
+			}
+		}
+		fmt.Println()
+	}
+
+	fmt.Printf("✅ Test execution completed at %s\n", result.ExecutionTime.Format("15:04:05"))
+	fmt.Println("📋 Next step: Implement TUI for interactive exploration")
 }

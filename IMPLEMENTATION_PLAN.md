@@ -4,7 +4,7 @@
 
 A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
 
-## Current Status: Steps 1-6 Complete ✅
+## Current Status: Steps 1-7 Complete ✅
 
 ### ✅ **Step 1: Project Foundation + Core Types** (COMPLETED)
 
@@ -56,24 +56,18 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - Integration with grouper workflow
 - Comprehensive test coverage
 
+### ✅ **Step 7: Test Runner Service** (COMPLETED)
+
+- TestRunner service for GUI-driven test execution
+- Execute test commands from config and parse JSON output
+- Complete workflow integration (parse → normalize → group → detect changes)
+- CLI `run` command implementation
+- Comprehensive test coverage
+- Ready for GUI integration
+
 ## Remaining Implementation Steps
 
-### 🔄 **Step 7: Test Runner** (NEXT)
-
-**Goal**: Execute tests and capture JSON output
-
-**Files to create**:
-
-- `internal/runner/runner.go`: Execute test command from config, capture stdout
-- `internal/runner/runner_test.go`: Tests with mock commands
-
-**CLI Update**: Run tests directly (no JSON file needed), parse output
-
-**Checkpoint**: `./wing_commander run` executes tests and displays grouped failures
-
----
-
-### 🔄 **Step 8: Basic Bubbletea UI - Single Pane**
+### 🔄 **Step 8: Basic Bubbletea UI - Single Pane** (NEXT)
 
 **Goal**: Replace text output with interactive TUI (groups list only)
 
@@ -205,9 +199,12 @@ wing_commander/
 │   │   ├── strategy_test.go
 │   │   ├── grouper.go
 │   │   └── grouper_test.go
-│   └── git/            # Git change detection
-│       ├── changes.go
-│       └── changes_test.go
+│   ├── git/            # Git change detection
+│   │   ├── changes.go
+│   │   └── changes_test.go
+│   └── runner/         # Test execution service
+│       ├── runner.go
+│       └── runner_test.go
 ├── testdata/
 │   ├── fixtures/       # Test JSON files
 │   └── config/         # Sample configs

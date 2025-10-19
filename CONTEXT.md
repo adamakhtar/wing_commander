@@ -112,7 +112,7 @@ type FailureGroup struct {
 
 ## Current Implementation Status
 
-### ✅ **Completed (Steps 1-6)**
+### ✅ **Completed (Steps 1-7)**
 
 - **Step 1**: Go module initialized, core types defined and tested
 - **Step 2**: JSON parser with RSpec/Minitest support, comprehensive tests
@@ -120,15 +120,16 @@ type FailureGroup struct {
 - **Step 4**: Backtrace normalizer (filter using config exclude patterns)
 - **Step 5**: Failure grouper with ErrorLocation strategy (group by bottom frame)
 - **Step 6**: Git integration with line-level change detection (3 intensity levels)
+- **Step 7**: Test runner service for GUI-driven test execution
 - **Build System**: Makefile configured, clean development workflow
-- **CLI**: Basic commands working (version, config, JSON parsing)
+- **CLI**: Basic commands working (version, config, JSON parsing, run)
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
 
-### 🔄 **Next Steps (Steps 7-8)**
+### 🔄 **Next Steps (Steps 8-9)**
 
-- **Step 7**: Test runner (execute test command from config)
 - **Step 8**: Basic Bubbletea UI (single pane, then multi-pane)
+- **Step 9**: Multi-pane UI with test runner integration
 
 ### 🎯 **Future Steps (Steps 9-12)**
 
