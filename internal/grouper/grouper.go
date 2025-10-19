@@ -3,6 +3,7 @@ package grouper
 import (
 	"sort"
 
+	"github.com/adamakhtar/wing_commander/internal/git"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
@@ -20,12 +21,21 @@ func NewGrouper(strategy Strategy) *Grouper {
 
 // GroupFailures groups test results by their failure characteristics using the configured strategy
 // Returns groups sorted by count (descending) - most frequent failures first
+// Also detects and assigns change intensities to stack frames
 func (g *Grouper) GroupFailures(results []types.TestResult) []types.FailureGroup {
 	// Filter to only failed tests
 	failedTests := filterFailedTests(results)
 	if len(failedTests) == 0 {
 		return []types.FailureGroup{}
 	}
+
+	// Collect all stack frames for change detection
+	allFrames := g.collectAllFrames(failedTests)
+
+	// Detect changes and assign intensities
+	changeDetector := git.NewChangeDetector()
+	fileChanges := changeDetector.DetectChanges(allFrames)
+	changeDetector.AssignChangeIntensities(allFrames, fileChanges)
 
 	// Group tests by strategy-generated key
 	groupMap := make(map[string]*types.FailureGroup)
@@ -70,6 +80,18 @@ func (g *Grouper) GroupFailures(results []types.TestResult) []types.FailureGroup
 	})
 
 	return groups
+}
+
+// collectAllFrames collects all stack frames from failed tests for change detection
+func (g *Grouper) collectAllFrames(failedTests []types.TestResult) []types.StackFrame {
+	var allFrames []types.StackFrame
+
+	for _, test := range failedTests {
+		frames := GetProjectFrames(test)
+		allFrames = append(allFrames, frames...)
+	}
+
+	return allFrames
 }
 
 // filterFailedTests returns only test results that have failed

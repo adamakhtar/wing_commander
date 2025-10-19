@@ -4,9 +4,11 @@ import "time"
 
 // StackFrame represents a single frame in a backtrace
 type StackFrame struct {
-	File     string // File path
-	Line     int    // Line number
-	Function string // Function/method name (may be empty)
+	File            string // File path
+	Line            int    // Line number
+	Function        string // Function/method name (may be empty)
+	ChangeIntensity int    // 0-3 (0 = no highlight, 3 = strongest)
+	ChangeReason    string // "uncommitted" | "last_commit" | "previous_commit"
 }
 
 // TestStatus represents the status of a test
@@ -46,9 +48,11 @@ type CacheData struct {
 // NewStackFrame creates a new StackFrame
 func NewStackFrame(file string, line int, function string) StackFrame {
 	return StackFrame{
-		File:     file,
-		Line:     line,
-		Function: function,
+		File:            file,
+		Line:            line,
+		Function:        function,
+		ChangeIntensity: 0,
+		ChangeReason:    "",
 	}
 }
 
@@ -72,4 +76,3 @@ func NewFailureGroup(hash string, errorMessage string) FailureGroup {
 		Count:               0,
 	}
 }
-

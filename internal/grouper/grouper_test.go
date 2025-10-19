@@ -203,6 +203,62 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	})
 }
 
+func TestGrouper_CollectAllFrames(t *testing.T) {
+	strategy := NewErrorLocationStrategy()
+	grouper := NewGrouper(strategy)
+
+	failedTests := []types.TestResult{
+		{
+			Name:         "Test 1",
+			Status:       types.StatusFail,
+			ErrorMessage: "Error 1",
+			FilteredBacktrace: []types.StackFrame{
+				{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+				{File: "app/services/user_service.rb", Line: 25, Function: "process"},
+			},
+		},
+		{
+			Name:         "Test 2",
+			Status:       types.StatusFail,
+			ErrorMessage: "Error 2",
+			FilteredBacktrace: []types.StackFrame{
+				{File: "app/models/product.rb", Line: 30, Function: "create_product"},
+			},
+		},
+	}
+
+	allFrames := grouper.collectAllFrames(failedTests)
+
+	assert.Len(t, allFrames, 3)
+	assert.Equal(t, "app/models/user.rb", allFrames[0].File)
+	assert.Equal(t, "app/services/user_service.rb", allFrames[1].File)
+	assert.Equal(t, "app/models/product.rb", allFrames[2].File)
+}
+
+func TestGrouper_GroupFailures_WithChangeDetection(t *testing.T) {
+	strategy := NewErrorLocationStrategy()
+	grouper := NewGrouper(strategy)
+
+	results := []types.TestResult{
+		{
+			Name:         "Test 1",
+			Status:       types.StatusFail,
+			ErrorMessage: "Something went wrong",
+			FilteredBacktrace: []types.StackFrame{
+				{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+			},
+		},
+	}
+
+	groups := grouper.GroupFailures(results)
+
+	assert.Len(t, groups, 1)
+	assert.Equal(t, "app/models/user.rb:42", groups[0].Hash)
+
+	// Note: Change detection will be tested in integration tests
+	// since it requires actual git commands or mocking
+}
+
 func TestFilterFailedTests(t *testing.T) {
 	results := []types.TestResult{
 		{Name: "Test 1", Status: types.StatusPass},

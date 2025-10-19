@@ -13,6 +13,10 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - **Rationale**: Groups failures by where the error actually surfaced, making it easy to identify root causes
 - **Language Support**: Works across Ruby, Python, JavaScript, Go (file:line format)
 - **Architecture**: Strategy pattern allows easy addition of new grouping strategies (CallPath, ErrorPattern, etc.)
+- **Change Detection**: Line-level change detection with 3 intensity levels:
+  - **Intensity 3**: Uncommitted changes to frame's line number
+  - **Intensity 2**: Line changed in last commit
+  - **Intensity 1**: Line changed in commit before last
 
 ### 2. **Project Structure**
 
@@ -94,6 +98,10 @@ type FailureGroup struct {
 - Generate grouping key from bottom frame only (file:line format)
 - Keep both full and filtered backtraces for display
 - Use ErrorLocationStrategy for V1 grouping
+- Detect line-level changes using git diff commands:
+  - `git diff --unified=0` for uncommitted changes
+  - `git diff HEAD~1 --unified=0` for last commit changes
+  - `git diff HEAD~2 HEAD~1 --unified=0` for previous commit changes
 
 ### UI Design (LazyGit-style)
 
@@ -104,21 +112,21 @@ type FailureGroup struct {
 
 ## Current Implementation Status
 
-### ✅ **Completed (Steps 1-5)**
+### ✅ **Completed (Steps 1-6)**
 
 - **Step 1**: Go module initialized, core types defined and tested
 - **Step 2**: JSON parser with RSpec/Minitest support, comprehensive tests
 - **Step 3**: Configuration system with YAML support, framework specification
 - **Step 4**: Backtrace normalizer (filter using config exclude patterns)
 - **Step 5**: Failure grouper with ErrorLocation strategy (group by bottom frame)
+- **Step 6**: Git integration with line-level change detection (3 intensity levels)
 - **Build System**: Makefile configured, clean development workflow
 - **CLI**: Basic commands working (version, config, JSON parsing)
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
 
-### 🔄 **Next Steps (Steps 6-8)**
+### 🔄 **Next Steps (Steps 7-8)**
 
-- **Step 6**: Git integration (identify recently changed files)
 - **Step 7**: Test runner (execute test command from config)
 - **Step 8**: Basic Bubbletea UI (single pane, then multi-pane)
 

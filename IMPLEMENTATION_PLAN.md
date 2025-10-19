@@ -4,7 +4,7 @@
 
 A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
 
-## Current Status: Steps 1-5 Complete ✅
+## Current Status: Steps 1-6 Complete ✅
 
 ### ✅ **Step 1: Project Foundation + Core Types** (COMPLETED)
 
@@ -48,24 +48,17 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - Comprehensive test coverage
 - Ready for CLI integration
 
+### ✅ **Step 6: Git Integration** (COMPLETED)
+
+- Line-level change detection with 3 intensity levels
+- Uncommitted changes (intensity 3), last commit (intensity 2), previous commit (intensity 1)
+- Unified diff parsing for precise line number detection
+- Integration with grouper workflow
+- Comprehensive test coverage
+
 ## Remaining Implementation Steps
 
-### 🔄 **Step 6: Git Integration** (NEXT)
-
-**Goal**: Identify recently changed files
-
-**Files to create**:
-
-- `internal/git/git.go`: Execute git diff, parse changed files
-- `internal/git/git_test.go`: Tests with mock exec
-
-**CLI Update**: Mark groups/frames that touch changed files in text output
-
-**Checkpoint**: `./wing_commander <json>` shows `[*]` next to recently changed frames
-
----
-
-### 🔄 **Step 7: Test Runner**
+### 🔄 **Step 7: Test Runner** (NEXT)
 
 **Goal**: Execute tests and capture JSON output
 
@@ -126,7 +119,7 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - `f`: Toggle full/filtered frames
 - `o`: Open selected file in editor
 - `r`: Re-run tests in selected group
-- Highlight recently changed files
+- Highlight recently changed files with intensity levels
 
 **Checkpoint**: All keybindings functional
 
@@ -171,6 +164,7 @@ exclude_patterns:
 - Store full 50 frames for user viewing
 - Use strategy pattern for future extensibility
 - Groups sorted by count (most frequent failures first)
+- Line-level change detection with 3 intensity levels
 
 ## Success Criteria
 
@@ -204,13 +198,16 @@ wing_commander/
 │   ├── types/          # Core domain types
 │   ├── parser/         # JSON parsing
 │   ├── config/         # Configuration system
-│   └── grouper/        # Grouping logic
-│       ├── normalizer.go
-│       ├── normalizer_test.go
-│       ├── strategy.go
-│       ├── strategy_test.go
-│       ├── grouper.go
-│       └── grouper_test.go
+│   ├── grouper/        # Grouping logic
+│   │   ├── normalizer.go
+│   │   ├── normalizer_test.go
+│   │   ├── strategy.go
+│   │   ├── strategy_test.go
+│   │   ├── grouper.go
+│   │   └── grouper_test.go
+│   └── git/            # Git change detection
+│       ├── changes.go
+│       └── changes_test.go
 ├── testdata/
 │   ├── fixtures/       # Test JSON files
 │   └── config/         # Sample configs
