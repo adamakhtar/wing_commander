@@ -55,7 +55,7 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 
 - **V1**: User runs all tests, tool executes test command and groups results
 - **Future**: File watching, selective test runs, incremental results
-- **Input**: JSON from test frameworks (RSpec, Minitest)
+- **Input**: JUnit XML from test frameworks (RSpec, Minitest)
 - **Output**: Grouped failures in TUI
 - **No Caching**: V1 keeps it simple - fresh run every time
 

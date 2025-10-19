@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="RSpec" tests="3" failures="2" skipped="0" time="0.257">
+    <testcase classname="User" name="should be valid" time="0.123">
+      <failure message="Expected User to be valid, but got validation errors">
+        app/models/user.rb:42:in `create_user'
+        spec/models/user_spec.rb:15:in `block (2 levels) in &lt;top (required)&gt;'
+        /gems/rspec-core-3.12.0/lib/rspec/core/example.rb:259:in `instance_eval'
+        /gems/rspec-core-3.12.0/lib/rspec/core/example.rb:509:in `instance_eval'
+      </failure>
+    </testcase>
+    <testcase classname="User" name="should have email" time="0.089">
+      <failure message="Expected User to have email attribute">
+        app/models/user.rb:42:in `create_user'
+        spec/models/user_spec.rb:25:in `block (2 levels) in &lt;top (required)&gt;'
+        /gems/rspec-core-3.12.0/lib/rspec/core/example.rb:259:in `instance_eval'
+      </failure>
+    </testcase>
+    <testcase classname="User" name="should save successfully" time="0.045">
+    </testcase>
+  </testsuite>
+</testsuites>

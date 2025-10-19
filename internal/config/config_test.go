@@ -13,7 +13,7 @@ func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 
 	assert.Equal(t, FrameworkUnknown, config.TestFramework)
-	assert.Equal(t, "bundle exec rspec --format json", config.TestCommand)
+	assert.Equal(t, "bundle exec rspec --format RspecJunitFormatter --out results.xml", config.TestCommand)
 	assert.NotEmpty(t, config.ExcludePatterns)
 	assert.Contains(t, config.ExcludePatterns, "/gems/")
 	assert.Contains(t, config.ExcludePatterns, "/lib/ruby/")
@@ -37,7 +37,7 @@ func TestLoadConfig_ValidFile(t *testing.T) {
 
 	configPath := filepath.Join(configDir, "config.yml")
 	configContent := `test_framework: rspec
-test_command: "bundle exec rspec --format json"
+test_command: "bundle exec rspec --format RspecJunitFormatter --out results.xml"
 exclude_patterns:
   - "/gems/"
   - "/lib/ruby/"
@@ -57,7 +57,7 @@ exclude_patterns:
 	require.NotNil(t, config)
 
 	assert.Equal(t, FrameworkRSpec, config.TestFramework)
-	assert.Equal(t, "bundle exec rspec --format json", config.TestCommand)
+	assert.Equal(t, "bundle exec rspec --format RspecJunitFormatter --out results.xml", config.TestCommand)
 	assert.Contains(t, config.ExcludePatterns, "/gems/")
 	assert.Contains(t, config.ExcludePatterns, "/custom/path/")
 }
@@ -70,7 +70,7 @@ func TestLoadConfig_InvalidYAML(t *testing.T) {
 
 	configPath := filepath.Join(configDir, "config.yml")
 	invalidYAML := `test_framework: rspec
-test_command: "bundle exec rspec --format json"
+test_command: "bundle exec rspec --format RspecJunitFormatter --out results.xml"
 exclude_patterns:
   - "/gems/"
   - "/lib/ruby/"
@@ -93,7 +93,7 @@ invalid: yaml: content`
 func TestSaveConfig(t *testing.T) {
 	config := &Config{
 		TestFramework: FrameworkRSpec,
-		TestCommand:   "bundle exec rspec --format json",
+		TestCommand:   "bundle exec rspec --format RspecJunitFormatter --out results.xml",
 		ExcludePatterns: []string{
 			"/gems/",
 			"/custom/path/",
@@ -154,11 +154,11 @@ func TestGetDefaultTestCommand(t *testing.T) {
 		framework TestFramework
 		expected  string
 	}{
-		{FrameworkRSpec, "bundle exec rspec --format json"},
-		{FrameworkMinitest, "bundle exec ruby -I test test/*_test.rb --format json"},
-		{FrameworkPytest, "pytest --json-report --json-report-file=test-results.json"},
-		{FrameworkJest, "npx jest --json --outputFile=test-results.json"},
-		{FrameworkUnknown, "bundle exec rspec --format json"},
+		{FrameworkRSpec, "bundle exec rspec --format RspecJunitFormatter --out results.xml"},
+		{FrameworkMinitest, "bundle exec rake test TESTOPTS='--junit --junit-filename=results.xml'"},
+		{FrameworkPytest, "pytest --junit-xml=results.xml"},
+		{FrameworkJest, "npx jest --reporters=jest-junit"},
+		{FrameworkUnknown, "bundle exec rspec --format RspecJunitFormatter --out results.xml"},
 	}
 
 	for _, tt := range tests {
@@ -196,6 +196,6 @@ exclude_patterns:
 
 	// Should use defaults for missing fields
 	assert.Equal(t, FrameworkRSpec, config.TestFramework)
-	assert.Equal(t, "bundle exec rspec --format json", config.TestCommand) // Default
+	assert.Equal(t, "bundle exec rspec --format RspecJunitFormatter --out results.xml", config.TestCommand) // Default
 	assert.Contains(t, config.ExcludePatterns, "/gems/")
 }

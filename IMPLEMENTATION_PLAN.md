@@ -15,13 +15,13 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - Build system (Makefile) configured
 - Clean project structure
 
-### ✅ **Step 2: JSON Parser** (COMPLETED)
+### ✅ **Step 2: JUnit XML Parser** (COMPLETED)
 
-- Parser package with JSON schema support
-- RSpec and Minitest JSON format support
+- Parser package with JUnit XML schema support
+- RSpec and Minitest JUnit XML format support
 - Backtrace frame parsing (file:line:method)
 - Comprehensive test coverage with fixtures
-- CLI integration for JSON file parsing
+- CLI integration for XML file parsing
 - Framework detection removed (user specifies in config)
 
 ### ✅ **Step 3: Configuration System** (COMPLETED)
@@ -59,7 +59,7 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 ### ✅ **Step 7: Test Runner Service** (COMPLETED)
 
 - TestRunner service for GUI-driven test execution
-- Execute test commands from config and parse JSON output
+- Execute test commands from config and parse JUnit XML output
 - Complete workflow integration (parse → normalize → group → detect changes)
 - CLI `run` command implementation with `--config` flag support
 - Config file path customization via command line flags

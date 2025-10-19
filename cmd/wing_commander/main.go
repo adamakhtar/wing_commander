@@ -40,15 +40,15 @@ func main() {
 			showConfig(cfg)
 			return
 		default:
-			// Check if it's a JSON file path
-			if isJSONFile(os.Args[1]) {
-				parseAndDisplayJSON(os.Args[1], cfg)
+			// Check if it's an XML file path
+			if isXMLFile(os.Args[1]) {
+				parseAndDisplayXML(os.Args[1], cfg)
 				return
 			}
 
 			fmt.Printf("Unknown command: %s\n", os.Args[1])
 			fmt.Println("Available commands: run, version, config")
-			fmt.Println("Or provide a JSON file path to parse test results")
+			fmt.Println("Or provide an XML file path to parse test results")
 			return
 		}
 	}
@@ -58,7 +58,7 @@ func main() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  wing_commander [command]")
-	fmt.Println("  wing_commander <json-file>")
+	fmt.Println("  wing_commander <xml-file>")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  run         - Run tests and analyze failures")
@@ -66,9 +66,9 @@ func main() {
 	fmt.Println("  version     - Show version information")
 	fmt.Println("  config      - Show current configuration")
 	fmt.Println()
-	fmt.Println("JSON Files:")
-	fmt.Println("  Parse test results from JSON files")
-	fmt.Println("  Example: wing_commander testdata/fixtures/rspec_failures.json")
+	fmt.Println("XML Files:")
+	fmt.Println("  Parse test results from JUnit XML files")
+	fmt.Println("  Example: wing_commander testdata/fixtures/rspec_failures.xml")
 	fmt.Println()
 	fmt.Printf("📋 Current framework: %s\n", cfg.TestFramework)
 	fmt.Printf("📋 Test command: %s\n", cfg.TestCommand)
@@ -86,17 +86,17 @@ func main() {
 
 	fmt.Println()
 	fmt.Println("✅ Core types loaded successfully!")
-	fmt.Println("📋 Next step: Implement JSON parser")
+	fmt.Println("📋 Next step: Implement JUnit XML parser")
 }
 
-// isJSONFile checks if the argument looks like a JSON file
-func isJSONFile(arg string) bool {
-	return len(arg) > 5 && arg[len(arg)-5:] == ".json"
+// isXMLFile checks if the argument looks like an XML file
+func isXMLFile(arg string) bool {
+	return len(arg) > 4 && arg[len(arg)-4:] == ".xml"
 }
 
-// parseAndDisplayJSON parses a JSON file and displays the results
-func parseAndDisplayJSON(filePath string, cfg *config.Config) {
-	fmt.Printf("📄 Parsing JSON file: %s\n", filePath)
+// parseAndDisplayXML parses an XML file and displays the results
+func parseAndDisplayXML(filePath string, cfg *config.Config) {
+	fmt.Printf("📄 Parsing XML file: %s\n", filePath)
 	fmt.Println()
 
 	result, err := parser.ParseFile(filePath)

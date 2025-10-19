@@ -30,7 +30,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		TestFramework: FrameworkUnknown,
-		TestCommand:   "bundle exec rspec --format json",
+		TestCommand:   "bundle exec rspec --format RspecJunitFormatter --out results.xml",
 		ExcludePatterns: []string{
 			"/gems/",
 			"/lib/ruby/",
@@ -78,7 +78,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		config.TestFramework = FrameworkUnknown
 	}
 	if config.TestCommand == "" {
-		config.TestCommand = "bundle exec rspec --format json"
+		config.TestCommand = "bundle exec rspec --format RspecJunitFormatter --out results.xml"
 	}
 	if len(config.ExcludePatterns) == 0 {
 		config.ExcludePatterns = DefaultConfig().ExcludePatterns
@@ -133,14 +133,14 @@ func ValidateFramework(framework string) (TestFramework, error) {
 func GetDefaultTestCommand(framework TestFramework) string {
 	switch framework {
 	case FrameworkRSpec:
-		return "bundle exec rspec --format json"
+		return "bundle exec rspec --format RspecJunitFormatter --out results.xml"
 	case FrameworkMinitest:
-		return "bundle exec ruby -I test test/*_test.rb --format json"
+		return "bundle exec rake test TESTOPTS='--junit --junit-filename=results.xml'"
 	case FrameworkPytest:
-		return "pytest --json-report --json-report-file=test-results.json"
+		return "pytest --junit-xml=results.xml"
 	case FrameworkJest:
-		return "npx jest --json --outputFile=test-results.json"
+		return "npx jest --reporters=jest-junit"
 	default:
-		return "bundle exec rspec --format json"
+		return "bundle exec rspec --format RspecJunitFormatter --out results.xml"
 	}
 }

@@ -33,7 +33,7 @@ func (r *TestRunner) ExecuteTests() (*TestExecutionResult, error) {
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
 
-	// Parse the JSON output
+	// Parse the XML output
 	testResults, err := r.parseTestOutput(output)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse test output: %w", err)
@@ -79,12 +79,12 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 	return string(output), nil
 }
 
-// parseTestOutput parses the JSON output from the test command
+// parseTestOutput parses the XML output from the test command
 func (r *TestRunner) parseTestOutput(output string) ([]types.TestResult, error) {
 	// Parse the output using the existing parser
-	result, err := parser.ParseJSON([]byte(output))
+	result, err := parser.ParseXML([]byte(output))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse JSON output: %w", err)
+		return nil, fmt.Errorf("failed to parse XML output: %w", err)
 	}
 
 	return result.Tests, nil

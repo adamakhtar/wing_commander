@@ -1,5 +1,19 @@
+# Wing Commander Configuration Example
+# This file shows how to configure Wing Commander for different test frameworks
+
+# Test framework (rspec, minitest, pytest, jest)
 test_framework: rspec
-test_command: "bundle exec rspec --format json"
+
+# Command to run tests and output JUnit XML format
+# RSpec: requires rspec_junit_formatter gem
+test_command: "bundle exec rspec --format RspecJunitFormatter --out results.xml"
+
+# Alternative commands for other frameworks:
+# Minitest: "bundle exec rake test TESTOPTS='--junit --junit-filename=results.xml'"
+# Pytest: "pytest --junit-xml=results.xml"
+# Jest: "npx jest --reporters=jest-junit"
+
+# Patterns to exclude from backtrace analysis
 exclude_patterns:
   - "/gems/"
   - "/lib/ruby/"

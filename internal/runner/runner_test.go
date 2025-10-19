@@ -183,37 +183,27 @@ func TestTestRunner_ParseTestOutput_RSpec(t *testing.T) {
 		TestFramework: config.FrameworkRSpec,
 	})
 
-	// Mock RSpec JSON output (simplified format that parser expects)
-	rspecJSON := `[
-		{
-			"name": "should pass",
-			"status": "passed",
-			"message": "",
-			"backtrace": [],
-			"duration": 0.1,
-			"file": "spec/test_spec.rb",
-			"line": 5
-		},
-		{
-			"name": "should fail",
-			"status": "failed",
-			"message": "Expected true to be false",
-			"backtrace": [
-				"spec/test_spec.rb:10:in 'block (2 levels) in <top (required)>'"
-			],
-			"duration": 0.2,
-			"file": "spec/test_spec.rb",
-			"line": 10
-		}
-	]`
+	// Mock RSpec XML output
+	rspecXML := `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="RSpec" tests="2" failures="1" skipped="0" time="0.3">
+    <testcase classname="TestSpec" name="should pass" time="0.1">
+    </testcase>
+    <testcase classname="TestSpec" name="should fail" time="0.2">
+      <failure message="Expected true to be false">
+        spec/test_spec.rb:10:in 'block (2 levels) in &lt;top (required)&gt;'
+      </failure>
+    </testcase>
+  </testsuite>
+</testsuites>`
 
-	results, err := runner.parseTestOutput(rspecJSON)
+	results, err := runner.parseTestOutput(rspecXML)
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	assert.Equal(t, "should pass", results[0].Name)
+	assert.Equal(t, "TestSpec.should pass", results[0].Name)
 	assert.Equal(t, types.StatusPass, results[0].Status)
-	assert.Equal(t, "should fail", results[1].Name)
+	assert.Equal(t, "TestSpec.should fail", results[1].Name)
 	assert.Equal(t, types.StatusFail, results[1].Status)
 }
 
@@ -222,49 +212,39 @@ func TestTestRunner_ParseTestOutput_Minitest(t *testing.T) {
 		TestFramework: config.FrameworkMinitest,
 	})
 
-	// Mock Minitest JSON output (simplified format that parser expects)
-	minitestJSON := `[
-		{
-			"name": "test_pass",
-			"status": "passed",
-			"message": "",
-			"backtrace": [],
-			"duration": 0.1,
-			"file": "test/test_class.rb",
-			"line": 5
-		},
-		{
-			"name": "test_fail",
-			"status": "failed",
-			"message": "Expected true to be false",
-			"backtrace": [
-				"test/test_class.rb:10:in 'test_fail'"
-			],
-			"duration": 0.2,
-			"file": "test/test_class.rb",
-			"line": 10
-		}
-	]`
+	// Mock Minitest XML output
+	minitestXML := `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Minitest" tests="2" failures="1" skipped="0" time="0.3">
+    <testcase classname="TestClass" name="test_pass" time="0.1">
+    </testcase>
+    <testcase classname="TestClass" name="test_fail" time="0.2">
+      <failure message="Expected true to be false">
+        test/test_class.rb:10:in 'test_fail'
+      </failure>
+    </testcase>
+  </testsuite>
+</testsuites>`
 
-	results, err := runner.parseTestOutput(minitestJSON)
+	results, err := runner.parseTestOutput(minitestXML)
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	assert.Equal(t, "test_pass", results[0].Name)
+	assert.Equal(t, "TestClass.test_pass", results[0].Name)
 	assert.Equal(t, types.StatusPass, results[0].Status)
-	assert.Equal(t, "test_fail", results[1].Name)
+	assert.Equal(t, "TestClass.test_fail", results[1].Name)
 	assert.Equal(t, types.StatusFail, results[1].Status)
 }
 
-func TestTestRunner_ParseTestOutput_InvalidJSON(t *testing.T) {
+func TestTestRunner_ParseTestOutput_InvalidXML(t *testing.T) {
 	runner := NewTestRunner(&config.Config{
 		TestFramework: config.FrameworkRSpec,
 	})
 
-	invalidJSON := `{ invalid json }`
+	invalidXML := `<?xml version="1.0"?><invalid>xml`
 
-	_, err := runner.parseTestOutput(invalidJSON)
+	_, err := runner.parseTestOutput(invalidXML)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse JSON output")
+	assert.Contains(t, err.Error(), "failed to parse XML output")
 }

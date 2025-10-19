@@ -1,35 +1,25 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/joshdk/go-junit"
 )
 
 
-// InputTestResult represents a test result from JSON input
+// InputTestResult represents a test result from JUnit XML input
 type InputTestResult struct {
-	Name        string `json:"name"`
-	Status      string `json:"status"`
-	Message     string `json:"message"`
-	Backtrace   []string `json:"backtrace"`
-	Duration    float64 `json:"duration,omitempty"`
-	File        string `json:"file,omitempty"`
-	Line        int    `json:"line,omitempty"`
-}
-
-// InputTestSuite represents the complete test suite output
-type InputTestSuite struct {
-	Tests []InputTestResult `json:"tests"`
-	Summary struct {
-		Total   int `json:"total"`
-		Passed  int `json:"passed"`
-		Failed  int `json:"failed"`
-		Skipped int `json:"skipped"`
-	} `json:"summary"`
+	Name        string
+	ClassName   string
+	Status      string
+	Message     string
+	Backtrace   []string
+	Duration    float64
+	File        string
+	Line        int
 }
 
 // ParseResult contains parsed test results and metadata
@@ -46,66 +36,85 @@ type TestSummary struct {
 	Skipped int
 }
 
-// ParseFile parses a JSON test results file
+// ParseFile parses a JUnit XML test results file
 func ParseFile(filePath string) (*ParseResult, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
 
-	return ParseJSON(data)
+	return ParseXML(data)
 }
 
-// ParseJSON parses JSON test results data
-func ParseJSON(data []byte) (*ParseResult, error) {
-	var suite InputTestSuite
-
-	// Try to parse as complete test suite first
-	if err := json.Unmarshal(data, &suite); err != nil {
-		// If that fails, try parsing as array of tests
-		var tests []InputTestResult
-		if err := json.Unmarshal(data, &tests); err != nil {
-			return nil, fmt.Errorf("failed to parse JSON: %w", err)
-		}
-		suite.Tests = tests
+// ParseXML parses JUnit XML test results data
+func ParseXML(data []byte) (*ParseResult, error) {
+	suites, err := junit.Ingest(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JUnit XML: %w", err)
 	}
 
-	// Convert to our domain types
 	result := &ParseResult{
-		Summary: TestSummary{
-			Total:   suite.Summary.Total,
-			Passed:  suite.Summary.Passed,
-			Failed:  suite.Summary.Failed,
-			Skipped: suite.Summary.Skipped,
-		},
+		Summary: TestSummary{},
 	}
 
-	for _, inputTest := range suite.Tests {
-		testResult := convertToTestResult(inputTest)
-		result.Tests = append(result.Tests, testResult)
+	totalTests := 0
+	failedTests := 0
+	skippedTests := 0
+
+	for _, suite := range suites {
+		totalTests += suite.Totals.Tests
+		failedTests += suite.Totals.Failed + suite.Totals.Error
+		skippedTests += suite.Totals.Skipped
+
+		for _, test := range suite.Tests {
+			testResult := convertJUnitTestToTestResult(test)
+			result.Tests = append(result.Tests, testResult)
+		}
+	}
+
+	result.Summary = TestSummary{
+		Total:   totalTests,
+		Passed:  totalTests - failedTests - skippedTests,
+		Failed:  failedTests,
+		Skipped: skippedTests,
 	}
 
 	return result, nil
 }
 
-// convertToTestResult converts input format to our domain type
-func convertToTestResult(input InputTestResult) types.TestResult {
-	// Convert status string to our enum
+// convertJUnitTestToTestResult converts JUnit test to our domain type
+func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
+	// Determine status based on JUnit test result
 	var status types.TestStatus
-	switch strings.ToLower(input.Status) {
-	case "pass", "passed", "success":
+	var errorMessage string
+	var backtrace []string
+
+	switch test.Status {
+	case junit.StatusPassed:
 		status = types.StatusPass
-	case "fail", "failed", "failure":
-		status = types.StatusFail
-	case "skip", "skipped", "pending":
+	case junit.StatusSkipped:
 		status = types.StatusSkip
+		errorMessage = test.Message
+	case junit.StatusFailed, junit.StatusError:
+		status = types.StatusFail
+		errorMessage = test.Message
+		// Parse stacktrace from error output
+		if test.Error != nil {
+			backtrace = parseStacktraceFromError(test.Error.Error())
+		}
+		// Also check SystemErr for additional stacktrace info
+		if test.SystemErr != "" {
+			additionalBacktrace := parseStacktraceFromError(test.SystemErr)
+			backtrace = append(backtrace, additionalBacktrace...)
+		}
 	default:
-		status = types.StatusFail // Default to fail for unknown statuses
+		status = types.StatusFail
+		errorMessage = "Unknown test status"
 	}
 
 	// Parse backtrace into StackFrames
 	var fullBacktrace []types.StackFrame
-	for _, frameStr := range input.Backtrace {
+	for _, frameStr := range backtrace {
 		frame := parseStackFrame(frameStr)
 		if frame.File != "" { // Only add frames with file info
 			fullBacktrace = append(fullBacktrace, frame)
@@ -117,13 +126,43 @@ func convertToTestResult(input InputTestResult) types.TestResult {
 		fullBacktrace = fullBacktrace[:50]
 	}
 
+	// Create test name combining classname and name if available
+	testName := test.Name
+	if test.Classname != "" && test.Classname != test.Name {
+		testName = fmt.Sprintf("%s.%s", test.Classname, test.Name)
+	}
+
 	return types.TestResult{
-		Name:              input.Name,
+		Name:              testName,
 		Status:            status,
-		ErrorMessage:      input.Message,
+		ErrorMessage:      errorMessage,
 		FullBacktrace:     fullBacktrace,
 		FilteredBacktrace: make([]types.StackFrame, 0), // Will be populated by normalizer
 	}
+}
+
+// parseStacktraceFromError extracts stacktrace lines from error output
+func parseStacktraceFromError(output string) []string {
+	if output == "" {
+		return []string{}
+	}
+
+	lines := strings.Split(output, "\n")
+	var stacktrace []string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// Skip empty lines and common non-stacktrace lines
+		if line == "" || strings.HasPrefix(line, "Error:") || strings.HasPrefix(line, "Failure:") {
+			continue
+		}
+		// Look for lines that look like stack frames (contain file paths and line numbers)
+		if strings.Contains(line, ":") && (strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
+			stacktrace = append(stacktrace, line)
+		}
+	}
+
+	return stacktrace
 }
 
 // parseStackFrame parses a backtrace frame string into a StackFrame

@@ -15,18 +15,18 @@ func TestParseFile(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "valid RSpec JSON file",
-			filename: "../../testdata/fixtures/rspec_failures.json",
+			name:     "valid RSpec XML file",
+			filename: "../../testdata/fixtures/rspec_failures.xml",
 			wantErr:  false,
 		},
 		{
-			name:     "valid Minitest JSON file",
-			filename: "../../testdata/fixtures/minitest_failures.json",
+			name:     "valid Minitest XML file",
+			filename: "../../testdata/fixtures/minitest_failures.xml",
 			wantErr:  false,
 		},
 		{
 			name:     "non-existent file",
-			filename: "testdata/fixtures/nonexistent.json",
+			filename: "testdata/fixtures/nonexistent.xml",
 			wantErr:  true,
 		},
 	}
@@ -45,27 +45,27 @@ func TestParseFile(t *testing.T) {
 	}
 }
 
-func TestParseJSON_RSpec(t *testing.T) {
-	jsonData := `[
-		{
-			"name": "User should be valid",
-			"status": "failed",
-			"message": "Expected User to be valid",
-			"backtrace": [
-				"app/models/user.rb:42:in 'create_user'",
-				"spec/models/user_spec.rb:15:in 'block (2 levels) in <top (required)>'"
-			]
-		}
-	]`
+func TestParseXML_RSpec(t *testing.T) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="RSpec" tests="1" failures="1" skipped="0" time="0.123">
+    <testcase classname="User" name="should be valid" time="0.123">
+      <failure message="Expected User to be valid">
+        app/models/user.rb:42:in 'create_user'
+        spec/models/user_spec.rb:15:in 'block (2 levels) in &lt;top (required)&gt;'
+      </failure>
+    </testcase>
+  </testsuite>
+</testsuites>`
 
-	result, err := ParseJSON([]byte(jsonData))
+	result, err := ParseXML([]byte(xmlData))
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "User should be valid", test.Name)
+	assert.Equal(t, "User.should be valid", test.Name)
 	assert.Equal(t, types.StatusFail, test.Status)
 	assert.Equal(t, "Expected User to be valid", test.ErrorMessage)
 	assert.Len(t, test.FullBacktrace, 2)
@@ -77,28 +77,20 @@ func TestParseJSON_RSpec(t *testing.T) {
 	assert.Equal(t, "create_user", frame.Function)
 }
 
-func TestParseJSON_Minitest(t *testing.T) {
-	jsonData := `{
-		"tests": [
-			{
-				"name": "test_user_creation",
-				"status": "failed",
-				"message": "Expected User to be valid",
-				"backtrace": [
-				"app/models/user.rb:42:in 'create_user'",
-				"test/models/user_test.rb:15:in 'test_user_creation'"
-				]
-			}
-		],
-		"summary": {
-			"total": 1,
-			"passed": 0,
-			"failed": 1,
-			"skipped": 0
-		}
-	}`
+func TestParseXML_Minitest(t *testing.T) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Minitest" tests="1" failures="1" skipped="0" time="0.156">
+    <testcase classname="UserTest" name="test_user_creation" time="0.156">
+      <failure message="Expected User to be valid">
+        app/models/user.rb:42:in 'create_user'
+        test/models/user_test.rb:15:in 'test_user_creation'
+      </failure>
+    </testcase>
+  </testsuite>
+</testsuites>`
 
-	result, err := ParseJSON([]byte(jsonData))
+	result, err := ParseXML([]byte(xmlData))
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
@@ -107,7 +99,7 @@ func TestParseJSON_Minitest(t *testing.T) {
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "test_user_creation", test.Name)
+	assert.Equal(t, "UserTest.test_user_creation", test.Name)
 	assert.Equal(t, types.StatusFail, test.Status)
 }
 
@@ -164,96 +156,10 @@ func TestParseStackFrame(t *testing.T) {
 }
 
 
-func TestConvertToTestResult(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    InputTestResult
-		expected types.TestResult
-	}{
-		{
-			name: "Failed test",
-			input: InputTestResult{
-				Name:      "Test name",
-				Status:    "failed",
-				Message:   "Error message",
-				Backtrace: []string{"app/test.rb:10:in 'test_method'"},
-			},
-			expected: types.TestResult{
-				Name:              "Test name",
-				Status:            types.StatusFail,
-				ErrorMessage:      "Error message",
-				FullBacktrace:     []types.StackFrame{{File: "app/test.rb", Line: 10, Function: "test_method"}},
-				FilteredBacktrace: []types.StackFrame{},
-			},
-		},
-		{
-			name: "Passed test",
-			input: InputTestResult{
-				Name:      "Test name",
-				Status:    "passed",
-				Message:   "",
-				Backtrace: []string{},
-			},
-			expected: types.TestResult{
-				Name:              "Test name",
-				Status:            types.StatusPass,
-				ErrorMessage:      "",
-				FullBacktrace:     make([]types.StackFrame, 0),
-				FilteredBacktrace: make([]types.StackFrame, 0),
-			},
-		},
-		{
-			name: "Skipped test",
-			input: InputTestResult{
-				Name:      "Test name",
-				Status:    "skipped",
-				Message:   "",
-				Backtrace: []string{},
-			},
-			expected: types.TestResult{
-				Name:              "Test name",
-				Status:            types.StatusSkip,
-				ErrorMessage:      "",
-				FullBacktrace:     make([]types.StackFrame, 0),
-				FilteredBacktrace: make([]types.StackFrame, 0),
-			},
-		},
-	}
+func TestInvalidXML(t *testing.T) {
+	invalidXML := `<?xml version="1.0"?><invalid>xml`
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := convertToTestResult(tt.input)
-		assert.Equal(t, tt.expected.Name, result.Name)
-		assert.Equal(t, tt.expected.Status, result.Status)
-		assert.Equal(t, tt.expected.ErrorMessage, result.ErrorMessage)
-		assert.Len(t, result.FullBacktrace, len(tt.expected.FullBacktrace))
-		assert.Len(t, result.FilteredBacktrace, 0) // Check length instead of exact comparison
-		})
-	}
-}
-
-func TestBacktraceFrameLimit(t *testing.T) {
-	// Create a test with more than 50 backtrace frames
-	backtrace := make([]string, 60)
-	for i := 0; i < 60; i++ {
-		backtrace[i] = "app/test.rb:10:in 'test_method'"
-	}
-
-	input := InputTestResult{
-		Name:      "Test with many frames",
-		Status:    "failed",
-		Message:   "Error",
-		Backtrace: backtrace,
-	}
-
-	result := convertToTestResult(input)
-	assert.Len(t, result.FullBacktrace, 50, "Backtrace should be capped at 50 frames")
-}
-
-func TestInvalidJSON(t *testing.T) {
-	invalidJSON := `{"invalid": "json"`
-
-	result, err := ParseJSON([]byte(invalidJSON))
+	result, err := ParseXML([]byte(invalidXML))
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }
