@@ -4,7 +4,7 @@
 
 A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
 
-## Current Status: Steps 1-9 Complete ✅
+## Current Status: Steps 1-10 Complete ✅
 
 ### ✅ **Step 1: Project Foundation + Core Types** (COMPLETED)
 
@@ -178,38 +178,53 @@ wing_commander run
 
 ---
 
-### 🔄 **Step 10: Advanced UI Features** (NEXT)
+### ✅ **Step 10: Advanced UI Features** (COMPLETED)
 
 **Goal**: Add keybindings for actions (toggle, open file, re-run)
 
-**Files to create**:
+**Files implemented**:
+- `internal/editor/editor.go`: File opening functionality with editor detection
+- `internal/editor/editor_test.go`: Comprehensive tests for editor functionality
+- Updated `internal/ui/model.go`: Enhanced UI model with new keybindings
+- Updated `cmd/wing_commander/main.go`: Pass TestRunner to UI model
+- Updated `Makefile`: Added `dev-minitest` command for development testing
 
-- Update `app.go`: Handle `f`, `o`, `r` keybindings
-- `internal/editor/editor.go`: Open file in $EDITOR at line
+**UI Features implemented**:
+- `f`: Toggle full/filtered frames display
+- `o`: Open selected file in external editor at specific line
+- `r`: Re-run tests for selected group
+- Async message handling for file opening and test re-running
+- Updated status bar with all available keybindings
 
-**UI Updates**:
+**Development workflow**:
+- `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
+- Real test execution with JUnit XML generation
+- Interactive TUI with actual test failures (not demo data)
 
-- `f`: Toggle full/filtered frames
-- `o`: Open selected file in editor
-- `r`: Re-run tests in selected group
-- Highlight recently changed files with intensity levels
-
-**Checkpoint**: All keybindings functional
+**Checkpoint**: Complete interactive TUI with file opening and test re-running capabilities
 
 ---
 
-### 🔄 **Step 11: Polish & Documentation**
+### 🔄 **Step 11: Polish & Documentation** (NEXT)
 
 **Goal**: Production-ready V1
 
 **Files to create**:
 
 - `README.md`: Installation, usage, configuration guide
-- Example `.wing_commander/config.yml` in docs
-- Error messages polish
-- Help screen in UI
+- `CHANGELOG.md`: Version history and features
+- `LICENSE`: Open source license
 
-**Checkpoint**: Ready for release
+**Polish items**:
+
+- Error handling improvements
+- Performance optimizations
+- Cross-platform testing
+- Final documentation review
+
+**Checkpoint**: Production-ready V1 release
+
+---
 
 ## Key Design Decisions Made
 
