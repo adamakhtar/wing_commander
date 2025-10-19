@@ -301,7 +301,7 @@ func runTests(cfg *config.Config) {
 	fmt.Println()
 
 	// Create UI model
-	model := ui.NewModel(result)
+	model := ui.NewModel(result, testRunner)
 
 	// Create and run the TUI program
 	program := tea.NewProgram(model, tea.WithAltScreen())
@@ -353,8 +353,11 @@ func demoCommand(args []string) {
 	fmt.Println("Use arrow keys to navigate, 'q' to quit")
 	fmt.Println()
 
+	// Create a dummy test runner for demo mode
+	dummyRunner := runner.NewTestRunner(cfg)
+
 	// Create UI model
-	model := ui.NewModel(executionResult)
+	model := ui.NewModel(executionResult, dummyRunner)
 
 	// Create and run the TUI program
 	program := tea.NewProgram(model, tea.WithAltScreen())

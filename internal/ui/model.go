@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/adamakhtar/wing_commander/internal/editor"
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
@@ -29,10 +30,14 @@ type Model struct {
 
 	// Execution result
 	result *runner.TestExecutionResult
+
+	// Services
+	editor *editor.Editor
+	runner *runner.TestRunner
 }
 
 // NewModel creates a new UI model
-func NewModel(result *runner.TestExecutionResult) Model {
+func NewModel(result *runner.TestExecutionResult, testRunner *runner.TestRunner) Model {
 	return Model{
 		failureGroups:   result.FailureGroups,
 		testResults:     result.TestResults,
@@ -42,6 +47,8 @@ func NewModel(result *runner.TestExecutionResult) Model {
 		activePane:      0,
 		showFullFrames:  false,
 		result:          result,
+		editor:          editor.NewEditor(),
+		runner:          testRunner,
 	}
 }
 
@@ -80,7 +87,41 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "f":
 			m.showFullFrames = !m.showFullFrames
 			return m, nil
+
+		case "o":
+			return m, m.handleOpenFile()
+
+		case "r":
+			return m, m.handleReRunTests()
 		}
+
+	case OpenFileSuccessMsg:
+		// File opened successfully - no UI update needed
+		return m, nil
+
+	case OpenFileErrorMsg:
+		// File opening failed - could show error message in future
+		return m, nil
+
+	case ReRunSuccessMsg:
+		// Tests re-run successfully - update the model with new results
+		m.result = msg.Result
+		m.failureGroups = msg.Result.FailureGroups
+		m.testResults = msg.Result.TestResults
+		// Reset selections to avoid out-of-bounds
+		if m.selectedGroup >= len(m.failureGroups) {
+			m.selectedGroup = 0
+		}
+		if len(m.failureGroups) > 0 && m.selectedGroup < len(m.failureGroups) {
+			if m.selectedTest >= len(m.failureGroups[m.selectedGroup].Tests) {
+				m.selectedTest = 0
+			}
+		}
+		return m, nil
+
+	case ReRunErrorMsg:
+		// Test re-run failed - could show error message in future
+		return m, nil
 	}
 
 	return m, nil
@@ -135,6 +176,48 @@ func (m Model) handleDownKey() Model {
 		}
 	}
 	return m
+}
+
+// handleOpenFile handles opening the selected file in an external editor
+func (m Model) handleOpenFile() tea.Cmd {
+	return func() tea.Msg {
+		if len(m.failureGroups) == 0 || m.selectedGroup >= len(m.failureGroups) {
+			return OpenFileErrorMsg{Error: "no group selected"}
+		}
+
+		group := m.failureGroups[m.selectedGroup]
+		frames := m.getCurrentFrames(group)
+
+		if len(frames) == 0 || m.selectedFrame >= len(frames) {
+			return OpenFileErrorMsg{Error: "no frame selected"}
+		}
+
+		frame := frames[m.selectedFrame]
+		err := m.editor.OpenFile(frame.File, frame.Line)
+		if err != nil {
+			return OpenFileErrorMsg{Error: err.Error()}
+		}
+
+		return OpenFileSuccessMsg{File: frame.File, Line: frame.Line}
+	}
+}
+
+// handleReRunTests handles re-running tests for the selected group
+func (m Model) handleReRunTests() tea.Cmd {
+	return func() tea.Msg {
+		if len(m.failureGroups) == 0 || m.selectedGroup >= len(m.failureGroups) {
+			return ReRunErrorMsg{Error: "no group selected"}
+		}
+
+		// For now, we'll re-run all tests
+		// In a future enhancement, we could run only specific tests from the group
+		result, err := m.runner.ExecuteTests()
+		if err != nil {
+			return ReRunErrorMsg{Error: err.Error()}
+		}
+
+		return ReRunSuccessMsg{Result: result}
+	}
 }
 
 // getCurrentFrames returns the appropriate frames based on showFullFrames setting
@@ -291,9 +374,34 @@ func (m Model) renderStatusBar() string {
 		GetKeyBindingStyle().Render("↑↓") + " navigate",
 		GetKeyBindingStyle().Render("Tab") + " switch panes",
 		GetKeyBindingStyle().Render("f") + " toggle frames",
+		GetKeyBindingStyle().Render("o") + " open file",
+		GetKeyBindingStyle().Render("r") + " re-run tests",
 		GetKeyBindingStyle().Render("q") + " quit",
 	}
 
 	statusText := strings.Join(keyBindings, " • ")
 	return GetStatusBarStyle().Width(m.width).Render(statusText)
+}
+
+// Message types for async operations
+
+// OpenFileSuccessMsg is sent when a file is successfully opened
+type OpenFileSuccessMsg struct {
+	File string
+	Line int
+}
+
+// OpenFileErrorMsg is sent when opening a file fails
+type OpenFileErrorMsg struct {
+	Error string
+}
+
+// ReRunSuccessMsg is sent when tests are successfully re-run
+type ReRunSuccessMsg struct {
+	Result *runner.TestExecutionResult
+}
+
+// ReRunErrorMsg is sent when re-running tests fails
+type ReRunErrorMsg struct {
+	Error string
 }
