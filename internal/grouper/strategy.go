@@ -29,9 +29,10 @@ func (s *ErrorLocationStrategy) GroupKey(frames []types.StackFrame) string {
 		return ""
 	}
 
-	// Get the bottom frame (last frame in the backtrace)
-	// This represents where the error actually surfaced
-	bottomFrame := frames[len(frames)-1]
+	// Get the bottom frame (first frame in the backtrace)
+	// In most backtraces, the first frame is where the error originated
+	// (deepest in the call stack), and subsequent frames show the call path
+	bottomFrame := frames[0]
 
 	// Generate key from filename and line number
 	// Include line number as it's important for precise error location

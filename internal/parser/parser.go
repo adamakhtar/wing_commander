@@ -151,14 +151,15 @@ func parseStacktraceFromError(output string) []string {
 	var stacktrace []string
 
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
+		// Don't trim the line yet - we need to check indentation
 		// Skip empty lines and common non-stacktrace lines
-		if line == "" || strings.HasPrefix(line, "Error:") || strings.HasPrefix(line, "Failure:") {
+		if strings.TrimSpace(line) == "" || strings.HasPrefix(strings.TrimSpace(line), "Error:") || strings.HasPrefix(strings.TrimSpace(line), "Failure:") {
 			continue
 		}
-		// Look for lines that look like stack frames (contain file paths and line numbers)
-		if strings.Contains(line, ":") && (strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
-			stacktrace = append(stacktrace, line)
+		// Look for lines that look like stack frames (indented with 4 spaces and contain file:line pattern)
+		if strings.HasPrefix(line, "    ") && strings.Contains(line, ":") &&
+		   (strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
+			stacktrace = append(stacktrace, strings.TrimSpace(line))
 		}
 	}
 
