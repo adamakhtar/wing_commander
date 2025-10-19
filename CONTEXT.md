@@ -127,7 +127,7 @@ type FailureGroup struct {
 
 ## Current Implementation Status
 
-### ✅ **Completed (Steps 1-7)**
+### ✅ **Completed (Steps 1-8)**
 
 - **Step 1**: Go module initialized, core types defined and tested
 - **Step 2**: JSON parser with RSpec/Minitest support, comprehensive tests
@@ -136,21 +136,20 @@ type FailureGroup struct {
 - **Step 5**: Failure grouper with ErrorLocation strategy (group by bottom frame)
 - **Step 6**: Git integration with line-level change detection (3 intensity levels)
 - **Step 7**: Test runner service for GUI-driven test execution
+- **Step 8**: Basic Bubbletea TUI with 3-pane layout and demo command
 - **Build System**: Makefile configured, clean development workflow
-- **CLI**: Basic commands working (version, config, JSON parsing, run)
+- **CLI**: Basic commands working (version, config, JSON parsing, run, demo)
 - **CLI Flags**: `--config` flag for run command to specify custom config file location
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
 
-### 🔄 **Next Steps (Steps 8-9)**
-
-- **Step 8**: Basic Bubbletea UI (single pane, then multi-pane)
-- **Step 9**: Multi-pane UI with test runner integration
-
-### 🎯 **Future Steps (Steps 9-12)**
+### 🔄 **Next Steps (Step 9)**
 
 - **Step 9**: Advanced UI features (keybindings, file opening, re-run)
-- **Step 10**: Multi-pane UI (groups, tests, backtrace panes)
+
+### 🎯 **Future Steps (Steps 10-12)**
+
+- **Step 10**: Multi-pane UI enhancements (groups, tests, backtrace panes)
 - **Step 11**: Polish & documentation (README, help screens)
 - **Step 12**: Production release (error handling, final testing)
 
@@ -163,6 +162,9 @@ make test
 
 # Run CLI
 make run
+
+# Test TUI with demo data
+./bin/wing_commander demo
 
 # Run with custom config
 ./bin/wing_commander run --config /path/to/config.yml
