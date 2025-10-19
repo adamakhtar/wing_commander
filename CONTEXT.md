@@ -8,10 +8,11 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 
 ### 1. **Grouping Strategy**
 
-- **Group by**: Normalized backtrace (file + method name, excluding line numbers)
+- **Group by**: ErrorLocation strategy - bottom frame only (file + line number)
 - **Store**: Full 50 frames for user viewing
-- **Rationale**: Line numbers change with code edits, but file+method stays stable
-- **Language Support**: Works across Ruby, Python, JavaScript, Go (method names in stack traces)
+- **Rationale**: Groups failures by where the error actually surfaced, making it easy to identify root causes
+- **Language Support**: Works across Ruby, Python, JavaScript, Go (file:line format)
+- **Architecture**: Strategy pattern allows easy addition of new grouping strategies (CallPath, ErrorPattern, etc.)
 
 ### 2. **Project Structure**
 
@@ -90,9 +91,9 @@ type FailureGroup struct {
 ### Backtrace Normalization Rules
 
 - Remove frames matching exclude patterns from config
-- Parse method names from stack frames
-- Generate hash from file+method (ignore line numbers)
-- Keep both full and filtered backtraces
+- Generate grouping key from bottom frame only (file:line format)
+- Keep both full and filtered backtraces for display
+- Use ErrorLocationStrategy for V1 grouping
 
 ### UI Design (LazyGit-style)
 
@@ -103,20 +104,20 @@ type FailureGroup struct {
 
 ## Current Implementation Status
 
-### ✅ **Completed (Steps 1-3)**
+### ✅ **Completed (Steps 1-5)**
 
 - **Step 1**: Go module initialized, core types defined and tested
 - **Step 2**: JSON parser with RSpec/Minitest support, comprehensive tests
 - **Step 3**: Configuration system with YAML support, framework specification
+- **Step 4**: Backtrace normalizer (filter using config exclude patterns)
+- **Step 5**: Failure grouper with ErrorLocation strategy (group by bottom frame)
 - **Build System**: Makefile configured, clean development workflow
 - **CLI**: Basic commands working (version, config, JSON parsing)
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
 
-### 🔄 **Next Steps (Steps 4-8)**
+### 🔄 **Next Steps (Steps 6-8)**
 
-- **Step 4**: Backtrace normalizer (filter using config exclude patterns)
-- **Step 5**: Failure grouper (group by normalized backtrace signature)
 - **Step 6**: Git integration (identify recently changed files)
 - **Step 7**: Test runner (execute test command from config)
 - **Step 8**: Basic Bubbletea UI (single pane, then multi-pane)

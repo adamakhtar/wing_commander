@@ -4,7 +4,7 @@
 
 A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
 
-## Current Status: Steps 1-3 Complete ✅
+## Current Status: Steps 1-5 Complete ✅
 
 ### ✅ **Step 1: Project Foundation + Core Types** (COMPLETED)
 
@@ -33,39 +33,24 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 - CLI config command
 - Clean file organization (test files in `testdata/`)
 
+### ✅ **Step 4: Backtrace Normalizer** (COMPLETED)
+
+- Filter frames using config exclude patterns
+- Normalize test results with filtered backtraces
+- Comprehensive test coverage
+- CLI integration for frame filtering statistics
+
+### ✅ **Step 5: Failure Grouper** (COMPLETED)
+
+- Strategy pattern implementation for grouping
+- ErrorLocationStrategy groups by bottom frame (file:line)
+- Groups sorted by count (most frequent first)
+- Comprehensive test coverage
+- Ready for CLI integration
+
 ## Remaining Implementation Steps
 
-### 🔄 **Step 4: Backtrace Normalizer** (NEXT)
-
-**Goal**: Filter and normalize backtraces using config exclude patterns
-
-**Files to create**:
-
-- `internal/grouper/normalizer.go`: Filter frames, parse method names, normalize
-- `internal/grouper/normalizer_test.go`: Tests with various backtrace patterns
-
-**CLI Update**: Parse JSON → normalize backtraces → print filtered vs full frame counts
-
-**Checkpoint**: `./wing_commander <json>` shows "Filtered X frames to Y project frames"
-
----
-
-### 🔄 **Step 5: Failure Grouper**
-
-**Goal**: Group tests by normalized backtrace signature
-
-**Files to create**:
-
-- `internal/grouper/grouper.go`: Group by file+method hash, sort by count
-- `internal/grouper/grouper_test.go`: Tests for grouping logic, edge cases
-
-**CLI Update**: Parse → normalize → group → print group summary (count, error, tests)
-
-**Checkpoint**: `./wing_commander <json>` outputs grouped failures in text format
-
----
-
-### 🔄 **Step 6: Git Integration**
+### 🔄 **Step 6: Git Integration** (NEXT)
 
 **Goal**: Identify recently changed files
 
@@ -182,9 +167,10 @@ exclude_patterns:
 
 ### **Grouping Strategy**
 
-- Group by normalized backtrace (file + method, ignore line numbers)
+- Group by ErrorLocation strategy (bottom frame only: file:line)
 - Store full 50 frames for user viewing
-- Use config exclude patterns for filtering
+- Use strategy pattern for future extensibility
+- Groups sorted by count (most frequent failures first)
 
 ## Success Criteria
 
@@ -217,7 +203,14 @@ wing_commander/
 ├── internal/
 │   ├── types/          # Core domain types
 │   ├── parser/         # JSON parsing
-│   └── config/         # Configuration system
+│   ├── config/         # Configuration system
+│   └── grouper/        # Grouping logic
+│       ├── normalizer.go
+│       ├── normalizer_test.go
+│       ├── strategy.go
+│       ├── strategy_test.go
+│       ├── grouper.go
+│       └── grouper_test.go
 ├── testdata/
 │   ├── fixtures/       # Test JSON files
 │   └── config/         # Sample configs

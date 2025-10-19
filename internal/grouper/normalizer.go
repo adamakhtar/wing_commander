@@ -62,32 +62,6 @@ func (n *Normalizer) shouldExclude(frame types.StackFrame) bool {
 	return false
 }
 
-// NormalizeFrameForGrouping creates a normalized string for grouping
-// This removes line numbers and focuses on file + method
-func NormalizeFrameForGrouping(frame types.StackFrame) string {
-	// For grouping, we use file + method (ignore line number)
-	if frame.Function != "" {
-		return frame.File + "::" + frame.Function
-	}
-	// If no function name, use just the file
-	return frame.File
-}
-
-// NormalizeBacktraceForGrouping creates a signature for a backtrace
-// This is used to group tests with similar call stacks
-func NormalizeBacktraceForGrouping(frames []types.StackFrame) string {
-	if len(frames) == 0 {
-		return ""
-	}
-
-	// Build signature from normalized frames
-	parts := make([]string, 0, len(frames))
-	for _, frame := range frames {
-		parts = append(parts, NormalizeFrameForGrouping(frame))
-	}
-
-	return strings.Join(parts, "|")
-}
 
 // GetProjectFrames returns only project-level frames (filtered)
 func GetProjectFrames(result types.TestResult) []types.StackFrame {
