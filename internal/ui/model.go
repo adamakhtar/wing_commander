@@ -285,9 +285,9 @@ func (m Model) formatTailFrames(frames []types.StackFrame, maxWidth int) string 
 func getFailureCauseIcon(cause types.FailureCause) string {
 	switch cause {
 	case types.FailureCauseTestDefinition:
-		return "🔧" // Test definition error
+		return "🏗️" // Test definition error
 	case types.FailureCauseProductionCode:
-		return "🐛" // Production code error
+		return "🚀" // Production code error
 	case types.FailureCauseAssertion:
 		return "❌" // Assertion failure
 	default:
@@ -331,11 +331,6 @@ func (m Model) renderGroupsPane(width, height int) string {
 		content.WriteString(GetSuccessTextStyle().Render("✅ All tests passed!"))
 	} else {
 		for i, group := range m.failureGroups {
-			style := GetNormalTextStyle()
-			if i == m.selectedGroup && isActive {
-				style = GetSelectedTextStyle()
-			}
-
 			// Get failure cause icon and count (in yellow)
 			var causeIcon string
 			var countText string
@@ -356,18 +351,32 @@ func (m Model) renderGroupsPane(width, height int) string {
 
 			// First line: icon count - error message
 			firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
-			content.WriteString(style.Render(firstLine))
-			content.WriteString("\n")
-
+			
 			// Second line: bottom frame (first frame in backtrace)
 			location := "Unknown"
 			if len(group.NormalizedBacktrace) > 0 {
 				frame := group.NormalizedBacktrace[0] // Bottom frame (first frame)
-				location = fmt.Sprintf("%s:%d", frame.File, frame.Line)
+				// Convert absolute path to relative if it contains the project path
+				filePath := frame.File
+				if projectPath, err := m.runner.GetWorkingDirectory(); err == nil {
+					if strings.HasPrefix(filePath, projectPath+"/") {
+						filePath = strings.TrimPrefix(filePath, projectPath+"/")
+					}
+				}
+				location = fmt.Sprintf("%s:%d", filePath, frame.Line)
 			}
 
-			line := fmt.Sprintf("  %s", location)
-			content.WriteString(style.Render(line))
+			secondLine := fmt.Sprintf("  %s", location)
+			
+			// Apply selection highlighting if this group is selected
+			if i == m.selectedGroup && isActive {
+				firstLine = GetSelectedTextStyle().Render(firstLine)
+				secondLine = GetSelectedTextStyle().Render(secondLine)
+			}
+			
+			content.WriteString(firstLine)
+			content.WriteString("\n")
+			content.WriteString(secondLine)
 			content.WriteString("\n")
 		}
 	}
