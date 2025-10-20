@@ -20,11 +20,24 @@ const (
 	StatusSkip TestStatus = "skip"
 )
 
+// FailureCause represents the coarse-grained cause of a test failure
+type FailureCause string
+
+const (
+    // FailureCauseTestDefinition indicates the failure originated from test code/framework
+    FailureCauseTestDefinition FailureCause = "test_definition_error"
+    // FailureCauseProductionCode indicates the failure was raised by the application under test
+    FailureCauseProductionCode FailureCause = "production_code_error"
+    // FailureCauseAssertion indicates the test completed but an expectation failed
+    FailureCauseAssertion FailureCause = "assertion_failure"
+)
+
 // TestResult represents a single test execution result
 type TestResult struct {
 	Name             string        // Test name/description
 	Status           TestStatus    // Test status
 	ErrorMessage     string        // Error message (if failed)
+    FailureCause     FailureCause  // Coarse-grained cause for failed tests
 	FullBacktrace    []StackFrame  // Complete backtrace (up to 50 frames)
 	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
 }

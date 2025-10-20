@@ -10,6 +10,25 @@ import (
 )
 
 
+// testPathIndicators lists substrings that indicate frames belonging to test code paths
+// Limited to Ruby frameworks for now (RSpec and Minitest). Extend as more frameworks are supported.
+var testPathIndicators = []string{
+    "/spec/",
+    "/test/",
+    "_spec.rb",
+}
+
+// frameworkPathIndicators lists substrings that indicate frames from test frameworks/runners
+var frameworkPathIndicators = []string{
+    "/rspec/",
+    "/minitest/",
+    "/junit/",
+    "/jest/",
+    "/node_modules/",
+    "/gems/",
+}
+
+
 // InputTestResult represents a test result from JUnit XML input
 type InputTestResult struct {
 	Name        string
@@ -88,8 +107,9 @@ func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
 	var status types.TestStatus
 	var errorMessage string
 	var backtrace []string
+    var failureCause types.FailureCause
 
-	switch test.Status {
+    switch test.Status {
 	case junit.StatusPassed:
 		status = types.StatusPass
 	case junit.StatusSkipped:
@@ -133,13 +153,61 @@ func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
 		testName = fmt.Sprintf("%s.%s", test.Classname, test.Name)
 	}
 
-	return types.TestResult{
+    // Classify failure cause if failed
+    if status == types.StatusFail {
+        failureCause = classifyFailure(errorMessage, fullBacktrace)
+    }
+
+    return types.TestResult{
 		Name:              testName,
 		Status:            status,
 		ErrorMessage:      errorMessage,
+        FailureCause:      failureCause,
 		FullBacktrace:     fullBacktrace,
 		FilteredBacktrace: make([]types.StackFrame, 0), // Will be populated by normalizer
 	}
+}
+
+// classifyFailure decides the FailureCause from parsed failure fields using simple heuristics
+// Inputs: error message and parsed stack frames (project/app and test paths if present)
+// 1) Assertion-like messages -> AssertionFailure
+// 2) If no frames or top frames point to test/spec -> TestDefinitionError
+// 3) Otherwise -> ProductionCodeError
+func classifyFailure(message string, frames []types.StackFrame) types.FailureCause {
+    m := strings.ToLower(message)
+    if m != "" {
+        if strings.Contains(m, "assertionerror") || strings.Contains(m, "expected ") || strings.HasPrefix(m, "expected:") || strings.Contains(m, "expected:") {
+            return types.FailureCauseAssertion
+        }
+    }
+
+    // If we have no frames, treat as test definition error (runner/setup/teardown/unmapped)
+    if len(frames) == 0 {
+        return types.FailureCauseTestDefinition
+    }
+
+    // Check if any of the first few frames clearly reference test code paths
+    limit := len(frames)
+    if limit > 5 {
+        limit = 5
+    }
+    for i := 0; i < limit; i++ {
+        f := frames[i]
+        lp := strings.ToLower(f.File)
+        for _, ind := range testPathIndicators {
+            if strings.Contains(lp, ind) || strings.HasSuffix(lp, ind) {
+                return types.FailureCauseTestDefinition
+            }
+        }
+        // Common framework indicators
+        for _, ind := range frameworkPathIndicators {
+            if strings.Contains(lp, ind) {
+                return types.FailureCauseTestDefinition
+            }
+        }
+    }
+
+    return types.FailureCauseProductionCode
 }
 
 // parseStacktraceFromError extracts stacktrace lines from error output

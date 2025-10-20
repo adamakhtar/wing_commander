@@ -68,7 +68,9 @@ func TestParseXML_RSpec(t *testing.T) {
 	assert.Equal(t, "User.should be valid", test.Name)
 	assert.Equal(t, types.StatusFail, test.Status)
 	assert.Equal(t, "Expected User to be valid", test.ErrorMessage)
-	assert.Len(t, test.FullBacktrace, 2)
+    assert.Len(t, test.FullBacktrace, 2)
+    // Expect assertion failure classification due to message
+    assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
 
 	// Check first frame
 	frame := test.FullBacktrace[0]
@@ -101,6 +103,55 @@ func TestParseXML_Minitest(t *testing.T) {
 	test := result.Tests[0]
 	assert.Equal(t, "UserTest.test_user_creation", test.Name)
 	assert.Equal(t, types.StatusFail, test.Status)
+    // Expect assertion failure classification due to message
+    assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
+}
+
+func TestClassifyFailure_Heuristics(t *testing.T) {
+    cases := []struct {
+        name    string
+        message string
+        frames  []types.StackFrame
+        want    types.FailureCause
+    }{
+        {
+            name:    "assertion by message",
+            message: "Expected 2 to equal 3",
+            frames:  nil,
+            want:    types.FailureCauseAssertion,
+        },
+        {
+            name:    "test definition by spec path",
+            message: "NoMethodError: undefined method",
+            frames: []types.StackFrame{
+                {File: "spec/models/user_spec.rb", Line: 10},
+                {File: "app/models/user.rb", Line: 20},
+            },
+            want: types.FailureCauseTestDefinition,
+        },
+        {
+            name:    "production by app path",
+            message: "NoMethodError: undefined method",
+            frames: []types.StackFrame{
+                {File: "app/models/user.rb", Line: 20},
+                {File: "gems/rspec-core/example.rb", Line: 100},
+            },
+            want: types.FailureCauseProductionCode,
+        },
+        {
+            name:    "no frames -> test definition",
+            message: "",
+            frames:  nil,
+            want:    types.FailureCauseTestDefinition,
+        },
+    }
+
+    for _, tc := range cases {
+        t.Run(tc.name, func(t *testing.T) {
+            got := classifyFailure(tc.message, tc.frames)
+            assert.Equal(t, tc.want, got)
+        })
+    }
 }
 
 func TestParseStackFrame(t *testing.T) {
