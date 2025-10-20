@@ -92,3 +92,13 @@ make clean
 - **Backtrace grouping**: Groups failures by error location similarity
 - **Git integration**: Highlights recently changed files with intensity levels
 - **Interactive TUI**: Built with Bubbletea for smooth navigation
+
+## Failure Cause Classification
+
+Wing Commander assigns each failed test one of three broad causes:
+
+- Test definition error: Failure originates in test code, framework, setup, or teardown.
+- Production code error: Exception raised by the application under test (stack points to app code).
+- Assertion failure: Test body completed; an expectation/matcher reported a mismatch.
+
+Heuristics are intentionally simple: assertion-like messages imply assertion failure; frames that clearly reference test paths/framework internals imply test definition error; otherwise the failure is attributed to production code. Hangs that produce no report are out of scope. Currently, path indicators include RSpec and Minitest conventions and can be extended as more frameworks are supported.

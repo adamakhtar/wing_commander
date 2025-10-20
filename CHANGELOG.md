@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Failure cause classification (test definition error, production code error, assertion failure) with simple parser heuristics
 - Advanced UI keybindings (`f`, `o`, `r`)
 - Editor integration for opening files at specific lines
 - Test re-running functionality
