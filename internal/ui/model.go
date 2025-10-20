@@ -143,9 +143,12 @@ func (m Model) handleUpKey() Model {
 	case 2: // Backtrace pane
 		if len(m.failureGroups) > 0 && m.selectedGroup < len(m.failureGroups) {
 			group := m.failureGroups[m.selectedGroup]
-			_ = m.getCurrentFrames(group) // Get frames to validate bounds
-			if m.selectedFrame > 0 {
-				m.selectedFrame--
+			if m.selectedTest < len(group.Tests) {
+				test := group.Tests[m.selectedTest]
+				_ = m.getCurrentTestFrames(test) // Get frames to validate bounds
+				if m.selectedFrame > 0 {
+					m.selectedFrame--
+				}
 			}
 		}
 	}
@@ -169,9 +172,12 @@ func (m Model) handleDownKey() Model {
 	case 2: // Backtrace pane
 		if len(m.failureGroups) > 0 && m.selectedGroup < len(m.failureGroups) {
 			group := m.failureGroups[m.selectedGroup]
-			frames := m.getCurrentFrames(group)
-			if m.selectedFrame < len(frames)-1 {
-				m.selectedFrame++
+			if m.selectedTest < len(group.Tests) {
+				test := group.Tests[m.selectedTest]
+				frames := m.getCurrentTestFrames(test)
+				if m.selectedFrame < len(frames)-1 {
+					m.selectedFrame++
+				}
 			}
 		}
 	}
@@ -186,7 +192,12 @@ func (m Model) handleOpenFile() tea.Cmd {
 		}
 
 		group := m.failureGroups[m.selectedGroup]
-		frames := m.getCurrentFrames(group)
+		if m.selectedTest >= len(group.Tests) {
+			return OpenFileErrorMsg{Error: "no test selected"}
+		}
+
+		test := group.Tests[m.selectedTest]
+		frames := m.getCurrentTestFrames(test)
 
 		if len(frames) == 0 || m.selectedFrame >= len(frames) {
 			return OpenFileErrorMsg{Error: "no frame selected"}
@@ -233,6 +244,43 @@ func (m Model) getCurrentFrames(group types.FailureGroup) []types.StackFrame {
 	return group.NormalizedBacktrace
 }
 
+// getCurrentTestFrames returns the appropriate frames for the selected test
+func (m Model) getCurrentTestFrames(test types.TestResult) []types.StackFrame {
+	if m.showFullFrames {
+		return test.FullBacktrace
+	}
+	return test.FilteredBacktrace
+}
+
+// getTailFrames returns all frames except the bottom frame (first frame in backtrace)
+func (m Model) getTailFrames(test types.TestResult) []types.StackFrame {
+	frames := m.getCurrentTestFrames(test)
+	if len(frames) <= 1 {
+		return []types.StackFrame{}
+	}
+	// Return all frames except the first one (bottom frame)
+	return frames[1:]
+}
+
+// formatTailFrames formats tail frames as a chain with arrows
+func (m Model) formatTailFrames(frames []types.StackFrame, maxWidth int) string {
+	if len(frames) == 0 {
+		return "(no additional frames)"
+	}
+
+	var parts []string
+	for _, frame := range frames {
+		parts = append(parts, fmt.Sprintf("%s:%d", frame.File, frame.Line))
+	}
+
+	result := strings.Join(parts, " → ")
+	if len(result) > maxWidth {
+		// Truncate from the end, keeping the beginning
+		result = result[:maxWidth-3] + "..."
+	}
+	return result
+}
+
 // View renders the UI
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
@@ -274,14 +322,22 @@ func (m Model) renderGroupsPane(width, height int) string {
 				style = GetSelectedTextStyle()
 			}
 
-			// Show error location (file:line) and count
+			// Show error message on first line
+			errorMsg := group.ErrorMessage
+			if len(errorMsg) > width-4 {
+				errorMsg = errorMsg[:width-7] + "..."
+			}
+			content.WriteString(style.Render(errorMsg))
+			content.WriteString("\n")
+
+			// Show error location (file:line) and count on second line
 			location := "Unknown"
 			if len(group.NormalizedBacktrace) > 0 {
 				frame := group.NormalizedBacktrace[len(group.NormalizedBacktrace)-1] // Bottom frame
 				location = fmt.Sprintf("%s:%d", frame.File, frame.Line)
 			}
 
-			line := fmt.Sprintf("%s (%d failures)", location, group.Count)
+			line := fmt.Sprintf("  %s (%d failures)", location, group.Count)
 			content.WriteString(style.Render(line))
 			content.WriteString("\n")
 		}
@@ -309,13 +365,22 @@ func (m Model) renderTestsPane(width, height int) string {
 				style = GetSelectedTextStyle()
 			}
 
-			// Truncate long test names
+			// Show test name on first line
 			name := test.Name
 			if len(name) > width-4 {
 				name = name[:width-7] + "..."
 			}
-
 			content.WriteString(style.Render(name))
+			content.WriteString("\n")
+
+			// Show tail frames (all frames except the bottom frame) on second line
+			tailFrames := m.getTailFrames(test)
+			if len(tailFrames) == 0 {
+				content.WriteString(style.Render("  (no additional frames)"))
+			} else {
+				tailStr := m.formatTailFrames(tailFrames, width-4)
+				content.WriteString(style.Render("  " + tailStr))
+			}
 			content.WriteString("\n")
 		}
 	}
@@ -335,32 +400,37 @@ func (m Model) renderBacktracePane(width, height int) string {
 		content.WriteString(GetDimmedTextStyle().Render("No groups selected"))
 	} else {
 		group := m.failureGroups[m.selectedGroup]
-		frames := m.getCurrentFrames(group)
+		if m.selectedTest >= len(group.Tests) {
+			content.WriteString(GetDimmedTextStyle().Render("No test selected"))
+		} else {
+			test := group.Tests[m.selectedTest]
+			frames := m.getCurrentTestFrames(test)
 
-		for i, frame := range frames {
-			style := GetChangeIntensityStyle(frame.ChangeIntensity)
-			if i == m.selectedFrame && isActive {
-				style = GetSelectedTextStyle()
+			for i, frame := range frames {
+				style := GetChangeIntensityStyle(frame.ChangeIntensity)
+				if i == m.selectedFrame && isActive {
+					style = GetSelectedTextStyle()
+				}
+
+				// Format frame display
+				line := fmt.Sprintf("%s:%d", frame.File, frame.Line)
+				if frame.Function != "" {
+					line += fmt.Sprintf(" in %s", frame.Function)
+				}
+
+				// Add change intensity indicator
+				if frame.ChangeIntensity > 0 {
+					line += fmt.Sprintf(" [%d]", frame.ChangeIntensity)
+				}
+
+				// Truncate if too long
+				if len(line) > width-4 {
+					line = line[:width-7] + "..."
+				}
+
+				content.WriteString(style.Render(line))
+				content.WriteString("\n")
 			}
-
-			// Format frame display
-			line := fmt.Sprintf("%s:%d", frame.File, frame.Line)
-			if frame.Function != "" {
-				line += fmt.Sprintf(" in %s", frame.Function)
-			}
-
-			// Add change intensity indicator
-			if frame.ChangeIntensity > 0 {
-				line += fmt.Sprintf(" [%d]", frame.ChangeIntensity)
-			}
-
-			// Truncate if too long
-			if len(line) > width-4 {
-				line = line[:width-7] + "..."
-			}
-
-			content.WriteString(style.Render(line))
-			content.WriteString("\n")
 		}
 	}
 
