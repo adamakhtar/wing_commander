@@ -350,8 +350,8 @@ func (m Model) renderGroupsPane(width, height int) string {
 			}
 
 			// First line: icon count - error message
-			firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
-			
+			firstLine := fmt.Sprintf("%s  %s - %s", causeIcon, countText, errorMsg)
+
 			// Second line: bottom frame (first frame in backtrace)
 			location := "Unknown"
 			if len(group.NormalizedBacktrace) > 0 {
@@ -367,13 +367,13 @@ func (m Model) renderGroupsPane(width, height int) string {
 			}
 
 			secondLine := fmt.Sprintf("  %s", location)
-			
+
 			// Apply selection highlighting if this group is selected
 			if i == m.selectedGroup && isActive {
 				firstLine = GetSelectedTextStyle().Render(firstLine)
 				secondLine = GetSelectedTextStyle().Render(secondLine)
 			}
-			
+
 			content.WriteString(firstLine)
 			content.WriteString("\n")
 			content.WriteString(secondLine)
