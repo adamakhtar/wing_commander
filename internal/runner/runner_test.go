@@ -201,9 +201,9 @@ func TestTestRunner_ParseTestOutput_RSpec(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	assert.Equal(t, "TestSpec.should pass", results[0].Name)
+	assert.Equal(t, "TestSpec should pass", results[0].Name)
 	assert.Equal(t, types.StatusPass, results[0].Status)
-	assert.Equal(t, "TestSpec.should fail", results[1].Name)
+	assert.Equal(t, "TestSpec should fail", results[1].Name)
 	assert.Equal(t, types.StatusFail, results[1].Status)
 }
 
@@ -230,9 +230,9 @@ func TestTestRunner_ParseTestOutput_Minitest(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	assert.Equal(t, "TestClass.test_pass", results[0].Name)
+	assert.Equal(t, "TestClass test_pass", results[0].Name)
 	assert.Equal(t, types.StatusPass, results[0].Status)
-	assert.Equal(t, "TestClass.test_fail", results[1].Name)
+	assert.Equal(t, "TestClass test_fail", results[1].Name)
 	assert.Equal(t, types.StatusFail, results[1].Status)
 }
 

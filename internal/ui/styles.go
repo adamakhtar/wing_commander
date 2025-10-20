@@ -9,6 +9,7 @@ var (
 	// Pane styles
 	activePaneBorder   = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("62"))
 	inactivePaneBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("8"))
+	pinkPaneBorder     = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("212"))
 
 	// Text styles
 	normalText     = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
@@ -23,6 +24,7 @@ var (
 
 	// Title styles
 	paneTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Bold(true)
+	pinkTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true).Align(lipgloss.Center)
 
 	// Status bar styles
 	statusBar = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Background(lipgloss.Color("0"))
@@ -36,10 +38,12 @@ var (
 
 // GetPaneStyle returns the appropriate border style for a pane
 func GetPaneStyle(isActive bool) lipgloss.Style {
-	if isActive {
-		return activePaneBorder
-	}
-	return inactivePaneBorder
+	return pinkPaneBorder
+}
+
+// GetPinkTitleStyle returns the style for pink centered titles
+func GetPinkTitleStyle() lipgloss.Style {
+	return pinkTitle
 }
 
 // GetChangeIntensityStyle returns the appropriate text style for change intensity

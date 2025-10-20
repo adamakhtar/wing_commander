@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="ThingTest" filepath="test/thing_test.rb" skipped="0" failures="1" errors="3" tests="4" assertions="1" time="8.899951353669167e-05">
-    <testcase name="test_error_in_test" lineno="13" classname="ThingTest" assertions="0" time="3.50000336766243e-05" file="test/thing_test.rb">
+  <testsuite name="ThingTest" filepath="test/thing_test.rb" skipped="0" failures="1" errors="3" tests="4" assertions="1" time="9.200023487210274e-05">
+    <testcase name="test_error_in_test" lineno="13" classname="ThingTest" assertions="0" time="3.700004890561104e-05" file="test/thing_test.rb">
     <error type="RuntimeError" message="RuntimeError: error in test...">
 Failure:
 test_error_in_test(Minitest::Result) [test/thing_test.rb:14]:
@@ -9,7 +9,7 @@ RuntimeError: error in test
     test/thing_test.rb:14:in `test_error_in_test'
     </error>
     </testcase>
-    <testcase name="test_expectation_not_met" lineno="17" classname="ThingTest" assertions="1" time="2.1999701857566833e-05" file="test/thing_test.rb">
+    <testcase name="test_expectation_not_met" lineno="17" classname="ThingTest" assertions="1" time="2.2999942302703857e-05" file="test/thing_test.rb">
     <failure type="Minitest::Assertion" message="Expected: &quot;foo&quot;...">
 Failure:
 test_expectation_not_met(Minitest::Result) [test/thing_test.rb:18]:
@@ -26,7 +26,7 @@ RuntimeError: boom
     test/thing_test.rb:10:in `test_boom_second_case'
     </error>
     </testcase>
-    <testcase name="test_boom_first_case" lineno="5" classname="ThingTest" assertions="0" time="1.3999640941619873e-05" file="test/thing_test.rb">
+    <testcase name="test_boom_first_case" lineno="5" classname="ThingTest" assertions="0" time="1.400010660290718e-05" file="test/thing_test.rb">
     <error type="RuntimeError" message="RuntimeError: boom...">
 Failure:
 test_boom_first_case(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest/lib/thing.rb:3]:

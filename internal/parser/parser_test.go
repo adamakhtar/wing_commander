@@ -65,7 +65,7 @@ func TestParseXML_RSpec(t *testing.T) {
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "User.should be valid", test.Name)
+	assert.Equal(t, "User should be valid", test.Name)
 	assert.Equal(t, types.StatusFail, test.Status)
 	assert.Equal(t, "Expected User to be valid", test.ErrorMessage)
     assert.Len(t, test.FullBacktrace, 2)
@@ -101,7 +101,7 @@ func TestParseXML_Minitest(t *testing.T) {
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "UserTest.test_user_creation", test.Name)
+	assert.Equal(t, "UserTest test_user_creation", test.Name)
 	assert.Equal(t, types.StatusFail, test.Status)
     // Expect assertion failure classification due to message
     assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)

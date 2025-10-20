@@ -150,7 +150,7 @@ func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
 	// Create test name combining classname and name if available
 	testName := test.Name
 	if test.Classname != "" && test.Classname != test.Name {
-		testName = fmt.Sprintf("%s.%s", test.Classname, test.Name)
+		testName = fmt.Sprintf("%s %s", test.Classname, test.Name)
 	}
 
     // Classify failure cause if failed

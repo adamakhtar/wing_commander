@@ -321,7 +321,7 @@ func (m Model) View() string {
 
 // renderGroupsPane renders the groups pane
 func (m Model) renderGroupsPane(width, height int) string {
-	title := GetPaneTitleStyle().Render("Failure Groups")
+	title := GetPinkTitleStyle().Width(width).Render("Failure Groups")
 	isActive := m.activePane == 0
 
 	// Create content
@@ -358,7 +358,7 @@ func (m Model) renderGroupsPane(width, height int) string {
 				// Add section header with better styling
 				title := causeTitles[cause]
 				divider := strings.Repeat("─", width-8-len(title)) // Account for icon in title
-				header := fmt.Sprintf("── %s %s", title, divider)
+				header := fmt.Sprintf("─ %s %s", title, divider)
 				content.WriteString(GetDimmedTextStyle().Render(header))
 				content.WriteString("\n")
 
@@ -415,15 +415,20 @@ func (m Model) renderGroupsPane(width, height int) string {
 		}
 	}
 
+	// Create horizontal divider between title and content
+	divider := strings.Repeat("─", width-2)
+	dividerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
+	dividerLine := dividerStyle.Render(divider)
+
 	// Apply pane styling
 	paneStyle := GetPaneStyle(isActive).Width(width).Height(height)
-	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, content.String()))
+	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, dividerLine, content.String()))
 }
 
 
 // renderTestsPane renders the tests pane
 func (m Model) renderTestsPane(width, height int) string {
-	title := GetPaneTitleStyle().Render("Tests")
+	title := GetPinkTitleStyle().Width(width).Render("Tests")
 	isActive := m.activePane == 1
 
 	var content strings.Builder
@@ -458,13 +463,18 @@ func (m Model) renderTestsPane(width, height int) string {
 		}
 	}
 
+	// Create horizontal divider between title and content
+	divider := strings.Repeat("─", width-2)
+	dividerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
+	dividerLine := dividerStyle.Render(divider)
+
 	paneStyle := GetPaneStyle(isActive).Width(width).Height(height)
-	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, content.String()))
+	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, dividerLine, content.String()))
 }
 
 // renderBacktracePane renders the backtrace pane
 func (m Model) renderBacktracePane(width, height int) string {
-	title := GetPaneTitleStyle().Render("Backtrace")
+	title := GetPinkTitleStyle().Width(width).Render("Backtrace")
 	isActive := m.activePane == 2
 
 	var content strings.Builder
@@ -507,8 +517,13 @@ func (m Model) renderBacktracePane(width, height int) string {
 		}
 	}
 
+	// Create horizontal divider between title and content
+	divider := strings.Repeat("─", width-2)
+	dividerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
+	dividerLine := dividerStyle.Render(divider)
+
 	paneStyle := GetPaneStyle(isActive).Width(width).Height(height)
-	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, content.String()))
+	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, dividerLine, content.String()))
 }
 
 // renderStatusBar renders the status bar with keybindings
