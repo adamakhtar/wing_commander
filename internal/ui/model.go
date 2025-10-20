@@ -330,60 +330,103 @@ func (m Model) renderGroupsPane(width, height int) string {
 	if len(m.failureGroups) == 0 {
 		content.WriteString(GetSuccessTextStyle().Render("✅ All tests passed!"))
 	} else {
-		for i, group := range m.failureGroups {
-			// Get failure cause icon and count (in yellow)
-			var causeIcon string
-			var countText string
+		// Group failures by cause
+		groupsByCause := make(map[types.FailureCause][]types.FailureGroup)
+		for _, group := range m.failureGroups {
 			if len(group.Tests) > 0 {
-				causeIcon = getFailureCauseIcon(group.Tests[0].FailureCause)
-				countText = GetYellowTextStyle().Render(fmt.Sprintf("%d", group.Count))
-			} else {
-				causeIcon = "❓"
-				countText = GetYellowTextStyle().Render("0")
+				cause := group.Tests[0].FailureCause
+				groupsByCause[cause] = append(groupsByCause[cause], group)
 			}
+		}
 
-			// Show error message (in yellow, truncated if necessary)
-			errorMsg := GetYellowTextStyle().Render(group.ErrorMessage)
-			if len(group.ErrorMessage) > width-8 { // Account for icon and count
-				truncated := group.ErrorMessage[:width-11] + "..."
-				errorMsg = GetYellowTextStyle().Render(truncated)
-			}
+		// Define order for displaying causes
+		causeOrder := []types.FailureCause{
+			types.FailureCauseProductionCode,
+			types.FailureCauseTestDefinition,
+			types.FailureCauseAssertion,
+		}
 
-			// First line: icon count - error message
-			firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
+		causeTitles := map[types.FailureCause]string{
+			types.FailureCauseProductionCode:  "Prod Error",
+			types.FailureCauseTestDefinition:  "Test Error",
+			types.FailureCauseAssertion:       "Failed Assertion",
+		}
 
-			// Second line: bottom frame (first frame in backtrace)
-			location := "Unknown"
-			if len(group.NormalizedBacktrace) > 0 {
-				frame := group.NormalizedBacktrace[0] // Bottom frame (first frame)
-				// Convert absolute path to relative if it contains the project path
-				filePath := frame.File
-				if projectPath, err := m.runner.GetWorkingDirectory(); err == nil {
-					if strings.HasPrefix(filePath, projectPath+"/") {
-						filePath = strings.TrimPrefix(filePath, projectPath+"/")
+		for _, cause := range causeOrder {
+			if groups, exists := groupsByCause[cause]; exists && len(groups) > 0 {
+				// Add section header
+				title := causeTitles[cause]
+				divider := strings.Repeat("-", width-2-len(title))
+				header := fmt.Sprintf("-- %s %s", title, divider)
+				content.WriteString(GetDimmedTextStyle().Render(header))
+				content.WriteString("\n")
+
+				// Add groups for this cause
+				for _, group := range groups {
+					// Get failure cause icon and count (in yellow)
+					var causeIcon string
+					var countText string
+					if len(group.Tests) > 0 {
+						causeIcon = getFailureCauseIcon(group.Tests[0].FailureCause)
+						countText = GetYellowTextStyle().Render(fmt.Sprintf("%d", group.Count))
+					} else {
+						causeIcon = "❓"
+						countText = GetYellowTextStyle().Render("0")
 					}
+
+					// Show error message (in yellow, truncated if necessary)
+					errorMsg := GetYellowTextStyle().Render(group.ErrorMessage)
+					if len(group.ErrorMessage) > width-8 { // Account for icon and count
+						truncated := group.ErrorMessage[:width-11] + "..."
+						errorMsg = GetYellowTextStyle().Render(truncated)
+					}
+
+					// First line: icon count - error message
+					firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
+
+					// Second line: bottom frame (first frame in backtrace)
+					location := "Unknown"
+					if len(group.NormalizedBacktrace) > 0 {
+						frame := group.NormalizedBacktrace[0] // Bottom frame (first frame)
+						// Convert absolute path to relative if it contains the project path
+						filePath := frame.File
+						if projectPath, err := m.runner.GetWorkingDirectory(); err == nil {
+							if strings.HasPrefix(filePath, projectPath+"/") {
+								filePath = strings.TrimPrefix(filePath, projectPath+"/")
+							}
+						}
+						location = fmt.Sprintf("%s:%d", filePath, frame.Line)
+					}
+
+					secondLine := fmt.Sprintf("  %s", location)
+
+					// Apply selection highlighting if this group is selected
+					if m.isGroupSelected(group) && isActive {
+						firstLine = GetSelectedTextStyle().Render(firstLine)
+						secondLine = GetSelectedTextStyle().Render(secondLine)
+					}
+
+					content.WriteString(firstLine)
+					content.WriteString("\n")
+					content.WriteString(secondLine)
+					content.WriteString("\n")
 				}
-				location = fmt.Sprintf("%s:%d", filePath, frame.Line)
+				content.WriteString("\n") // Add spacing between sections
 			}
-
-			secondLine := fmt.Sprintf("  %s", location)
-
-			// Apply selection highlighting if this group is selected
-			if i == m.selectedGroup && isActive {
-				firstLine = GetSelectedTextStyle().Render(firstLine)
-				secondLine = GetSelectedTextStyle().Render(secondLine)
-			}
-
-			content.WriteString(firstLine)
-			content.WriteString("\n")
-			content.WriteString(secondLine)
-			content.WriteString("\n")
 		}
 	}
 
 	// Apply pane styling
 	paneStyle := GetPaneStyle(isActive).Width(width).Height(height)
 	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, content.String()))
+}
+
+// isGroupSelected checks if the given group is currently selected
+func (m Model) isGroupSelected(group types.FailureGroup) bool {
+	if m.selectedGroup >= len(m.failureGroups) {
+		return false
+	}
+	return &m.failureGroups[m.selectedGroup] == &group
 }
 
 // renderTestsPane renders the tests pane
