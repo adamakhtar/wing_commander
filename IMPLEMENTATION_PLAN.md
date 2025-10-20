@@ -183,6 +183,7 @@ wing_commander run
 **Goal**: Add keybindings for actions (toggle, open file, re-run)
 
 **Files implemented**:
+
 - `internal/editor/editor.go`: File opening functionality with editor detection
 - `internal/editor/editor_test.go`: Comprehensive tests for editor functionality
 - Updated `internal/ui/model.go`: Enhanced UI model with new keybindings
@@ -190,6 +191,7 @@ wing_commander run
 - Updated `Makefile`: Added `dev-minitest` command for development testing
 
 **UI Features implemented**:
+
 - `f`: Toggle full/filtered frames display
 - `o`: Open selected file in external editor at specific line
 - `r`: Re-run tests for selected group
@@ -197,6 +199,7 @@ wing_commander run
 - Updated status bar with all available keybindings
 
 **Development workflow**:
+
 - `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
 - Real test execution with JUnit XML generation
 - Interactive TUI with actual test failures (not demo data)

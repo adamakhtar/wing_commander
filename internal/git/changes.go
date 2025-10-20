@@ -10,11 +10,15 @@ import (
 )
 
 // ChangeDetector handles detection of line-level changes in git
-type ChangeDetector struct{}
+type ChangeDetector struct {
+	hunkRegex *regexp.Regexp
+}
 
 // NewChangeDetector creates a new ChangeDetector
 func NewChangeDetector() *ChangeDetector {
-	return &ChangeDetector{}
+	return &ChangeDetector{
+		hunkRegex: regexp.MustCompile(`@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@`),
+	}
 }
 
 // DetectChanges analyzes all stack frames and assigns change intensities
@@ -115,14 +119,12 @@ func (cd *ChangeDetector) getPreviousCommitChanges(filePath string) ([]int, erro
 
 // parseDiffOutput parses unified diff output to extract changed line numbers
 func (cd *ChangeDetector) parseDiffOutput(diffOutput string) []int {
-	changedLines := make([]int, 0)
-
-	// Regex to match hunk headers: @@ -old_start,old_count +new_start,new_count @@
-	hunkRegex := regexp.MustCompile(`@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@`)
+	// Pre-allocate slice with reasonable capacity
+	changedLines := make([]int, 0, 100)
 
 	lines := strings.Split(diffOutput, "\n")
 	for _, line := range lines {
-		matches := hunkRegex.FindStringSubmatch(line)
+		matches := cd.hunkRegex.FindStringSubmatch(line)
 		if len(matches) >= 4 {
 			// Extract new line start and count
 			newStart, _ := strconv.Atoi(matches[3])

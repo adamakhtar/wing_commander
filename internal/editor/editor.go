@@ -50,7 +50,7 @@ func (e *Editor) OpenFile(filePath string, line int) error {
 
 	// Build command arguments
 	var args []string
-	
+
 	// Handle different editor commands
 	switch {
 	case strings.Contains(e.editorCommand, "vim") || strings.Contains(e.editorCommand, "nvim"):

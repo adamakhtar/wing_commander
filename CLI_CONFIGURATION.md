@@ -29,6 +29,23 @@ Wing Commander now uses a CLI-first configuration approach where command-line op
 - **Available Variables**: `{{.Paths}}` (for test paths, empty by default)
 - **Example**: `--test-command "rails test {{.Paths}} --output junit"`
 
+For Minitest using `minitest-reporters` JUnit reporter, point the command to generate JUnit XML. For example, when your `test_helper.rb` configures:
+
+```ruby
+require 'minitest/reporters'
+Minitest::Reporters.use! [
+  Minitest::Reporters::JUnitReporter.new('test/reports')
+]
+```
+
+run Wing Commander with the project path and a command that triggers your test suite (the reporter writes XML files to `test/reports` which Wing Commander reads from combined output):
+
+```bash
+wing_commander run \
+  --project-path /path/to/project \
+  --test-command "bundle exec rake test"
+```
+
 ### `--config PATH`
 
 - **Purpose**: Specify custom configuration file location

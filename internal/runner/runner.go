@@ -108,14 +108,14 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 		if execErr, ok := err.(*exec.Error); ok && execErr.Err == exec.ErrNotFound {
 			return "", fmt.Errorf("test command not found: %s (make sure it's installed and in PATH)", parts[0])
 		}
-		
+
 		// Check if it's a permission error
 		if execErr, ok := err.(*exec.Error); ok && execErr.Err == os.ErrPermission {
 			return "", fmt.Errorf("permission denied running test command: %s", finalCommand)
 		}
-		
+
 		// Generic test command failure with output
-		return "", fmt.Errorf("test command failed (exit code %d): %w\nCommand: %s\nOutput: %s", 
+		return "", fmt.Errorf("test command failed (exit code %d): %w\nCommand: %s\nOutput: %s",
 			cmd.ProcessState.ExitCode(), err, finalCommand, string(output))
 	}
 

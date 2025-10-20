@@ -36,10 +36,12 @@ wing_commander demo
 ## TUI Panels
 
 - **Panel 1 – Failure Groups**
+
   - First line: error message
   - Second line: bottom frame `file:line` and failure count
 
 - **Panel 2 – Tests in Selected Group**
+
   - First line: test name
   - Second line: tail frames (all frames except the shared bottom frame) shown as a chain: `file1:line → file2:line → ...`
   - If there are no additional frames, shows `(no additional frames)`
@@ -55,6 +57,20 @@ wing_commander demo
 - Minitest (Ruby)
 - Pytest (Python)
 - Jest (JavaScript)
+
+### Minitest setup
+
+If you use Minitest, ensure a JUnit XML reporter is enabled so Wing Commander can parse failures:
+
+```ruby
+# test/test_helper.rb
+require 'minitest/reporters'
+Minitest::Reporters.use! [
+  Minitest::Reporters::JUnitReporter.new('test/reports')
+]
+```
+
+This produces XML files under `test/reports` with embedded failure/error details. Wing Commander extracts stack frames from both the formatted failure body and any `SystemErr` output, including embedded `file.rb:LINE` tokens like `[test/thing_test.rb:18]`.
 
 ## Development
 

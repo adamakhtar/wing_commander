@@ -95,13 +95,14 @@ func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
 	case junit.StatusSkipped:
 		status = types.StatusSkip
 		errorMessage = test.Message
-	case junit.StatusFailed, junit.StatusError:
-		status = types.StatusFail
-		errorMessage = test.Message
-		// Parse stacktrace from error output
-		if test.Error != nil {
-			backtrace = parseStacktraceFromError(test.Error.Error())
-		}
+    case junit.StatusFailed, junit.StatusError:
+        status = types.StatusFail
+        errorMessage = test.Message
+        // Parse stacktrace from error output
+        if test.Error != nil {
+            // Library provides an error value; parse its string form
+            backtrace = parseStacktraceFromError(test.Error.Error())
+        }
 		// Also check SystemErr for additional stacktrace info
 		if test.SystemErr != "" {
 			additionalBacktrace := parseStacktraceFromError(test.SystemErr)
@@ -150,20 +151,75 @@ func parseStacktraceFromError(output string) []string {
 	lines := strings.Split(output, "\n")
 	var stacktrace []string
 
-	for _, line := range lines {
+    for _, line := range lines {
 		// Don't trim the line yet - we need to check indentation
 		// Skip empty lines and common non-stacktrace lines
 		if strings.TrimSpace(line) == "" || strings.HasPrefix(strings.TrimSpace(line), "Error:") || strings.HasPrefix(strings.TrimSpace(line), "Failure:") {
 			continue
 		}
-		// Look for lines that look like stack frames (indented with 4 spaces and contain file:line pattern)
-		if strings.HasPrefix(line, "    ") && strings.Contains(line, ":") &&
-		   (strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
-			stacktrace = append(stacktrace, strings.TrimSpace(line))
-		}
+        // Look for lines that look like stack frames (indented with 4 spaces and contain file:line pattern)
+        if strings.HasPrefix(line, "    ") && strings.Contains(line, ":") &&
+           (strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
+            stacktrace = append(stacktrace, strings.TrimSpace(line))
+            continue
+        }
+
+        // Fallback: detect embedded file:line anywhere in the line, including bracketed forms
+        trimmed := strings.TrimSpace(line)
+        if embedded := extractFileLine(trimmed); embedded != "" {
+            stacktrace = append(stacktrace, embedded)
+        }
 	}
 
 	return stacktrace
+}
+
+// extractFileLine attempts to find a substring like "path/to/file.rb:123" inside an arbitrary line
+// and returns it; returns empty string if not found.
+func extractFileLine(s string) string {
+    // Quick exits for common non-frame lines
+    if strings.HasPrefix(s, "Expected:") || strings.HasPrefix(s, "Actual:") {
+        return ""
+    }
+
+    // Find a ruby/python/js file marker
+    idx := strings.Index(s, ".rb:")
+    ext := ".rb:"
+    if idx == -1 {
+        idx = strings.Index(s, ".py:")
+        ext = ".py:"
+    }
+    if idx == -1 {
+        idx = strings.Index(s, ".js:")
+        ext = ".js:"
+    }
+    if idx == -1 {
+        return ""
+    }
+
+    // Walk backwards to find start of path (stop at whitespace or '[')
+    start := idx
+    for start > 0 {
+        c := s[start-1]
+        if c == ' ' || c == '\t' || c == '[' || c == '(' {
+            break
+        }
+        start--
+    }
+
+    // Walk forwards from after the colon to consume digits of the line number
+    end := idx + len(ext)
+    for end < len(s) && s[end] >= '0' && s[end] <= '9' {
+        end++
+    }
+
+    candidate := s[start:end]
+    // Basic sanity: ensure there's at least one slash and a colon digit
+    if strings.Contains(candidate, "/") && strings.Count(candidate, ":") >= 1 {
+        return candidate
+    }
+
+    return ""
 }
 
 // parseStackFrame parses a backtrace frame string into a StackFrame
