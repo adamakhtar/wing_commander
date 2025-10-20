@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Advanced UI keybindings (`f`, `o`, `r`)
 - Editor integration for opening files at specific lines
 - Test re-running functionality
@@ -16,11 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI-first configuration system
 
 ### Changed
+
 - Improved backtrace parsing accuracy
 - Enhanced test grouping by error location
 - Updated UI with better navigation and status display
+- TUI layout updated: Panel 1 shows error + bottom frame, Panel 2 shows test + tail frames, Panel 3 shows full test backtrace with highlighting
 
 ### Fixed
+
 - Corrected test grouping to use first frame (error origin) instead of last frame
 - Fixed parser to only capture properly indented stack frames
 - Prevented parsing of error message lines as stack frames
@@ -28,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-10-19
 
 ### Added
+
 - Initial release
 - Core test failure analysis functionality
 - JUnit XML parsing support
@@ -41,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation
 
 ### Features
+
 - **Test Parsing**: Parse JUnit XML output from multiple test frameworks
 - **Failure Grouping**: Group tests by backtrace similarity using error location strategy
 - **Interactive TUI**: Navigate through failure groups, tests, and backtraces
@@ -49,12 +55,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cross-Platform**: Support for multiple operating systems and editors
 
 ### Supported Test Frameworks
+
 - RSpec (Ruby)
-- Minitest (Ruby) 
+- Minitest (Ruby)
 - Pytest (Python)
 - Jest (JavaScript)
 
 ### Supported Editors
+
 - VS Code (`code`)
 - Sublime Text (`subl`)
 - Atom (`atom`)

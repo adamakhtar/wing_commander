@@ -33,6 +33,22 @@ wing_commander demo
 - `r` - Re-run tests for selected group
 - `q` - Quit
 
+## TUI Panels
+
+- **Panel 1 – Failure Groups**
+  - First line: error message
+  - Second line: bottom frame `file:line` and failure count
+
+- **Panel 2 – Tests in Selected Group**
+  - First line: test name
+  - Second line: tail frames (all frames except the shared bottom frame) shown as a chain: `file1:line → file2:line → ...`
+  - If there are no additional frames, shows `(no additional frames)`
+
+- **Panel 3 – Backtrace**
+  - Full backtrace of the selected test
+  - Frames are highlighted by change intensity as per Git integration
+  - `f` toggles between filtered (project-only) and full frames
+
 ## Supported Test Frameworks
 
 - RSpec (Ruby)
