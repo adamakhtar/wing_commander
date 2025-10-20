@@ -347,9 +347,9 @@ func (m Model) renderGroupsPane(width, height int) string {
 		}
 
 		causeTitles := map[types.FailureCause]string{
-			types.FailureCauseProductionCode:  "Prod Error",
-			types.FailureCauseTestDefinition:  "Test Error",
-			types.FailureCauseAssertion:       "Failed Assertion",
+			types.FailureCauseProductionCode:  "🚀 Prod Error",
+			types.FailureCauseTestDefinition:  "🔧 Test Error",
+			types.FailureCauseAssertion:       "❌ Failed Assertion",
 		}
 
 		currentGlobalIndex := 0
@@ -357,33 +357,30 @@ func (m Model) renderGroupsPane(width, height int) string {
 			if groups, exists := groupsByCause[cause]; exists && len(groups) > 0 {
 				// Add section header with better styling
 				title := causeTitles[cause]
-				divider := strings.Repeat("─", width-6-len(title))
+				divider := strings.Repeat("─", width-8-len(title)) // Account for icon in title
 				header := fmt.Sprintf("── %s %s", title, divider)
 				content.WriteString(GetDimmedTextStyle().Render(header))
 				content.WriteString("\n")
 
 				// Add groups for this cause
 				for _, group := range groups {
-					// Get failure cause icon and count (in yellow)
-					var causeIcon string
+					// Get count (in yellow)
 					var countText string
 					if len(group.Tests) > 0 {
-						causeIcon = getFailureCauseIcon(group.Tests[0].FailureCause)
 						countText = GetYellowTextStyle().Render(fmt.Sprintf("%d", group.Count))
 					} else {
-						causeIcon = "❓"
 						countText = GetYellowTextStyle().Render("0")
 					}
 
 					// Show error message (in yellow, truncated if necessary)
 					errorMsg := GetYellowTextStyle().Render(group.ErrorMessage)
-					if len(group.ErrorMessage) > width-8 { // Account for icon and count
-						truncated := group.ErrorMessage[:width-11] + "..."
+					if len(group.ErrorMessage) > width-4 { // Account for count
+						truncated := group.ErrorMessage[:width-7] + "..."
 						errorMsg = GetYellowTextStyle().Render(truncated)
 					}
 
-					// First line: icon count - error message
-					firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
+					// First line: count - error message
+					firstLine := fmt.Sprintf("%s - %s", countText, errorMsg)
 
 					// Second line: bottom frame (first frame in backtrace)
 					location := "Unknown"

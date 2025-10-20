@@ -38,8 +38,8 @@ wing_commander demo
 - **Panel 1 – Failure Groups**
 
   - Groups failures by cause (Production Code Error, Test Definition Error, Failed Assertion)
-  - Each section shows: `{icon} {count} - {error message}` and `{bottom frame}`
-  - Failure cause icons: 🚀 (production), 🔧 (test definition), ❌ (assertion)
+  - Each section shows: `{count} - {error message}` and `{bottom frame}`
+  - Section headers include failure cause icons: 🚀 (production), 🔧 (test definition), ❌ (assertion)
   - Count and error message displayed in yellow
   - Bottom frame shows relative file path and line number
 
