@@ -352,12 +352,13 @@ func (m Model) renderGroupsPane(width, height int) string {
 			types.FailureCauseAssertion:       "Failed Assertion",
 		}
 
+		currentGlobalIndex := 0
 		for _, cause := range causeOrder {
 			if groups, exists := groupsByCause[cause]; exists && len(groups) > 0 {
-				// Add section header
+				// Add section header with better styling
 				title := causeTitles[cause]
-				divider := strings.Repeat("-", width-2-len(title))
-				header := fmt.Sprintf("-- %s %s", title, divider)
+				divider := strings.Repeat("─", width-6-len(title))
+				header := fmt.Sprintf("── %s %s", title, divider)
 				content.WriteString(GetDimmedTextStyle().Render(header))
 				content.WriteString("\n")
 
@@ -401,7 +402,7 @@ func (m Model) renderGroupsPane(width, height int) string {
 					secondLine := fmt.Sprintf("  %s", location)
 
 					// Apply selection highlighting if this group is selected
-					if m.isGroupSelected(group) && isActive {
+					if currentGlobalIndex == m.selectedGroup && isActive {
 						firstLine = GetSelectedTextStyle().Render(firstLine)
 						secondLine = GetSelectedTextStyle().Render(secondLine)
 					}
@@ -410,6 +411,7 @@ func (m Model) renderGroupsPane(width, height int) string {
 					content.WriteString("\n")
 					content.WriteString(secondLine)
 					content.WriteString("\n")
+					currentGlobalIndex++
 				}
 				content.WriteString("\n") // Add spacing between sections
 			}
@@ -421,13 +423,6 @@ func (m Model) renderGroupsPane(width, height int) string {
 	return paneStyle.Render(lipgloss.JoinVertical(lipgloss.Left, title, content.String()))
 }
 
-// isGroupSelected checks if the given group is currently selected
-func (m Model) isGroupSelected(group types.FailureGroup) bool {
-	if m.selectedGroup >= len(m.failureGroups) {
-		return false
-	}
-	return &m.failureGroups[m.selectedGroup] == &group
-}
 
 // renderTestsPane renders the tests pane
 func (m Model) renderTestsPane(width, height int) string {
