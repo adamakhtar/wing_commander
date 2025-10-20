@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Failure cause classification (test definition error, production code error, assertion failure) with simple parser heuristics
+- UI grouping by failure cause with section headers and Unicode dividers
+- Failure cause icons: 🚀 (production), 🔧 (test definition), ❌ (assertion)
+- Yellow styling for counts and error messages in groups pane
 - Advanced UI keybindings (`f`, `o`, `r`)
 - Editor integration for opening files at specific lines
 - Test re-running functionality
