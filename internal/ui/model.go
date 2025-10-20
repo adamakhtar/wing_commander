@@ -350,7 +350,7 @@ func (m Model) renderGroupsPane(width, height int) string {
 			}
 
 			// First line: icon count - error message
-			firstLine := fmt.Sprintf("%s  %s - %s", causeIcon, countText, errorMsg)
+			firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
 
 			// Second line: bottom frame (first frame in backtrace)
 			location := "Unknown"
