@@ -281,6 +281,20 @@ func (m Model) formatTailFrames(frames []types.StackFrame, maxWidth int) string 
 	return result
 }
 
+// getFailureCauseIcon returns an icon for the failure cause
+func getFailureCauseIcon(cause types.FailureCause) string {
+	switch cause {
+	case types.FailureCauseTestDefinition:
+		return "🔧" // Test definition error
+	case types.FailureCauseProductionCode:
+		return "🐛" // Production code error
+	case types.FailureCauseAssertion:
+		return "❌" // Assertion failure
+	default:
+		return "❓" // Unknown
+	}
+}
+
 // View renders the UI
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
@@ -322,22 +336,37 @@ func (m Model) renderGroupsPane(width, height int) string {
 				style = GetSelectedTextStyle()
 			}
 
-			// Show error message on first line
-			errorMsg := group.ErrorMessage
-			if len(errorMsg) > width-4 {
-				errorMsg = errorMsg[:width-7] + "..."
+			// Get failure cause icon and count (in yellow)
+			var causeIcon string
+			var countText string
+			if len(group.Tests) > 0 {
+				causeIcon = getFailureCauseIcon(group.Tests[0].FailureCause)
+				countText = GetYellowTextStyle().Render(fmt.Sprintf("%d", group.Count))
+			} else {
+				causeIcon = "❓"
+				countText = GetYellowTextStyle().Render("0")
 			}
-			content.WriteString(style.Render(errorMsg))
+
+			// Show error message (in yellow, truncated if necessary)
+			errorMsg := GetYellowTextStyle().Render(group.ErrorMessage)
+			if len(group.ErrorMessage) > width-8 { // Account for icon and count
+				truncated := group.ErrorMessage[:width-11] + "..."
+				errorMsg = GetYellowTextStyle().Render(truncated)
+			}
+
+			// First line: icon count - error message
+			firstLine := fmt.Sprintf("%s %s - %s", causeIcon, countText, errorMsg)
+			content.WriteString(style.Render(firstLine))
 			content.WriteString("\n")
 
-			// Show error location (file:line) and count on second line
+			// Second line: bottom frame (first frame in backtrace)
 			location := "Unknown"
 			if len(group.NormalizedBacktrace) > 0 {
-				frame := group.NormalizedBacktrace[len(group.NormalizedBacktrace)-1] // Bottom frame
+				frame := group.NormalizedBacktrace[0] // Bottom frame (first frame)
 				location = fmt.Sprintf("%s:%d", frame.File, frame.Line)
 			}
 
-			line := fmt.Sprintf("  %s (%d failures)", location, group.Count)
+			line := fmt.Sprintf("  %s", location)
 			content.WriteString(style.Render(line))
 			content.WriteString("\n")
 		}

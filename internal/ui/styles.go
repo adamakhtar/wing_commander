@@ -31,6 +31,7 @@ var (
 	// Success/error styles
 	successText = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 	errorText   = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+	yellowText  = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 )
 
 // GetPaneStyle returns the appropriate border style for a pane
@@ -95,4 +96,9 @@ func GetSuccessTextStyle() lipgloss.Style {
 // GetErrorTextStyle returns the style for error messages
 func GetErrorTextStyle() lipgloss.Style {
 	return errorText
+}
+
+// GetYellowTextStyle returns the style for yellow text
+func GetYellowTextStyle() lipgloss.Style {
+	return yellowText
 }
