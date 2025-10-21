@@ -134,7 +134,7 @@ wing_commander run
 - `internal/ui/styles.go`: Lipgloss styles for panes and text
 - Added bubbletea and lipgloss dependencies
 
-**CLI Update**: Added `demo` command to launch TUI with XML fixture data
+**CLI Update**: Added TUI with XML fixture data
 
 **Features implemented**:
 
@@ -144,7 +144,7 @@ wing_commander run
 - 'q' to quit
 - Real data processing through existing pipeline
 
-**Checkpoint**: `./bin/wing_commander demo` shows interactive 3-pane TUI
+**Checkpoint**: `./bin/wing_commander run` shows interactive 3-pane TUI
 
 ---
 
@@ -172,7 +172,7 @@ wing_commander run
 
 - `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
 - Real test execution with JUnit XML generation
-- Interactive TUI with actual test failures (not demo data)
+- Interactive TUI with actual test failures
 
 **Checkpoint**: Complete interactive TUI with file opening and test re-running capabilities
 
@@ -202,7 +202,7 @@ wing_commander run
 
 - `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
 - Real test execution with JUnit XML generation
-- Interactive TUI with actual test failures (not demo data)
+- Interactive TUI with actual test failures
 
 **Checkpoint**: Complete interactive TUI with file opening and test re-running capabilities
 

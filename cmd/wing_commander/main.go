@@ -37,9 +37,6 @@ func main() {
 		case "run":
 			runCommand(os.Args[2:])
 			return
-		case "demo":
-			demoCommand(os.Args[2:])
-			return
 		case "config":
 			// Load config with CLI options to show the actual project path
 			configWithCLI, err := loadConfigWithCLIOptions("", "", "")
@@ -75,7 +72,6 @@ func main() {
 	fmt.Println("             --config PATH         Specify config file path (default: .wing_commander/config.yml)")
 	fmt.Println("             --project-path PATH   Path to project directory (default: current working directory)")
 	fmt.Println("             --test-command CMD    Test runner command with interpolation (e.g., 'rails test {{.Paths}} --output junit')")
-	fmt.Println("  demo        - Launch TUI with demo data")
 	fmt.Println("  version     - Show version information")
 	fmt.Println("  config      - Show current configuration")
 	fmt.Println()
@@ -302,62 +298,6 @@ func runTests(cfg *config.Config) {
 
 	// Create UI model
 	model := ui.NewModel(result, testRunner)
-
-	// Create and run the TUI program
-	program := tea.NewProgram(model, tea.WithAltScreen())
-	if _, err := program.Run(); err != nil {
-		fmt.Printf("❌ Error running TUI: %v\n", err)
-		return
-	}
-}
-
-// demoCommand launches the TUI with demo data from XML fixtures
-func demoCommand(args []string) {
-	fmt.Println("🎭 Launching TUI with demo data...")
-	fmt.Println()
-
-	// Load configuration
-	cfg, err := config.LoadConfig("")
-	if err != nil {
-		fmt.Printf("❌ Error loading config: %v\n", err)
-		return
-	}
-
-	// Parse the XML fixture
-	result, err := parser.ParseFile("testdata/fixtures/minitest_failures.xml")
-	if err != nil {
-		fmt.Printf("❌ Error parsing XML: %v\n", err)
-		return
-	}
-
-	// Normalize backtraces
-	normalizer := grouper.NewNormalizer(cfg)
-	normalizedResults := normalizer.NormalizeTestResults(result.Tests)
-
-	// Group failures
-	strategy := grouper.NewErrorLocationStrategy()
-	grouperInstance := grouper.NewGrouper(strategy)
-	failureGroups := grouperInstance.GroupFailures(normalizedResults)
-
-	// Create execution result
-	executionResult := &runner.TestExecutionResult{
-		TestResults:   normalizedResults,
-		FailureGroups: failureGroups,
-	}
-
-	// Display summary
-	fmt.Printf("✅ Parsed %d test results\n", len(normalizedResults))
-	fmt.Printf("🔍 Found %d failure groups\n", len(failureGroups))
-	fmt.Println()
-	fmt.Println("🚀 Launching TUI...")
-	fmt.Println("Use arrow keys to navigate, 'q' to quit")
-	fmt.Println()
-
-	// Create a dummy test runner for demo mode
-	dummyRunner := runner.NewTestRunner(cfg)
-
-	// Create UI model
-	model := ui.NewModel(executionResult, dummyRunner)
 
 	// Create and run the TUI program
 	program := tea.NewProgram(model, tea.WithAltScreen())

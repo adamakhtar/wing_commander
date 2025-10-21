@@ -180,9 +180,9 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 - **Step 5**: Failure grouper with ErrorLocation strategy (group by bottom frame)
 - **Step 6**: Git integration with line-level change detection (3 intensity levels)
 - **Step 7**: Test runner service for GUI-driven test execution
-- **Step 8**: Basic Bubbletea TUI with 3-pane layout and demo command
+- **Step 8**: Basic Bubbletea TUI with 3-pane layout
 - **Build System**: Makefile configured, clean development workflow
-- **CLI**: Basic commands working (version, config, JSON parsing, run, demo)
+- **CLI**: Basic commands working (version, config, JSON parsing, run)
 - **CLI Flags**: `--config`, `--project-path`, `--test-command` flags for run command
 - **Testing**: All unit tests passing, comprehensive test coverage
 - **Project Structure**: Clean organization, proper gitignore
@@ -206,9 +206,6 @@ make test
 
 # Run CLI
 make run
-
-# Test TUI with demo data
-./bin/wing_commander demo
 
 # Run with CLI options
 ./bin/wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output junit"

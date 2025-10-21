@@ -20,8 +20,6 @@ wing_commander run --project-path /path/to/project --test-command "rails test --
 # Show configuration
 wing_commander config
 
-# Demo mode with sample data
-wing_commander demo
 ```
 
 ## Keybindings
