@@ -38,9 +38,7 @@ type Model struct {
 
 // NewModel creates a new UI model
 func NewModel(result *runner.TestExecutionResult, testRunner *runner.TestRunner) Model {
-	return Model{
-		failureGroups:   result.FailureGroups,
-		testResults:     result.TestResults,
+	model := Model{
 		selectedGroup:   0,
 		selectedTest:    0,
 		selectedFrame:   0,
@@ -50,6 +48,17 @@ func NewModel(result *runner.TestExecutionResult, testRunner *runner.TestRunner)
 		editor:          editor.NewEditor(),
 		runner:          testRunner,
 	}
+
+	// Handle nil result (empty state)
+	if result == nil {
+		model.failureGroups = []types.FailureGroup{}
+		model.testResults = []types.TestResult{}
+	} else {
+		model.failureGroups = result.FailureGroups
+		model.testResults = result.TestResults
+	}
+
+	return model
 }
 
 // Init initializes the model
@@ -216,12 +225,7 @@ func (m Model) handleOpenFile() tea.Cmd {
 // handleReRunTests handles re-running tests for the selected group
 func (m Model) handleReRunTests() tea.Cmd {
 	return func() tea.Msg {
-		if len(m.failureGroups) == 0 || m.selectedGroup >= len(m.failureGroups) {
-			return ReRunErrorMsg{Error: "no group selected"}
-		}
-
-		// For now, we'll re-run all tests
-		// In a future enhancement, we could run only specific tests from the group
+		// Always run all tests regardless of current state
 		result, err := m.runner.ExecuteTests()
 		if err != nil {
 			return ReRunErrorMsg{Error: err.Error()}
@@ -328,7 +332,15 @@ func (m Model) renderGroupsPane(width, height int) string {
 	var content strings.Builder
 
 	if len(m.failureGroups) == 0 {
-		content.WriteString(GetSuccessTextStyle().Render("✅ All tests passed!"))
+		if m.result == nil {
+			// Empty state - no tests run yet
+			content.WriteString(GetInfoTextStyle().Render("No test results yet"))
+			content.WriteString("\n\n")
+			content.WriteString(GetKeyBindingStyle().Render("Press 'r' to run tests"))
+		} else {
+			// Tests run but no failures
+			content.WriteString(GetSuccessTextStyle().Render("✅ All tests passed!"))
+		}
 	} else {
 		// Group failures by cause
 		groupsByCause := make(map[types.FailureCause][]types.FailureGroup)
@@ -528,13 +540,24 @@ func (m Model) renderBacktracePane(width, height int) string {
 
 // renderStatusBar renders the status bar with keybindings
 func (m Model) renderStatusBar() string {
-	keyBindings := []string{
-		GetKeyBindingStyle().Render("↑↓") + " navigate",
-		GetKeyBindingStyle().Render("Tab") + " switch panes",
-		GetKeyBindingStyle().Render("f") + " toggle frames",
-		GetKeyBindingStyle().Render("o") + " open file",
-		GetKeyBindingStyle().Render("r") + " re-run tests",
-		GetKeyBindingStyle().Render("q") + " quit",
+	var keyBindings []string
+
+	if m.result == nil {
+		// Empty state - only show essential keybindings
+		keyBindings = []string{
+			GetKeyBindingStyle().Render("r") + " run tests",
+			GetKeyBindingStyle().Render("q") + " quit",
+		}
+	} else {
+		// Populated state - show all keybindings
+		keyBindings = []string{
+			GetKeyBindingStyle().Render("↑↓") + " navigate",
+			GetKeyBindingStyle().Render("Tab") + " switch panes",
+			GetKeyBindingStyle().Render("f") + " toggle frames",
+			GetKeyBindingStyle().Render("o") + " open file",
+			GetKeyBindingStyle().Render("r") + " run tests",
+			GetKeyBindingStyle().Render("q") + " quit",
+		}
 	}
 
 	statusText := strings.Join(keyBindings, " • ")

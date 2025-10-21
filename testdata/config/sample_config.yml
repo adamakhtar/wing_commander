@@ -14,12 +14,10 @@ test_framework: rspec
 # Command to run tests with template interpolation support
 # Use {{.Paths}} placeholder for test paths (empty by default)
 # Can be overridden with --test-command CLI option
-test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out results.xml"
+test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out .wing_commander/test_output.xml"
 
 # Alternative commands for other frameworks with interpolation:
-# Minitest: "bundle exec rake test {{.Paths}} TESTOPTS='--junit --junit-filename=results.xml'"
-# Pytest: "pytest {{.Paths}} --junit-xml=results.xml"
-# Jest: "npx jest {{.Paths}} --reporters=jest-junit"
+# Minitest: "bundle exec rake test {{.Paths}}"
 
 # Patterns to exclude from backtrace analysis
 exclude_patterns:

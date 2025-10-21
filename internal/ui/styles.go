@@ -106,3 +106,8 @@ func GetErrorTextStyle() lipgloss.Style {
 func GetYellowTextStyle() lipgloss.Style {
 	return yellowText
 }
+
+// GetInfoTextStyle returns the style for informational messages
+func GetInfoTextStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("#87CEEB")) // Sky blue
+}

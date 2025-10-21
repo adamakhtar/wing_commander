@@ -27,18 +27,18 @@ Wing Commander now uses a CLI-first configuration approach where command-line op
 - **Default**: Must be provided (no hardcoded default)
 - **Template Syntax**: Uses Go `text/template` syntax
 - **Available Variables**: `{{.Paths}}` (for test paths, empty by default)
-- **Example**: `--test-command "rails test {{.Paths}} --output junit"`
+- **Example**: `--test-command "rails test {{.Paths}} --output .wing_commander/test_output.xml"`
 
 For Minitest using `minitest-reporters` JUnit reporter, point the command to generate JUnit XML. For example, when your `test_helper.rb` configures:
 
 ```ruby
 require 'minitest/reporters'
 Minitest::Reporters.use! [
-  Minitest::Reporters::JUnitReporter.new('test/reports')
+  Minitest::Reporters::JUnitReporter.new('.wing_commander')
 ]
 ```
 
-run Wing Commander with the project path and a command that triggers your test suite (the reporter writes XML files to `test/reports` which Wing Commander reads from combined output):
+run Wing Commander with the project path and a command that triggers your test suite (the reporter writes XML files to `.wing_commander/` which Wing Commander reads from combined output):
 
 ```bash
 wing_commander run \
@@ -63,7 +63,7 @@ project_path: ""
 test_framework: rspec
 
 # Test command with template interpolation
-test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out results.xml"
+test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out .wing_commander/test_output.xml"
 
 # Patterns to exclude from backtrace analysis
 exclude_patterns:
@@ -78,19 +78,19 @@ exclude_patterns:
 - **Syntax**: `{{.VariableName}}`
 - **Available Variables**:
   - `{{.Paths}}`: Test paths (empty by default, ready for future expansion)
-- **Example**: `rails test {{.Paths}} --output junit`
+- **Example**: `rails test {{.Paths}} --output .wing_commander/test_output.xml`
 
 ## Usage Examples
 
 ```bash
 # CLI-first approach - override everything via command line
-wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output junit"
+wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output .wing_commander/test_output.xml"
 
 # Mix CLI and config - project path from CLI, test command from config
 wing_commander run --project-path /path/to/project
 
 # Custom config file with CLI overrides
-wing_commander run --config custom-config.yml --test-command "pytest {{.Paths}} --junit-xml=results.xml"
+wing_commander run --config custom-config.yml --test-command "pytest {{.Paths}} --junit-xml=.wing_commander/test_output.xml"
 
 # Traditional approach - everything from config file
 wing_commander run

@@ -248,7 +248,8 @@ func loadConfigWithCLIOptions(configPath, projectPath, testCommand string) (*con
 
 // runTests executes tests using the TestRunner service and launches TUI
 func runTests(cfg *config.Config) {
-	fmt.Println("🏃 Running tests...")
+	fmt.Println("🚀 Wing Commander - Test Failure Analyzer")
+	fmt.Println("==========================================")
 	fmt.Println()
 
 	// Create test runner
@@ -266,38 +267,17 @@ func runTests(cfg *config.Config) {
 		return
 	}
 
-	// Execute tests
+	// Display configuration
 	fmt.Printf("📋 Framework: %s\n", cfg.TestFramework)
 	fmt.Printf("📋 Command: %s\n", cfg.TestCommand)
 	fmt.Println()
 
-	result, err := testRunner.ExecuteTests()
-	if err != nil {
-		fmt.Printf("❌ Test execution failed: %v\n", err)
-		return
-	}
-
-	// Display summary before launching TUI
-	summary := result.GetSummary()
-	fmt.Println("📊 Test Results:")
-	fmt.Printf("  Total:   %d\n", summary.TotalTests)
-	fmt.Printf("  Passed:  %d\n", summary.PassedTests)
-	fmt.Printf("  Failed:  %d\n", summary.FailedTests)
-	fmt.Printf("  Skipped: %d\n", summary.SkippedTests)
-	fmt.Printf("  Groups:  %d\n", summary.FailureGroups)
-	fmt.Println()
-
-	if summary.FailedTests == 0 {
-		fmt.Println("🎉 All tests passed!")
-		return
-	}
-
-	// Launch TUI
+	// Launch TUI in empty state (no tests executed yet)
 	fmt.Println("🚀 Launching interactive UI...")
 	fmt.Println()
 
-	// Create UI model
-	model := ui.NewModel(result, testRunner)
+	// Create UI model with nil result (empty state)
+	model := ui.NewModel(nil, testRunner)
 
 	// Create and run the TUI program
 	program := tea.NewProgram(model, tea.WithAltScreen())

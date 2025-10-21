@@ -1,7 +1,7 @@
 require 'rake/testtask'
 
-# Create reports directory
-directory 'test/reports'
+# Create .wing_commander directory for XML output
+directory '.wing_commander'
 
 Rake::TestTask.new do |t|
   t.libs << 'test'
@@ -12,7 +12,7 @@ Rake::TestTask.new do |t|
 end
 
 desc 'Run tests with JUnit XML output'
-task :test => 'test/reports' do
-  ENV['CI_REPORTS'] = 'test/reports'
+task :test => '.wing_commander' do
+  ENV['CI_REPORTS'] = '.wing_commander'
   Rake::Task['test'].invoke
 end

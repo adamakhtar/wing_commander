@@ -15,7 +15,7 @@ make dev-minitest
 
 ```bash
 # Run tests and analyze failures
-wing_commander run --project-path /path/to/project --test-command "rails test --output junit"
+wing_commander run --project-path /path/to/project --test-command "rails test --output .wing_commander/test_output.xml"
 
 # Show configuration
 wing_commander config
@@ -28,7 +28,7 @@ wing_commander config
 - `Tab` - Switch between panes (Groups/Tests/Backtrace)
 - `f` - Toggle full/filtered frames display
 - `o` - Open selected file in editor at specific line
-- `r` - Re-run tests for selected group
+- `r` - Run tests (or re-run all tests)
 - `q` - Quit
 
 ## TUI Panels
@@ -67,11 +67,11 @@ If you use Minitest, ensure a JUnit XML reporter is enabled so Wing Commander ca
 # test/test_helper.rb
 require 'minitest/reporters'
 Minitest::Reporters.use! [
-  Minitest::Reporters::JUnitReporter.new('test/reports')
+  Minitest::Reporters::JUnitReporter.new('.wing_commander')
 ]
 ```
 
-This produces XML files under `test/reports` with embedded failure/error details. Wing Commander extracts stack frames from both the formatted failure body and any `SystemErr` output, including embedded `file.rb:LINE` tokens like `[test/thing_test.rb:18]`.
+This produces XML files under `.wing_commander/` with embedded failure/error details. Wing Commander extracts stack frames from both the formatted failure body and any `SystemErr` output, including embedded `file.rb:LINE` tokens like `[test/thing_test.rb:18]`.
 
 ## Development
 
