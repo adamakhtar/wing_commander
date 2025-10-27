@@ -25,7 +25,7 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel() Model {
+func NewModel() tea.Model {
 	ctx := context.Context{
 		CurrentScreen: context.ResultsScreen,
 	}
@@ -36,6 +36,7 @@ func NewModel() Model {
 	}
 
 	model.resultsScreen = results.NewModel(model.ctx)
+	model.filepickerScreen = filepicker.NewModel(model.ctx)
 
 	return model
 }
@@ -49,25 +50,37 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
+	case results.OpenFilePickerMsg:
+		m.ctx.CurrentScreen = context.FilePickerScreen
+		return m, m.filepickerScreen.Init()
 	case tea.WindowSizeMsg:
-		m.onWindowResize(msg)
-		return m, nil
-
+		m.ctx.ScreenWidth = msg.Width
+		m.ctx.ScreenHeight = msg.Height
+		m.ready = true
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, keys.AppKeys.Quit):
+		if key.Matches(msg, keys.AppKeys.Quit) {
 			return m, tea.Quit
-
-		case key.Matches(msg, keys.ResultsKeys.PickFiles):
-			m.ctx.CurrentScreen = context.FilePickerScreen
-			return m, nil
 		}
+	}
+
+	// process child screen messages
+	switch m.ctx.CurrentScreen {
+	case context.ResultsScreen:
+		resultsScreen, resultsCmd := m.resultsScreen.Update(msg)
+		m.resultsScreen = resultsScreen.(results.Model)
+		cmd = resultsCmd
+	case context.FilePickerScreen:
+		filepickerScreen, filepickerCmd := m.filepickerScreen.Update(msg)
+		m.filepickerScreen = filepickerScreen.(filepicker.Model)
+		cmd = filepickerCmd
 	}
 
 	m.syncContext()
 
-	return m, nil
+	return m, cmd
 }
 
 func (m Model) View() string {
@@ -78,9 +91,9 @@ func (m Model) View() string {
 	currentScreen := m.getCurrentScreen()
 	if currentScreen == nil {
 		return "Error: No screen found"
+	} else {
+		return currentScreen.View()
 	}
-
-	return currentScreen.View()
 }
 
 //
@@ -110,4 +123,5 @@ func (m Model) getCurrentScreen() tea.Model {
 
 func (m *Model) syncContext() {
 	m.resultsScreen.UpdateContext(m.ctx)
+	m.filepickerScreen.UpdateContext(m.ctx)
 }

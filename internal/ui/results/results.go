@@ -2,6 +2,8 @@ package results
 
 import (
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
+	"github.com/adamakhtar/wing_commander/internal/ui/keys"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -33,6 +35,13 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, keys.ResultsKeys.PickFiles):
+			return m, switchToFilePickerCmd
+		}
+	}
 	return m, nil
 }
 
@@ -41,6 +50,19 @@ func (m Model) View() string {
 }
 
 //
+// MESSAGES & HANDLERS
+//================================================
+
+type OpenFilePickerMsg struct{}
+
+//
+// COMMANDS
+//================================================
+
+func switchToFilePickerCmd() tea.Msg {
+	return OpenFilePickerMsg{}
+}
+
 // EXTERNAL FUNCTIONS
 //================================================
 
