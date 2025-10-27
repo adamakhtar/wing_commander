@@ -55,7 +55,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case results.OpenFilePickerMsg:
 		m.ctx.CurrentScreen = context.FilePickerScreen
-		return m, m.filepickerScreen.Init()
+		cmd = m.filepickerScreen.Prepare()
+		return m, cmd
+	case filepicker.CancelMsg:
+		m.ctx.CurrentScreen = context.ResultsScreen
+		cmd = m.resultsScreen.Prepare()
+		return m, cmd
 	case tea.WindowSizeMsg:
 		m.ctx.ScreenWidth = msg.Width
 		m.ctx.ScreenHeight = msg.Height

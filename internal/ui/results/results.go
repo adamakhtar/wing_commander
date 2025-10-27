@@ -69,3 +69,7 @@ func switchToFilePickerCmd() tea.Msg {
 func (m *Model) UpdateContext(ctx context.Context) {
 	m.ctx = ctx
 }
+
+func (m *Model) Prepare() tea.Cmd {
+	return nil
+}

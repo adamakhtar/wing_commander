@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
+	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -91,35 +93,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.onFilePathsLoaded(msg)
 			return m, nil
     case tea.KeyMsg:
-			switch msg.String() {
-				case "tab":
-					m.togglePanelFocus()
+			switch {
+				case key.Matches(msg, keys.FilepickerKeys.Cancel):
+					return m, cancelCmd
+				case key.Matches(msg, keys.FilepickerKeys.LineUp):
+					m.resultsTable, cmd = m.resultsTable.Update(msg)
+					return m, cmd
+				case key.Matches(msg, keys.FilepickerKeys.LineDown):
+					m.resultsTable, cmd = m.resultsTable.Update(msg)
+					return m, cmd
+				case key.Matches(msg, keys.FilepickerKeys.Select):
+					m.AddSelectedPath()
 					return m, nil
+				case key.Matches(msg, keys.FilepickerKeys.RunTests):
+					return m, nil
+				default:
+					m.searchInput, cmd = m.searchInput.Update(msg)
+					m.onSearchInputChanged(m.searchInput.Value())
+					return m, cmd
 			}
 		case errMsg:
 			fmt.Printf(msg.Error())
 			return m, nil
 	}
 
-	if m.searchResultsFocussed() {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter":
-				m.AddSelectedPath()
-				return m, nil
-			case "up", "down":
-				m.resultsTable, cmd = m.resultsTable.Update(msg)
-				return m, cmd
-			default:
-				m.searchInput, cmd = m.searchInput.Update(msg)
-				m.onSearchInputChanged(m.searchInput.Value())
-				return m, cmd
-			}
-		}
-	}
-
-	return m, nil
+	return m, cmd
 }
 
 func (m Model) View() string {
@@ -154,6 +152,8 @@ func (msg filePathsMsg) FilePaths() []string {
 type errMsg struct {
 	err error
 }
+
+type CancelMsg struct {}
 
 func (m *Model) onFilePathsLoaded(msg filePathsMsg) {
 	m.allPaths = msg.FilePaths()
@@ -197,9 +197,18 @@ func (e errMsg) Error() string {
 	return e.err.Error()
 }
 
+func cancelCmd() tea.Msg {
+	return CancelMsg{}
+}
+
 //
 // EXTERNAL FUNCTIONS
 //================================================
+
+func (m *Model) Prepare() tea.Cmd {
+	m.resetPicker()
+	return getTestFilePathsCmd
+}
 
 func (m *Model) UpdateContext(ctx context.Context) {
 	m.ctx = ctx
@@ -326,6 +335,13 @@ func (m Model) getComponentDimensions() ComponentDimensions {
 		resultsPanel: Dimension{(m.ctx.ScreenWidth - margin * 3) / 2, m.ctx.ScreenHeight - searchInputHeight - (margin * 2)},
 		selectedPathsPanel: Dimension{(m.ctx.ScreenWidth - margin * 3) / 2, m.ctx.ScreenHeight - searchInputHeight - (margin * 2)},
 	}
+}
+
+func (m *Model) resetPicker() {
+	m.selectedPaths = make(UniqueFilesSet)
+	m.searchInput.SetValue("")
+	m.setResultTableRows(m.allPaths)
+	m.resultsTable.SetCursor(0)
 }
 
 func FileEntriesRecursive(path string, includePatterns []string, excludePatterns []string) []string {
