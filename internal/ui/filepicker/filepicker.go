@@ -3,10 +3,10 @@ package filepicker
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
+	filewalker "github.com/adamakhtar/wing_commander/internal/file_walker"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 
@@ -16,7 +16,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
-	"github.com/gobwas/glob"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
@@ -103,7 +102,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.resultsTable, cmd = m.resultsTable.Update(msg)
 					return m, cmd
 				case key.Matches(msg, keys.FilepickerKeys.Select):
-					m.AddSelectedPath()
+					m.addSelectedPath()
 					return m, nil
 				case key.Matches(msg, keys.FilepickerKeys.RunTests):
 					return m, nil
@@ -177,8 +176,6 @@ func (m *Model) onSearchInputChanged(value string) {
 	}
 }
 
-
-
 //
 // Commands
 //===============================================================
@@ -242,7 +239,6 @@ func (s *UniqueFilesSet) String() string {
 }
 
 
-
 //
 //  METHODS
 //===============================================================
@@ -257,7 +253,7 @@ func getTestFilePaths() ([]string, error) {
 
 	excludePatterns := []string{".git/**"}
 
-	filePaths := FileEntriesRecursive(cwd, []string{}, excludePatterns)
+	filePaths := filewalker.FileEntriesRecursive(cwd, []string{}, excludePatterns)
 
 	fmt.Println("getTestFilePaths End")
 	return filePaths, nil
@@ -280,7 +276,7 @@ func (m *Model) setResultTableRows(filePaths []string) {
 }
 
 
-func (m *Model) AddSelectedPath() {
+func (m *Model) addSelectedPath() {
 	selectedRow := m.resultsTable.SelectedRow()
 
 	if selectedRow == nil {
@@ -344,77 +340,6 @@ func (m *Model) resetPicker() {
 	m.resultsTable.SetCursor(0)
 }
 
-func FileEntriesRecursive(path string, includePatterns []string, excludePatterns []string) []string {
-	files := []string{}
-	filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Convert to relative path
-		relPath, err := filepath.Rel(path, filePath)
-		if err != nil {
-			return err
-		}
-
-		// Add trailing slash for directories to aid user in differentiating between files and directories
-		if info.IsDir() {
-			relPath = relPath + string(filepath.Separator)
-		}
-
-		if shouldExclude(relPath, excludePatterns) {
-			return nil
-		}
-
-		if shouldInclude(relPath, includePatterns) {
-			files = append(files, relPath)
-		}
-
-		return nil
-	})
-
-	return files
-}
-
-func shouldExclude(filePath string, excludePatterns []string) bool {
-	if len(excludePatterns) == 0 {
-		return false
-	}
-
-	for _, pattern := range excludePatterns {
-		g, err := glob.Compile(pattern)
-		if err != nil {
-			continue
-		}
-		if g.Match(filePath) {
-			return true
-		}
-		if g.Match(filepath.Base(filePath)) {
-			return true
-		}
-	}
-	return false
-}
-
-func shouldInclude(filePath string, includePatterns []string) bool {
-	if len(includePatterns) == 0 {
-		return true
-	}
-
-	for _, pattern := range includePatterns {
-		g, err := glob.Compile(pattern)
-		if err != nil {
-			continue
-		}
-		if g.Match(filePath) {
-			return true
-		}
-		if g.Match(filepath.Base(filePath)) {
-			return true
-		}
-	}
-	return false
-}
 
 // Panel Componeents
 
