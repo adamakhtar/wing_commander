@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/adamakhtar/wing_commander/internal/config"
+	"github.com/adamakhtar/wing_commander/internal/logger"
 	"github.com/adamakhtar/wing_commander/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,6 +16,14 @@ func main() {
 		fmt.Printf("❌ Error loading config: %v\n", err)
 		return
 	}
+
+	// Logging
+	closeLogger, err := logger.SetupLogger(cfg.Debug)
+	if err != nil {
+		fmt.Printf("❌ Error setting up logger: %v\n", err)
+		return
+	}
+	defer closeLogger()
 
 	model := ui.NewModel(cfg)
 	program := tea.NewProgram(model, tea.WithAltScreen())

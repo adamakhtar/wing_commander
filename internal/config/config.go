@@ -25,6 +25,7 @@ type Config struct {
 	TestFramework   TestFramework `yaml:"test_framework"`
 	TestCommand     string        `yaml:"test_command"`
 	ExcludePatterns []string      `yaml:"exclude_patterns"`
+	Debug           bool          `yaml:"debug"`
 }
 
 // DefaultConfig returns the default configuration
@@ -32,7 +33,8 @@ func DefaultConfig() *Config {
 	return &Config{
 		ProjectPath:   "", // Will be set to current working directory by CLI
 		TestFramework: FrameworkMinitest, // Use a supported framework by default
-		TestCommand:   "bundle exec rspec --format RspecJunitFormatter --out results.xml",
+		TestCommand:   "ruby -Ilib:test",
+		Debug:         true,
 		ExcludePatterns: []string{
 			"/gems/",
 			"/lib/ruby/",
@@ -76,6 +78,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	}
 
 	// Validate and set defaults for missing fields
+	config.Debug = true
 	if config.ProjectPath == "" {
 		config.ProjectPath = "" // Will be set by CLI or default to current working directory
 	}
