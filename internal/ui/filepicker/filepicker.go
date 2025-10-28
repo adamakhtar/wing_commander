@@ -80,43 +80,45 @@ func NewModel(ctx context.Context) Model {
 //================================================
 
 func (m Model) Init() tea.Cmd {
-	fmt.Println("initaializing")
 	return getTestFilePathsCmd
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
+	var (
+		cmd tea.Cmd
+		cmds []tea.Cmd
+	)
 
 	switch msg := msg.(type) {
-		case filePathsMsg:
-			m.onFilePathsLoaded(msg)
-			return m, nil
-    case tea.KeyMsg:
-			switch {
-				case key.Matches(msg, keys.FilepickerKeys.Cancel):
-					return m, cancelCmd
-				case key.Matches(msg, keys.FilepickerKeys.LineUp):
-					m.resultsTable, cmd = m.resultsTable.Update(msg)
-					return m, cmd
-				case key.Matches(msg, keys.FilepickerKeys.LineDown):
-					m.resultsTable, cmd = m.resultsTable.Update(msg)
-					return m, cmd
-				case key.Matches(msg, keys.FilepickerKeys.Select):
-					m.addSelectedPath()
-					return m, nil
-				case key.Matches(msg, keys.FilepickerKeys.RunTests):
-					return m, nil
-				default:
-					m.searchInput, cmd = m.searchInput.Update(msg)
-					m.onSearchInputChanged(m.searchInput.Value())
-					return m, cmd
-			}
-		case errMsg:
-			fmt.Printf(msg.Error())
-			return m, nil
+	case filePathsMsg:
+		m.onFilePathsLoaded(msg)
+		return m, nil
+	case tea.KeyMsg:
+		switch {
+			case key.Matches(msg, keys.FilepickerKeys.Cancel):
+				cmd = cancelCmd
+			case key.Matches(msg, keys.FilepickerKeys.LineUp):
+				m.resultsTable, cmd = m.resultsTable.Update(msg)
+			case key.Matches(msg, keys.FilepickerKeys.LineDown):
+				m.resultsTable, cmd = m.resultsTable.Update(msg)
+			case key.Matches(msg, keys.FilepickerKeys.Select):
+				m.addSelectedPath()
+			case key.Matches(msg, keys.FilepickerKeys.ConfirmSelection):
+				cmds = append(cmds, confirmSelectonCmd(m.selectedPaths.Keys()), cancelCmd)
+			default:
+				m.searchInput, cmd = m.searchInput.Update(msg)
+				m.onSearchInputChanged(m.searchInput.Value())
+		}
+	case errMsg:
+		fmt.Print(msg.Error())
+		return m, nil
 	}
 
-	return m, cmd
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -196,6 +198,16 @@ func (e errMsg) Error() string {
 
 func cancelCmd() tea.Msg {
 	return CancelMsg{}
+}
+
+type TestsSelectedMsg struct {
+	Filepaths []string
+}
+
+func confirmSelectonCmd(filepaths []string) tea.Cmd {
+	return func() tea.Msg {
+		return TestsSelectedMsg{Filepaths: filepaths}
+	}
 }
 
 //

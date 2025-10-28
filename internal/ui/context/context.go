@@ -1,5 +1,7 @@
 package context
 
+import "github.com/adamakhtar/wing_commander/internal/config"
+
 type ScreenType string
 
 const (
@@ -8,6 +10,7 @@ const (
 )
 
 type Context struct {
+	Config *config.Config
 	ScreenWidth int
 	ScreenHeight int
 	CurrentScreen ScreenType

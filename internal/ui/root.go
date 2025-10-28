@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/filepicker"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
@@ -25,9 +26,10 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel() tea.Model {
+func NewModel(cfg *config.Config) tea.Model {
 	ctx := context.Context{
 		CurrentScreen: context.ResultsScreen,
+		Config: cfg,
 	}
 
 	model := Model{
@@ -61,6 +63,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.CurrentScreen = context.ResultsScreen
 		cmd = m.resultsScreen.Prepare()
 		return m, cmd
+	case filepicker.TestsSelectedMsg:
+		m.ctx.CurrentScreen = context.ResultsScreen
+		// TODO - consider running a command here that the results screen listens to and it then
+		//  performs the test run
+		testRun, err := m.resultsScreen.AddTestRun(msg.Filepaths)
+		if err != nil {
+			// TODO - handle error
+			return m, nil
+		}
+		cmd = m.resultsScreen.ExecuteTestRunCmd(testRun.Id)
 	case tea.WindowSizeMsg:
 		m.ctx.ScreenWidth = msg.Width
 		m.ctx.ScreenHeight = msg.Height
@@ -111,6 +123,11 @@ func (m *Model) onWindowResize(msg tea.WindowSizeMsg) {
 
 	m.ready = true
 }
+
+//
+// COMMANDS
+//================================================
+
 
 // INTERNAL FUNCTIONS
 //================================================

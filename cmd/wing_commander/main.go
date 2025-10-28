@@ -3,12 +3,20 @@ package main
 import (
 	"fmt"
 
+	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	model := ui.NewModel()
+	// Load configuration
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		fmt.Printf("❌ Error loading config: %v\n", err)
+		return
+	}
+
+	model := ui.NewModel(cfg)
 	program := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := program.Run(); err != nil {

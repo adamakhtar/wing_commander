@@ -9,7 +9,7 @@ type FilepickerKeyMap struct {
 	LineUp key.Binding
 	LineDown key.Binding
 	Select key.Binding
-	RunTests key.Binding
+	ConfirmSelection key.Binding
 }
 
 var FilepickerKeys = FilepickerKeyMap{
@@ -29,8 +29,8 @@ var FilepickerKeys = FilepickerKeyMap{
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "select file"),
 	),
-	RunTests: key.NewBinding(
-		key.WithKeys("ctrl+enter"),
-		key.WithHelp("ctrl+enter", "run tests"),
+	ConfirmSelection: key.NewBinding(
+		key.WithKeys("ctrl+r"),
+		key.WithHelp("ctrl+r", "run tests"),
 	),
 }
