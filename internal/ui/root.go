@@ -72,7 +72,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// TODO - handle error
 			return m, nil
 		}
+
 		cmd = m.resultsScreen.ExecuteTestRunCmd(testRun.Id)
+		return m, cmd
 	case tea.WindowSizeMsg:
 		m.ctx.ScreenWidth = msg.Width
 		m.ctx.ScreenHeight = msg.Height

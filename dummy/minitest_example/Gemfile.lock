@@ -3,12 +3,6 @@ GEM
   specs:
     ansi (1.5.0)
     builder (3.3.0)
-    ci_reporter (2.1.0)
-      builder (>= 2.1.2)
-      rexml
-    ci_reporter_minitest (1.0.0)
-      ci_reporter (~> 2.0)
-      minitest (~> 5.0)
     minitest (5.26.0)
     minitest-reporters (1.7.1)
       ansi
@@ -16,7 +10,6 @@ GEM
       minitest (>= 5.0)
       ruby-progressbar
     rake (13.3.0)
-    rexml (3.4.4)
     ruby-progressbar (1.13.0)
 
 PLATFORMS
@@ -24,10 +17,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  ci_reporter_minitest
-  minitest
+  minitest (~> 5.16)
   minitest-reporters (~> 1.7)
-  rake
+  rake (~> 13.0)
 
 BUNDLED WITH
    2.6.9

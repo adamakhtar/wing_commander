@@ -1,5 +1,5 @@
 test_framework: minitest
-test_command: bundle exec rake test
+test_command: rake test
 exclude_patterns:
   - "/gems/"
   - "/lib/ruby/"

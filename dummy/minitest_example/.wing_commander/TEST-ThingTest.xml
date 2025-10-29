@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="ThingTest" filepath="test/thing_test.rb" skipped="0" failures="1" errors="3" tests="4" assertions="1" time="0.0001560002565383911">
+    <testcase name="test_error_in_test" lineno="14" classname="ThingTest" assertions="0" time="5.5999960750341415e-05" file="test/thing_test.rb">
+    <error type="RuntimeError" message="RuntimeError: error in test...">
+Failure:
+test_error_in_test(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:15]:
+RuntimeError: error in test
+    test/thing_test.rb:15:in `test_error_in_test'
+    </error>
+    </testcase>
+    <testcase name="test_boom_first_case" lineno="6" classname="ThingTest" assertions="0" time="3.900006413459778e-05" file="test/thing_test.rb">
+    <error type="NameError" message="NameError: uninitialized constant ThingTest::Thing...">
+Failure:
+test_boom_first_case(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:7]:
+NameError: uninitialized constant ThingTest::Thing
+    test/thing_test.rb:7:in `test_boom_first_case'
+    </error>
+    </testcase>
+    <testcase name="test_boom_second_case" lineno="10" classname="ThingTest" assertions="0" time="2.800021320581436e-05" file="test/thing_test.rb">
+    <error type="NameError" message="NameError: uninitialized constant ThingTest::Thing...">
+Failure:
+test_boom_second_case(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:11]:
+NameError: uninitialized constant ThingTest::Thing
+    test/thing_test.rb:11:in `test_boom_second_case'
+    </error>
+    </testcase>
+    <testcase name="test_expectation_not_met" lineno="18" classname="ThingTest" assertions="1" time="3.300001844763756e-05" file="test/thing_test.rb">
+    <failure type="Minitest::Assertion" message="Expected: &quot;foo&quot;...">
+Failure:
+test_expectation_not_met(Minitest::Result) [/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:19]:
+Expected: "foo"
+  Actual: "bar"
+    </failure>
+    </testcase>
+  </testsuite>
+</testsuites>

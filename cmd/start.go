@@ -8,6 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/adamakhtar/wing_commander/internal/config"
+	"github.com/adamakhtar/wing_commander/internal/logger"
+
+	"github.com/adamakhtar/wing_commander/internal/ui"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -18,12 +24,12 @@ var startCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-		start(cmd, args)
+		start(args)
 	},
 }
 
 var (
-	testsMatching string
+	testFilePattern string
 	runCommand    string
 	debug        bool
 )
@@ -32,18 +38,29 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 
 	startCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable logging to debug problems.")
-	startCmd.Flags().StringVarP(&testsMatching, "search-pattern", "s", "", "Only files matching this pattern will be searchable to run (e.g. 'test/**/*.rb')")
+	startCmd.Flags().StringVarP(&testFilePattern, "test-file-pattern", "t", "", "Only files matching this pattern will be appear as test files to run (e.g. 'test/**/*.rb')")
 
-	startCmd.Flags().StringVarP(&runCommand, "command", "c", "", "Command to run tests (e.g. 'rake test')")
-	if err := startCmd.MarkFlagRequired("command"); err != nil { panic(err) }
+	startCmd.Flags().StringVarP(&runCommand, "run-command", "c", "", "Command to execute tests (e.g. 'rake test')")
+	if err := startCmd.MarkFlagRequired("run-command"); err != nil { panic(err) }
 }
 
-func start(cmd *cobra.Command, args []string) {
+func start(args []string) {
+	closeLogger := setupLogger()
+	defer closeLogger()
+
 	projectPath := processProjectPathArg(args)
-	fmt.Printf("Starting Wing Commander for project at %s\n", projectPath)
-	fmt.Printf("Debug mode is %t\n", debug)
-	fmt.Printf("Test command is %s\n", runCommand)
-	fmt.Printf("Test matching is %s\n", testsMatching)
+
+	log.Debug("Starting Wing Commander", "projectPath", projectPath, "-debug", debug, "-command", runCommand, "-test-file-pattern", testFilePattern)
+
+	config := config.NewConfig(projectPath, runCommand, testFilePattern, debug)
+	model := ui.NewModel(config)
+
+	program := tea.NewProgram(model, tea.WithAltScreen())
+
+	if _, err := program.Run(); err != nil {
+		fmt.Printf("❌ Error running TUI: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func processProjectPathArg(args []string) (string) {
@@ -76,4 +93,13 @@ func processProjectPathArg(args []string) (string) {
 	}
 
 	return projectPath
+}
+
+func setupLogger() (func() error) {
+	closeLogger, err := logger.SetupLogger(debug)
+	if err != nil {
+		fmt.Printf("Error setting up logger: %v\n", err)
+		os.Exit(1)
+	}
+	return closeLogger
 }

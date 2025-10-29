@@ -101,11 +101,15 @@ func switchToFilePickerCmd() tea.Msg {
 
 func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 	return func () tea.Msg {
-		result, err := m.testRunner.ExecuteTests()
+		testRun, err := m.testRuns.Get(testRunId)
 		if err != nil {
 			return TestExecutionFailedMsg{TestRunId: testRunId, Error: err.Error()}
 		}
 
+		result, err := m.testRunner.ExecuteTests(testRun.Filepaths)
+		if err != nil {
+			return TestExecutionFailedMsg{TestRunId: testRunId, Error: err.Error()}
+		}
 		return TestExecutionCompletedMsg{TestRunId: testRunId, Result: result}
 	}
 }

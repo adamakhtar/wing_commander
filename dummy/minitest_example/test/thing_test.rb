@@ -1,5 +1,6 @@
-require 'test_helper'
-require 'thing'
+# frozen_string_literal: true
+
+require "test_helper"
 
 class ThingTest < Minitest::Test
   def test_boom_first_case

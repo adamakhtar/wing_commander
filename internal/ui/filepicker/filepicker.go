@@ -2,7 +2,6 @@ package filepicker
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
@@ -80,7 +78,7 @@ func NewModel(ctx context.Context) Model {
 //================================================
 
 func (m Model) Init() tea.Cmd {
-	return getTestFilePathsCmd
+	return nil
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -182,8 +180,8 @@ func (m *Model) onSearchInputChanged(value string) {
 // Commands
 //===============================================================
 
-func getTestFilePathsCmd() tea.Msg {
-	filePaths, err := getTestFilePaths()
+func (m Model) getTestFilePathsCmd() tea.Msg {
+	filePaths, err := getTestFilePaths(m.ctx.Config.ProjectPath, m.ctx.Config.TestFilePattern)
 
 	if err != nil {
 		return errMsg{err: err}
@@ -216,7 +214,7 @@ func confirmSelectonCmd(filepaths []string) tea.Cmd {
 
 func (m *Model) Prepare() tea.Cmd {
 	m.resetPicker()
-	return getTestFilePathsCmd
+	return m.getTestFilePathsCmd
 }
 
 func (m *Model) UpdateContext(ctx context.Context) {
@@ -226,7 +224,6 @@ func (m *Model) UpdateContext(ctx context.Context) {
 	m.resultsTable.SetHeight(dimensions.resultsPanel.height)
 	m.resultsTable.SetWidth(dimensions.resultsPanel.width)
 	m.searchInput.Width = dimensions.searchInput.width
-	log.Debug("filepicker.UpdateContext: dimensions", dimensions)
 }
 
 
@@ -255,17 +252,8 @@ func (s *UniqueFilesSet) String() string {
 //  METHODS
 //===============================================================
 
-func getTestFilePaths() ([]string, error) {
-	fmt.Println("getTestFilePaths Start")
-	cwd, err := os.Getwd()
-
-	if err != nil {
-		return nil, errMsg{err: err}
-	}
-
-	excludePatterns := []string{".git/**"}
-
-	filePaths := filewalker.FileEntriesRecursive(cwd, []string{}, excludePatterns)
+func getTestFilePaths(projectPath string, testFilePattern string) ([]string, error) {
+	filePaths := filewalker.FileEntriesRecursive(projectPath, []string{testFilePattern}, []string{})
 
 	fmt.Println("getTestFilePaths End")
 	return filePaths, nil

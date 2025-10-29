@@ -3,4 +3,4 @@ dev:
 test:
 	go test ./...
 dev-minitest: dev
-	cd dummy/minitest && ../../bin/wing_commander run --project-path . --test-command "./run_tests.sh"
+	./bin/wing_commander start dummy/minitest_example --run-command "rake test && cat test/reports/TEST-ThingTest.xml" --test-file-pattern "test/*_test.rb" --debug
