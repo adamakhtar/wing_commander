@@ -1,5 +1,5 @@
 dev:
-	go build -o bin/wing_commander ./cmd/wing_commander
+	go build -o bin/wing_commander
 test:
 	go test ./...
 dev-minitest: dev

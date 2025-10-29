@@ -2,8 +2,6 @@
 /bin/
 /dist/
 /build/
-wing_commander
-wing-commander
 
 # Go specific
 *.exe
