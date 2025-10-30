@@ -17,15 +17,17 @@ type Config struct {
 	TestFramework   TestFramework
 	TestCommand     string
 	TestFilePattern string
+	TestResultsPath string
 	Debug           bool
 	ExcludePatterns []string // TODO deprecated - remove
 }
 
-func NewConfig(projectPath string, testCommand string, testFilePattern string, debug bool) *Config {
+func NewConfig(projectPath string, testCommand string, testFilePattern string, testResultsPath string, debug bool) *Config {
 	return &Config{
 		ProjectPath: projectPath,
 		TestCommand: testCommand,
 		TestFilePattern: testFilePattern,
+		TestResultsPath: testResultsPath,
 		Debug: debug,
 	}
 }

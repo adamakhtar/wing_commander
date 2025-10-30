@@ -9,6 +9,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 )
 
 //
@@ -19,6 +20,8 @@ type Model struct {
 	ctx context.Context
 	testRuns TestRuns
 	testRunner *runner.TestRunner
+	testExecutionResult *runner.TestExecutionResult
+	error error
 }
 
 //
@@ -47,9 +50,9 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
-		m.recordTestRunResult(msg.TestRunId, msg.Result)
+		m.recordTestExecutionResult(msg.TestRunId, msg.TestExecutionResult)
 	case TestExecutionFailedMsg:
-		m.recordTestRunError(msg.TestRunId, msg.Error)
+		m.error = msg.error
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.ResultsKeys.PickFiles):
@@ -66,8 +69,15 @@ func (m Model) View() string {
 	testRun, ok := m.testRuns.MostRecent()
 	if ok {
 		sb.WriteString(fmt.Sprintf("Test Run: %d\n", testRun.Id))
-		sb.WriteString(fmt.Sprintf("Error: %v\n", testRun.Error))
 		sb.WriteString(fmt.Sprintf("Filepaths: %v\n", strings.Join(testRun.Filepaths, ", ")))
+	}
+	if m.error != nil {
+		log.Debug("Results Screen", "error", m.error)
+		sb.WriteString(fmt.Sprintf("Error: %v\n", m.error.Error()))
+	}
+	if m.testExecutionResult != nil {
+		sb.WriteString(fmt.Sprintf("Test Execution Result: %v\n", m.testExecutionResult.Metrics))
+		sb.WriteString(fmt.Sprintf("Test Execution Result: %v\n", m.testExecutionResult.ExecutionTime))
 	}
 	return sb.String()
 }
@@ -83,12 +93,12 @@ type TestRunExecutedMsg struct {
 
 type TestExecutionCompletedMsg struct {
 	TestRunId int
-	Result    *runner.TestExecutionResult
+	TestExecutionResult    *runner.TestExecutionResult
 }
 
 type TestExecutionFailedMsg struct {
 	TestRunId int
-	Error string
+	error error
 }
 
 //
@@ -103,14 +113,14 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 	return func () tea.Msg {
 		testRun, err := m.testRuns.Get(testRunId)
 		if err != nil {
-			return TestExecutionFailedMsg{TestRunId: testRunId, Error: err.Error()}
+			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
 
-		result, err := m.testRunner.ExecuteTests(testRun.Filepaths)
+		testExecutionResult, err := m.testRunner.ExecuteTests(testRunId, testRun.Filepaths, m.ctx.Config.TestResultsPath)
 		if err != nil {
-			return TestExecutionFailedMsg{TestRunId: testRunId, Error: err.Error()}
+			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
-		return TestExecutionCompletedMsg{TestRunId: testRunId, Result: result}
+		return TestExecutionCompletedMsg{TestRunId: testRunId, TestExecutionResult: testExecutionResult}
 	}
 }
 
@@ -122,20 +132,8 @@ func (m *Model) AddTestRun(filepaths []string) (TestRun, error) {
 	return testRun, err
 }
 
-func (m *Model) recordTestRunResult(testRunId int, result *runner.TestExecutionResult) {
-	_, err := m.testRuns.UpdateResult(testRunId, result)
-	if err != nil {
-		// TODO - handle error
-		return
-	}
-}
-
-func (m *Model) recordTestRunError(testRunId int, error string) {
-	_, err := m.testRuns.UpdateError(testRunId, error)
-	if err != nil {
-		// TODO - handle error
-		return
-	}
+func (m *Model) recordTestExecutionResult(testRunId int, testExecutionResult *runner.TestExecutionResult) {
+	m.testExecutionResult = testExecutionResult
 }
 
 func (m *Model) UpdateContext(ctx context.Context) {

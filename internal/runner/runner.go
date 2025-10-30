@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/adamakhtar/wing_commander/internal/config"
@@ -27,17 +27,17 @@ func NewTestRunner(cfg *config.Config) *TestRunner {
 }
 
 // ExecuteTests runs the configured test command and returns parsed results
-func (r *TestRunner) ExecuteTests() (*TestExecutionResult, error) {
+func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResultsPath string) (*TestExecutionResult, error) {
 	// Execute the test command
-	output, err := r.executeTestCommand()
+	output, err := r.executeTestCommand(filepaths)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
 
-	// Parse the XML output
-	testResults, err := r.parseTestOutput(output)
+    // Always parse JUnit XML files written by the test framework
+    testResults, err := r.parseTestResultsFromXMLFiles(testResultsPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse test output: %w", err)
+        return nil, fmt.Errorf("failed to parse test output: %w", err)
 	}
 
 	// Normalize backtraces
@@ -49,8 +49,12 @@ func (r *TestRunner) ExecuteTests() (*TestExecutionResult, error) {
 	grouperInstance := grouper.NewGrouper(strategy)
 	failureGroups := grouperInstance.GroupFailures(normalizedResults)
 
+	metrics := calculateMetrics(normalizedResults)
+
 	return &TestExecutionResult{
+		TestRunId: testRunId,
 		TestResults:    normalizedResults,
+		Metrics: metrics,
 		FailureGroups:  failureGroups,
 		ExecutionTime:  time.Now(),
 		CommandOutput:  output,
@@ -58,115 +62,102 @@ func (r *TestRunner) ExecuteTests() (*TestExecutionResult, error) {
 }
 
 // executeTestCommand runs the configured test command and returns the output
-func (r *TestRunner) executeTestCommand() (string, error) {
-	// Parse the test command template
-	cmdTemplate, err := template.New("testCommand").Parse(r.config.TestCommand)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse test command template: %w", err)
+func (r *TestRunner) executeTestCommand(filepaths []string) (string, error) {
+	// Build the full command string
+	commandStr := r.config.TestCommand
+	if len(filepaths) > 0 {
+		commandStr = commandStr + " " + strings.Join(filepaths, " ")
 	}
 
-	// Prepare template data for interpolation
-	templateData := struct {
-		Paths string // For now, empty - will be used for specific test paths in future
-	}{
-		Paths: "", // Empty by default to run all tests
-	}
-
-	// Execute template to get the final command
-	var cmdBuilder strings.Builder
-	if err := cmdTemplate.Execute(&cmdBuilder, templateData); err != nil {
-		return "", fmt.Errorf("failed to execute test command template: %w", err)
-	}
-
-	finalCommand := cmdBuilder.String()
-
-	// Split the command into parts
-	parts := strings.Fields(finalCommand)
-	if len(parts) == 0 {
-		return "", fmt.Errorf("no test command configured")
-	}
-
-	// Create command
-	cmd := exec.Command(parts[0], parts[1:]...)
+	// Execute via shell to handle multi-word commands like "bundle exec rake test"
+	cmd := exec.Command("sh", "-c", commandStr)
 
 	// Set working directory to project path
-	if r.config.ProjectPath != "" {
-		cmd.Dir = r.config.ProjectPath
-	} else {
-		// Fallback to current working directory
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", fmt.Errorf("failed to get current working directory: %w", err)
-		}
-		cmd.Dir = cwd
-	}
-
+	cmd.Dir = r.config.ProjectPath
 	// Execute command and capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Check if it's a command not found error
+		// Check if it's a command not found error (when sh itself is not found)
 		if execErr, ok := err.(*exec.Error); ok && execErr.Err == exec.ErrNotFound {
-			return "", fmt.Errorf("test command not found: %s (make sure it's installed and in PATH)", parts[0])
+			return "", fmt.Errorf("test command not found: %s (make sure it's installed and in PATH)", commandStr)
 		}
 
 		// Check if it's a permission error
 		if execErr, ok := err.(*exec.Error); ok && execErr.Err == os.ErrPermission {
-			return "", fmt.Errorf("permission denied running test command: %s", finalCommand)
+			return "", fmt.Errorf("permission denied running test command: %s", commandStr)
 		}
 
-		// Generic test command failure with output
-		return "", fmt.Errorf("test command failed (exit code %d): %w\nCommand: %s\nOutput: %s",
-			cmd.ProcessState.ExitCode(), err, finalCommand, string(output))
+		// Check if it's an exit error (command ran but returned non-zero)
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			exitCode := -1
+			if exitErr.ProcessState != nil {
+				exitCode = exitErr.ExitCode()
+			}
+			// Exit code 1 typically means tests failed, which is normal - we still have valid output
+			// Only return error if exit code suggests a real problem (not 1)
+			if exitCode != 1 {
+				return "", fmt.Errorf("test command failed (exit code %d): %w\nCommand: %s\nOutput: %s",
+					exitCode, err, commandStr, string(output))
+			}
+			// Exit code 1 (test failures) - return the output so it can be parsed
+			return string(output), nil
+		}
+
+		// Unknown error type
+		return "", fmt.Errorf("unexpected error executing test command: %w\nCommand: %s\nOutput: %s",
+			err, commandStr, string(output))
 	}
 
 	return string(output), nil
 }
 
-// parseTestOutput parses the XML output from the test command
-func (r *TestRunner) parseTestOutput(output string) ([]types.TestResult, error) {
-	// Check if output is empty
-	if strings.TrimSpace(output) == "" {
-		return nil, fmt.Errorf("test command produced no output - check if tests are configured correctly")
-	}
+// parseTestResultsFromXMLFiles reads JUnit XML files from the project's test results directory
+// and returns aggregated test results. Errors if no XML files are found.
+func (r *TestRunner) parseTestResultsFromXMLFiles(testResultsPath string) ([]types.TestResult, error) {
+    globPattern := filepath.Join(testResultsPath, "*.xml")
 
-	// Parse the output using the existing parser
-	result, err := parser.ParseXML([]byte(output))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse XML output: %w\nOutput preview: %s", err, truncateString(output, 200))
-	}
+    files, err := filepath.Glob(globPattern)
+    if err != nil {
+        return nil, fmt.Errorf("failed to list JUnit XML files in %s: %w", testResultsPath, err)
+    }
+    if len(files) == 0 {
+        return nil, fmt.Errorf("no JUnit XML files found in %s (expected reporter to write XML)", testResultsPath)
+    }
 
-	// Check if we got any test results
-	if len(result.Tests) == 0 {
-		return nil, fmt.Errorf("no test results found in XML output - check if test framework is generating JUnit XML correctly")
-	}
+    var aggregated []types.TestResult
+    for _, fp := range files {
+        parsed, err := parser.ParseFile(fp)
+        if err != nil {
+            return nil, fmt.Errorf("failed to parse JUnit XML file %s: %w", fp, err)
+        }
+        aggregated = append(aggregated, parsed.Tests...)
+    }
 
-	return result.Tests, nil
-}
+    if len(aggregated) == 0 {
+        return nil, fmt.Errorf("parsed 0 test results from %s", testResultsPath)
+    }
 
-// truncateString truncates a string to the specified length and adds ellipsis
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
+    return aggregated, nil
 }
 
 // TestExecutionResult represents the complete result of a test execution
 type TestExecutionResult struct {
+	TestRunId 		 int // The ID of the test run that was executed
 	TestResults    []types.TestResult  // All test results (normalized)
 	FailureGroups  []types.FailureGroup // Grouped failures with change detection
 	ExecutionTime  time.Time           // When the tests were executed
+	Metrics        Metrics             // Metrics of the test execution
 	CommandOutput  string              // Raw output from test command
 }
 
 // GetSummary returns a summary of the test execution
-func (r *TestExecutionResult) GetSummary() TestSummary {
-	totalTests := len(r.TestResults)
+func  calculateMetrics(testResults []types.TestResult) Metrics {
+	totalTests := len(testResults)
 	failedTests := 0
 	passedTests := 0
 	skippedTests := 0
 
-	for _, result := range r.TestResults {
+	for _, result := range testResults {
 		switch result.Status {
 		case types.StatusFail:
 			failedTests++
@@ -177,17 +168,16 @@ func (r *TestExecutionResult) GetSummary() TestSummary {
 		}
 	}
 
-	return TestSummary{
+	return Metrics{
 		TotalTests:   totalTests,
 		FailedTests:  failedTests,
 		PassedTests:  passedTests,
 		SkippedTests: skippedTests,
-		FailureGroups: len(r.FailureGroups),
 	}
 }
 
 // TestSummary provides a high-level summary of test results
-type TestSummary struct {
+type Metrics struct {
 	TotalTests     int
 	FailedTests    int
 	PassedTests    int

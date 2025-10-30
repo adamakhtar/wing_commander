@@ -30,18 +30,22 @@ var startCmd = &cobra.Command{
 
 var (
 	testFilePattern string
-	runCommand    string
-	debug        bool
+	runCommand string
+	testResultsPath string
+	debug bool
 )
 
 func init() {
 	rootCmd.AddCommand(startCmd)
 
 	startCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable logging to debug problems.")
-	startCmd.Flags().StringVarP(&testFilePattern, "test-file-pattern", "t", "", "Only files matching this pattern will be appear as test files to run (e.g. 'test/**/*.rb')")
+	startCmd.Flags().StringVarP(&testFilePattern, "test-file-pattern", "p", "", "A pattern to use to match test files in the project (e.g. 'test/**/*.rb')")
 
-	startCmd.Flags().StringVarP(&runCommand, "run-command", "c", "", "Command to execute tests (e.g. 'rake test')")
+	startCmd.Flags().StringVarP(&runCommand, "run-command", "r", "", "The command to execute tests on the command line (e.g. 'rake test')")
 	if err := startCmd.MarkFlagRequired("run-command"); err != nil { panic(err) }
+
+	startCmd.Flags().StringVarP(&testResultsPath, "test-results-path", "t", "", "path to the directory where the test results are written (e.g. '.wing_commander/test_results')")
+	if err := startCmd.MarkFlagRequired("test-results-path"); err != nil { panic(err) }
 }
 
 func start(args []string) {
@@ -49,10 +53,11 @@ func start(args []string) {
 	defer closeLogger()
 
 	projectPath := processProjectPathArg(args)
+	testResultsPath := processTestResultsPathOption(projectPath, testResultsPath)
 
 	log.Debug("Starting Wing Commander", "projectPath", projectPath, "-debug", debug, "-command", runCommand, "-test-file-pattern", testFilePattern)
 
-	config := config.NewConfig(projectPath, runCommand, testFilePattern, debug)
+	config := config.NewConfig(projectPath, runCommand, testFilePattern, testResultsPath, debug)
 	model := ui.NewModel(config)
 
 	program := tea.NewProgram(model, tea.WithAltScreen())
@@ -93,6 +98,29 @@ func processProjectPathArg(args []string) (string) {
 	}
 
 	return projectPath
+}
+
+func processTestResultsPathOption(projectPath string, providedPath string) string {
+    var absPath string
+    if filepath.IsAbs(providedPath) {
+        absPath = providedPath
+    } else {
+        absPath = filepath.Join(projectPath, providedPath)
+    }
+
+    // Ensure directory exists
+    if err := os.MkdirAll(absPath, 0755); err != nil {
+        fmt.Printf("❌ Error: unable to create testResultsPath %s: %v\n", absPath, err)
+        os.Exit(1)
+    }
+
+    info, err := os.Stat(absPath)
+    if err != nil || !info.IsDir() {
+        fmt.Printf("❌ Error: testResultsPath %s is not a directory or does not exist\n", absPath)
+        os.Exit(1)
+    }
+
+    return absPath
 }
 
 func setupLogger() (func() error) {
