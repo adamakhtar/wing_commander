@@ -14,3 +14,18 @@ var ResultsKeys = KeyMap{
 		key.WithHelp("t", "pick tests to run"),
 	),
 }
+
+type ResultsSectionKeyMap struct {
+	LineUp key.Binding
+	LineDown key.Binding
+}
+var ResultsSectionKeys = ResultsSectionKeyMap{
+	LineUp: key.NewBinding(
+		key.WithKeys("up"),
+		key.WithHelp("up", "scroll up"),
+	),
+	LineDown: key.NewBinding(
+		key.WithKeys("down"),
+		key.WithHelp("down", "scroll down"),
+	),
+}

@@ -147,35 +147,29 @@ func TestTestExecutionResult_GetSummary(t *testing.T) {
 			{Name: "Test 4", Status: types.StatusPass},
 			{Name: "Test 5", Status: types.StatusFail},
 		},
-		FailureGroups: []types.FailureGroup{
-			{Hash: "group1", Count: 2},
-		},
 		ExecutionTime: time.Now(),
 	}
 
-	summary := result.GetSummary()
+    summary := calculateMetrics(result.TestResults)
 
 	assert.Equal(t, 5, summary.TotalTests)
 	assert.Equal(t, 2, summary.FailedTests)
 	assert.Equal(t, 2, summary.PassedTests)
 	assert.Equal(t, 1, summary.SkippedTests)
-	assert.Equal(t, 1, summary.FailureGroups)
 }
 
 func TestTestExecutionResult_EmptyResults(t *testing.T) {
 	result := &TestExecutionResult{
 		TestResults:   []types.TestResult{},
-		FailureGroups: []types.FailureGroup{},
 		ExecutionTime: time.Now(),
 	}
 
-	summary := result.GetSummary()
+    summary := calculateMetrics(result.TestResults)
 
 	assert.Equal(t, 0, summary.TotalTests)
 	assert.Equal(t, 0, summary.FailedTests)
 	assert.Equal(t, 0, summary.PassedTests)
 	assert.Equal(t, 0, summary.SkippedTests)
-	assert.Equal(t, 0, summary.FailureGroups)
 }
 
 func TestTestRunner_ParseTestOutput_RSpec(t *testing.T) {

@@ -44,20 +44,33 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 	normalizer := grouper.NewNormalizer(r.config)
 	normalizedResults := normalizer.NormalizeTestResults(testResults)
 
-	// Group failures with change detection
-	strategy := grouper.NewErrorLocationStrategy()
-	grouperInstance := grouper.NewGrouper(strategy)
-	failureGroups := grouperInstance.GroupFailures(normalizedResults)
+	// Partition results by status (no backtrace grouping)
+	var passedTests []types.TestResult
+	var failedTests []types.TestResult
+	var skippedTests []types.TestResult
+
+	for _, tr := range normalizedResults {
+		switch tr.Status {
+		case types.StatusPass:
+			passedTests = append(passedTests, tr)
+		case types.StatusFail:
+			failedTests = append(failedTests, tr)
+		case types.StatusSkip:
+			skippedTests = append(skippedTests, tr)
+		}
+	}
 
 	metrics := calculateMetrics(normalizedResults)
 
 	return &TestExecutionResult{
-		TestRunId: testRunId,
-		TestResults:    normalizedResults,
-		Metrics: metrics,
-		FailureGroups:  failureGroups,
-		ExecutionTime:  time.Now(),
-		CommandOutput:  output,
+		TestRunId:     testRunId,
+		TestResults:   normalizedResults,
+		Metrics:       metrics,
+		PassedTests:   passedTests,
+		FailedTests:   failedTests,
+		SkippedTests:  skippedTests,
+		ExecutionTime: time.Now(),
+		CommandOutput: output,
 	}, nil
 }
 
@@ -144,7 +157,9 @@ func (r *TestRunner) parseTestResultsFromXMLFiles(testResultsPath string) ([]typ
 type TestExecutionResult struct {
 	TestRunId 		 int // The ID of the test run that was executed
 	TestResults    []types.TestResult  // All test results (normalized)
-	FailureGroups  []types.FailureGroup // Grouped failures with change detection
+	PassedTests    []types.TestResult  // Passed tests
+	FailedTests    []types.TestResult  // Failed tests
+	SkippedTests   []types.TestResult  // Skipped tests
 	ExecutionTime  time.Time           // When the tests were executed
 	Metrics        Metrics             // Metrics of the test execution
 	CommandOutput  string              // Raw output from test command
@@ -182,7 +197,6 @@ type Metrics struct {
 	FailedTests    int
 	PassedTests    int
 	SkippedTests   int
-	FailureGroups  int
 }
 
 // ValidateConfig checks if the test configuration is valid

@@ -226,6 +226,13 @@ func (m *Model) UpdateContext(ctx context.Context) {
 	m.searchInput.Width = dimensions.searchInput.width
 }
 
+func (m *Model) SetSize(width int, height int) {
+	dimensions := m.getComponentDimensions()
+	m.resultsTable.SetHeight(dimensions.resultsPanel.height)
+	m.resultsTable.SetWidth(dimensions.resultsPanel.width)
+	m.searchInput.Width = dimensions.searchInput.width
+}
+
 
 type UniqueFilesSet map[string]bool
 

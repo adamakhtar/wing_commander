@@ -1,15 +1,14 @@
 package results
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
+	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/log"
 )
 
 //
@@ -20,7 +19,9 @@ type Model struct {
 	ctx context.Context
 	testRuns TestRuns
 	testRunner *runner.TestRunner
-	testExecutionResult *runner.TestExecutionResult
+	resultsSection resultssection.Model
+	width int
+	height int
 	error error
 }
 
@@ -35,6 +36,7 @@ func NewModel(ctx context.Context) Model {
 		ctx: ctx,
 		testRunner: testRunner,
 		testRuns: NewTestRuns(),
+		resultsSection: resultssection.NewModel(),
 	}
 	return model
 }
@@ -48,37 +50,33 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
-		m.recordTestExecutionResult(msg.TestRunId, msg.TestExecutionResult)
+		m.handleTestExecutionCompletion(msg.TestExecutionResult)
+		return m, nil
 	case TestExecutionFailedMsg:
 		m.error = msg.error
+		return m, nil
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.ResultsKeys.PickFiles):
 			return m, switchToFilePickerCmd
 		}
 	}
-	return m, nil
+
+	resultsSection, cmd := m.resultsSection.Update(msg)
+	m.resultsSection = resultsSection.(resultssection.Model)
+
+	return m, cmd
 }
 
 func (m Model) View() string {
 	sb := strings.Builder{}
 	sb.WriteString("Results Screen!\n")
 
-	testRun, ok := m.testRuns.MostRecent()
-	if ok {
-		sb.WriteString(fmt.Sprintf("Test Run: %d\n", testRun.Id))
-		sb.WriteString(fmt.Sprintf("Filepaths: %v\n", strings.Join(testRun.Filepaths, ", ")))
-	}
-	if m.error != nil {
-		log.Debug("Results Screen", "error", m.error)
-		sb.WriteString(fmt.Sprintf("Error: %v\n", m.error.Error()))
-	}
-	if m.testExecutionResult != nil {
-		sb.WriteString(fmt.Sprintf("Test Execution Result: %v\n", m.testExecutionResult.Metrics))
-		sb.WriteString(fmt.Sprintf("Test Execution Result: %v\n", m.testExecutionResult.ExecutionTime))
-	}
+	sb.WriteString(m.resultsSection.View())
 	return sb.String()
 }
 
@@ -132,8 +130,8 @@ func (m *Model) AddTestRun(filepaths []string) (TestRun, error) {
 	return testRun, err
 }
 
-func (m *Model) recordTestExecutionResult(testRunId int, testExecutionResult *runner.TestExecutionResult) {
-	m.testExecutionResult = testExecutionResult
+func (m *Model) handleTestExecutionCompletion(testExecutionResult *runner.TestExecutionResult) {
+	m.resultsSection.SetRows(testExecutionResult)
 }
 
 func (m *Model) UpdateContext(ctx context.Context) {
@@ -142,4 +140,11 @@ func (m *Model) UpdateContext(ctx context.Context) {
 
 func (m *Model) Prepare() tea.Cmd {
 	return nil
+}
+
+func (m *Model) SetSize(width int, height int) {
+	m.width = width
+	m.height = height
+
+	m.resultsSection.SetSize(m.width, m.height)
 }

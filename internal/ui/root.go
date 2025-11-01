@@ -76,8 +76,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = m.resultsScreen.ExecuteTestRunCmd(testRun.Id)
 		return m, cmd
 	case tea.WindowSizeMsg:
-		m.ctx.ScreenWidth = msg.Width
-		m.ctx.ScreenHeight = msg.Height
+		m.setSize(msg.Width, msg.Height)
 		m.ready = true
 	case tea.KeyMsg:
 		if key.Matches(msg, keys.AppKeys.Quit) {
@@ -133,6 +132,18 @@ func (m *Model) onWindowResize(msg tea.WindowSizeMsg) {
 
 // INTERNAL FUNCTIONS
 //================================================
+
+func (m *Model) setSize(width int, height int) {
+	// TODO - figure out why we need to subtract 8 and 4 from the width and height to prevent
+	// the borders from spilling over the edges of the screen
+	hackyWidth := width - 8
+	hackyHeight := height - 4
+	m.ctx.ScreenWidth = hackyWidth
+	m.ctx.ScreenHeight = hackyHeight
+
+	m.resultsScreen.SetSize(hackyWidth, hackyHeight)
+	m.filepickerScreen.SetSize(hackyWidth, hackyHeight)
+}
 
 func (m Model) getCurrentScreen() tea.Model {
 	switch m.ctx.CurrentScreen {

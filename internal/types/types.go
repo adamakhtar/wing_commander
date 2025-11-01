@@ -23,6 +23,19 @@ const (
 // FailureCause represents the coarse-grained cause of a test failure
 type FailureCause string
 
+func (fc FailureCause) Abbreviated() string {
+	switch fc {
+	case FailureCauseTestDefinition:
+		return "T"
+	case FailureCauseProductionCode:
+		return "C"
+	case FailureCauseAssertion:
+		return "A"
+	default:
+		return ""
+	}
+}
+
 const (
     // FailureCauseTestDefinition indicates the failure originated from test code/framework
     FailureCauseTestDefinition FailureCause = "test_definition_error"
@@ -37,7 +50,7 @@ type TestResult struct {
 	Name             string        // Test name/description
 	Status           TestStatus    // Test status
 	ErrorMessage     string        // Error message (if failed)
-    FailureCause     FailureCause  // Coarse-grained cause for failed tests
+  FailureCause     FailureCause  // Coarse-grained cause for failed tests
 	FullBacktrace    []StackFrame  // Complete backtrace (up to 50 frames)
 	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
 }
