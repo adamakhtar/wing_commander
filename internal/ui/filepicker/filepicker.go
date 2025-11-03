@@ -42,7 +42,7 @@ const (
 )
 
 type Model struct {
-	ctx context.Context
+	ctx *context.Context
 	allPaths []string
 	resultsTable table.Model
 	selectedPaths UniqueFilesSet
@@ -55,7 +55,7 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel(ctx context.Context) Model {
+func NewModel(ctx *context.Context) Model {
 	si := textinput.New()
 	si.Placeholder = "Pikachu"
 	si.CharLimit = 156
@@ -215,15 +215,6 @@ func confirmSelectonCmd(filepaths []string) tea.Cmd {
 func (m *Model) Prepare() tea.Cmd {
 	m.resetPicker()
 	return m.getTestFilePathsCmd
-}
-
-func (m *Model) UpdateContext(ctx context.Context) {
-	m.ctx = ctx
-
-	dimensions := m.getComponentDimensions()
-	m.resultsTable.SetHeight(dimensions.resultsPanel.height)
-	m.resultsTable.SetWidth(dimensions.resultsPanel.width)
-	m.searchInput.Width = dimensions.searchInput.width
 }
 
 func (m *Model) SetSize(width int, height int) {

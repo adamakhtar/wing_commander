@@ -16,7 +16,7 @@ import (
 //================================================
 
 type Model struct {
-	ctx context.Context
+	ctx *context.Context
 	testRuns TestRuns
 	testRunner *runner.TestRunner
 	resultsSection resultssection.Model
@@ -29,7 +29,7 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel(ctx context.Context) Model {
+func NewModel(ctx *context.Context) Model {
 	testRunner := runner.NewTestRunner(ctx.Config)
 
 	model := Model{
@@ -132,10 +132,6 @@ func (m *Model) AddTestRun(filepaths []string) (TestRun, error) {
 
 func (m *Model) handleTestExecutionCompletion(testExecutionResult *runner.TestExecutionResult) {
 	m.resultsSection.SetRows(testExecutionResult)
-}
-
-func (m *Model) UpdateContext(ctx context.Context) {
-	m.ctx = ctx
 }
 
 func (m *Model) Prepare() tea.Cmd {

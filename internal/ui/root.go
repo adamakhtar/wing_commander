@@ -16,7 +16,7 @@ import (
 
 type Model struct {
 	// Data
-	ctx context.Context
+	ctx *context.Context
 	ready bool
 	resultsScreen results.Model
 	filepickerScreen filepicker.Model
@@ -27,7 +27,7 @@ type Model struct {
 //================================================
 
 func NewModel(cfg *config.Config) tea.Model {
-	ctx := context.Context{
+	ctx := &context.Context{
 		CurrentScreen: context.ResultsScreen,
 		Config: cfg,
 	}
@@ -96,8 +96,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd = filepickerCmd
 	}
 
-	m.syncContext()
-
 	return m, cmd
 }
 
@@ -154,9 +152,4 @@ func (m Model) getCurrentScreen() tea.Model {
 	default:
 		return nil
 	}
-}
-
-func (m *Model) syncContext() {
-	m.resultsScreen.UpdateContext(m.ctx)
-	m.filepickerScreen.UpdateContext(m.ctx)
 }
