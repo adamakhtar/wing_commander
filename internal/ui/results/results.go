@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
+	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
@@ -19,6 +20,7 @@ type Model struct {
 	ctx *context.Context
 	testRuns TestRuns
 	testRunner *runner.TestRunner
+	testExecutionResult *runner.TestExecutionResult
 	resultsSection resultssection.Model
 	width int
 	height int
@@ -36,7 +38,7 @@ func NewModel(ctx *context.Context) Model {
 		ctx: ctx,
 		testRunner: testRunner,
 		testRuns: NewTestRuns(),
-		resultsSection: resultssection.NewModel(),
+		resultsSection: resultssection.NewModel(ctx),
 	}
 	return model
 }
@@ -51,6 +53,8 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
+	// selectedTestResult := m.GetSelectedTestResultId()
 
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
@@ -130,7 +134,25 @@ func (m *Model) AddTestRun(filepaths []string) (TestRun, error) {
 	return testRun, err
 }
 
+func (m Model) GetSelectedTestResultId() *types.TestResult {
+	testResultId := m.resultsSection.GetSelectedTestResultId()
+
+	if testResultId == -1 {
+		return nil
+	}
+
+	// TODO extract this to a TestResultCollection type that has a GetById method
+	for _, testResult := range m.testExecutionResult.TestResults {
+		if testResult.Id == testResultId {
+			return &testResult
+		}
+	}
+	return nil
+}
+
+
 func (m *Model) handleTestExecutionCompletion(testExecutionResult *runner.TestExecutionResult) {
+	m.testExecutionResult = testExecutionResult
 	m.resultsSection.SetRows(testExecutionResult)
 }
 

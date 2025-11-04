@@ -5,13 +5,19 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
+)
+
+const (
+	columnKeyTestName    = "test_name"
+	columnKeyFailureCause = "failure_cause"
+	columnKeyMetaId = "test_id"
 )
 
 type Model struct {
-	ctx context.Context
+	ctx *context.Context
 	resultsTable table.Model
 }
 
@@ -19,13 +25,15 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel() Model {
-	columns := getColumnConfiguration(0, 0)
+func NewModel(ctx *context.Context) Model {
+	columns := getColumnConfiguration(3, 15)
 
-	resultsTable := table.New(table.WithColumns(columns))
-	resultsTable.Focus()
+	resultsTable := table.New(columns).Focused(true).WithBaseStyle(
+		lipgloss.NewStyle().Align(lipgloss.Left),
+	)
 
 	return Model{
+		ctx: ctx,
 		resultsTable: resultsTable,
 	}
 }
@@ -41,6 +49,8 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	// case table.UserEventHighlightedIndexChanged:
+	// 	m.handleResultTableHighlightedRowChange(msg)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, keys.ResultsSectionKeys.LineUp):
@@ -53,7 +63,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	// Make your own border
 	var panelStyle = lipgloss.NewStyle().BorderStyle(lipgloss.NormalBorder()).Padding(1, 1)
 
 	return panelStyle.Render(m.resultsTable.View())
@@ -73,30 +82,37 @@ func (m Model) View() string {
 // EXTERNAL FUNCTIONS
 //================================================
 
-func (m *Model) UpdateContext(ctx context.Context) {
-	m.ctx = ctx
-}
-
 func (m *Model) SetSize(width int, height int) {
-	m.resultsTable.SetWidth(width)
-	m.resultsTable.SetHeight(height)
+	m.resultsTable.WithTargetWidth(width)
+	m.resultsTable.WithMinimumHeight(height)
 
 	failureCauseWidth := 3
 	testNameWidth := width - failureCauseWidth
 
 	columns := getColumnConfiguration(failureCauseWidth, testNameWidth)
-	m.resultsTable.SetColumns(columns)
+	m.resultsTable.WithColumns(columns)
 }
 
 func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 	rows := []table.Row{}
 	for _, test := range testExecutionResult.FailedTests {
-		rows = append(rows, table.Row{
-			test.FailureCause.Abbreviated(),
-			test.Name,
+		row := table.NewRow(table.RowData{
+			columnKeyFailureCause: test.FailureCause.Abbreviated(),
+			columnKeyTestName: test.Name,
+			columnKeyMetaId: test.Id,
 		})
+		rows = append(rows, row)
 	}
-	m.resultsTable.SetRows(rows)
+
+	m.resultsTable = m.resultsTable.WithRows(rows)
+}
+
+func (m Model) GetSelectedTestResultId() int {
+	highlightedRow := m.resultsTable.HighlightedRow()
+	if highlightedRow == nil {
+		return -1
+	}
+	return highlightedRow.Data[columnKeyMetaId].(int)
 }
 
 //
@@ -104,8 +120,9 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 //================================================
 
 func getColumnConfiguration(failureCauseWidth int, testNameWidth int) []table.Column {
+	// TODO - syling - refer to https://github.com/Evertras/bubble-table/blob/main/examples/features/main.go
 	return []table.Column{
-	{Title: "", Width: failureCauseWidth},
-	{Title: "Test", Width: testNameWidth},
+		table.NewColumn(columnKeyFailureCause, "", failureCauseWidth).WithStyle(lipgloss.NewStyle().Align(lipgloss.Center)),
+		table.NewFlexColumn(columnKeyTestName, "Test name", testNameWidth),
 	}
 }
