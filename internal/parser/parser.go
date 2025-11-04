@@ -1,14 +1,15 @@
 package parser
 
 import (
+	"encoding/xml"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/joshdk/go-junit"
 )
-
 
 // testPathIndicators lists substrings that indicate frames belonging to test code paths
 // Limited to Ruby frameworks for now (RSpec and Minitest). Extend as more frameworks are supported.
@@ -65,8 +66,48 @@ func ParseFile(filePath string) (*ParseResult, error) {
 	return ParseXML(data)
 }
 
+// testcaseAttrs represents XML attributes for a testcase element
+type testcaseAttrs struct {
+	File   string `xml:"file,attr"`
+	LineNo string `xml:"lineno,attr"`
+}
+
 // ParseXML parses JUnit XML test results data
 func ParseXML(data []byte) (*ParseResult, error) {
+	// First, parse XML directly to extract file and lineno attributes
+	testcaseMap := make(map[string]testcaseAttrs)
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			break
+		}
+		if startElem, ok := token.(xml.StartElement); ok && startElem.Name.Local == "testcase" {
+			var attrs testcaseAttrs
+			var name, classname string
+			for _, attr := range startElem.Attr {
+				switch attr.Name.Local {
+				case "file":
+					attrs.File = attr.Value
+				case "lineno":
+					attrs.LineNo = attr.Value
+				case "name":
+					name = attr.Value
+				case "classname":
+					classname = attr.Value
+				}
+			}
+			// Use classname + name as key for uniqueness (matching junit library behavior)
+			key := name
+			if classname != "" && classname != name {
+				key = fmt.Sprintf("%s %s", classname, name)
+			}
+			if key != "" {
+				testcaseMap[key] = attrs
+			}
+		}
+	}
+
 	suites, err := junit.Ingest(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse JUnit XML: %w", err)
@@ -79,6 +120,7 @@ func ParseXML(data []byte) (*ParseResult, error) {
 	totalTests := 0
 	failedTests := 0
 	skippedTests := 0
+	testIdCounter := 0
 
 	for _, suite := range suites {
 		totalTests += suite.Totals.Tests
@@ -86,7 +128,13 @@ func ParseXML(data []byte) (*ParseResult, error) {
 		skippedTests += suite.Totals.Skipped
 
 		for _, test := range suite.Tests {
-			testResult := convertJUnitTestToTestResult(test)
+			testIdCounter++
+			// Look up file and lineno from our map
+			var attrs testcaseAttrs
+			if found, ok := testcaseMap[test.Name]; ok {
+				attrs = found
+			}
+			testResult := convertJUnitTestToTestResult(testIdCounter, test, attrs)
 			result.Tests = append(result.Tests, testResult)
 		}
 	}
@@ -102,7 +150,7 @@ func ParseXML(data []byte) (*ParseResult, error) {
 }
 
 // convertJUnitTestToTestResult converts JUnit test to our domain type
-func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
+func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) types.TestResult {
 	// Determine status based on JUnit test result
 	var status types.TestStatus
 	var errorMessage string
@@ -158,10 +206,34 @@ func convertJUnitTestToTestResult(test junit.Test) types.TestResult {
         failureCause = classifyFailure(errorMessage, fullBacktrace)
     }
 
+	// Extract test file path and line number from XML attributes
+	testFilePath := attrs.File
+	testLineNumber := 0
+	if attrs.LineNo != "" {
+		if parsedLine, err := strconv.Atoi(attrs.LineNo); err == nil {
+			testLineNumber = parsedLine
+		}
+	}
+
+	// Fallback to Properties if attributes not found in direct XML parse
+	if testFilePath == "" && test.Properties != nil {
+		if file, ok := test.Properties["file"]; ok {
+			testFilePath = file
+		}
+		if lineno, ok := test.Properties["lineno"]; ok && testLineNumber == 0 {
+			if parsedLine, err := strconv.Atoi(lineno); err == nil {
+				testLineNumber = parsedLine
+			}
+		}
+	}
+
     return types.TestResult{
+		Id:                id,
 		Name:              testName,
 		Status:            status,
 		ErrorMessage:      errorMessage,
+		TestFilePath:      testFilePath,
+		TestLineNumber:    testLineNumber,
         FailureCause:      failureCause,
 		FullBacktrace:     fullBacktrace,
 		FilteredBacktrace: make([]types.StackFrame, 0), // Will be populated by normalizer

@@ -47,9 +47,12 @@ const (
 
 // TestResult represents a single test execution result
 type TestResult struct {
+	Id               int           // Unique ID for the test result
 	Name             string        // Test name/description
 	Status           TestStatus    // Test status
 	ErrorMessage     string        // Error message (if failed)
+	TestFilePath     string        // File path of the test
+	TestLineNumber   int           // Line number of the test
   FailureCause     FailureCause  // Coarse-grained cause for failed tests
 	FullBacktrace    []StackFrame  // Complete backtrace (up to 50 frames)
 	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
