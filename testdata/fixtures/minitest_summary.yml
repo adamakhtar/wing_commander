@@ -1,5 +1,5 @@
 ---
-- test_case_name: Minitest::Result
+- test_group_name: Minitest::Result
   test_status: failed
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
@@ -51,7 +51,7 @@
     `run'"
   - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
     `block in autorun'"
-- test_case_name: Minitest::Result
+- test_group_name: Minitest::Result
   test_status: failed
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
@@ -107,7 +107,7 @@
     `run'"
   - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
     `block in autorun'"
-- test_case_name: Minitest::Result
+- test_group_name: Minitest::Result
   test_status: failed
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
@@ -159,7 +159,7 @@
     `run'"
   - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
     `block in autorun'"
-- test_case_name: Minitest::Result
+- test_group_name: Minitest::Result
   test_status: failed
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"

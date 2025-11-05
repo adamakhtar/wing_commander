@@ -79,8 +79,18 @@ class WingCommanderReporter < Minitest::Reporters::BaseReporter
   private
 
   def build_test_summary(result)
+    test_class_name = if result.respond_to?(:klass)
+      klass = result.klass
+      klass.is_a?(String) ? klass : klass.name
+    elsif result.respond_to?(:test)
+      result.test.class.name
+    else
+      result.class.name
+    end
+
     summary = {
-      'test_case_name' => result.class.name,
+      'test_group_name' => test_class_name,
+      'test_case_name' => result.name,
       'test_status' => determine_status(result),
       'duration' => format_duration(result.time)
     }

@@ -65,7 +65,7 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 
 ```yaml
 ---
-- test_case_name: ThingTest
+- test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 6
   failure_cause:
@@ -78,7 +78,7 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
   full_backtrace:
   test_status: passed
   duration: "0.05"
-- test_case_name: ThingTest
+- test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 10
   failure_cause: error
@@ -94,7 +94,7 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
     - /absolute/path/to/gems/minitest-5.16.0/lib/minitest/test.rb:164:in `run'
   test_status: failed
   duration: "0.00"
-- test_case_name: ThingTest
+- test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 14
   failure_cause: error
@@ -109,7 +109,7 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
     - /absolute/path/to/gems/minitest-5.16.0/lib/minitest/test.rb:98:in `block in run'
   test_status: failed
   duration: "0.00"
-- test_case_name: ThingTest
+- test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 18
   failure_cause: failed_assertion
@@ -124,7 +124,7 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
     - /absolute/path/to/gems/minitest-5.16.0/lib/minitest/test.rb:98:in `block in run'
   test_status: failed
   duration: "0.00"
-- test_case_name: ThingTest
+- test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 21
   failure_cause:
@@ -148,7 +148,7 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 
 ### Required Fields (13 total)
 
-1. **test_case_name** - Test class name (`result.class.name`)
+1. **test_group_name** - Test class name (`result.klass.name`)
 2. **test_file_path** - Absolute file path of test file (from `source_location`, expanded)
 3. **test_line_number** - Line number of test definition (from `source_location`)
 4. **failure_cause** - Either `"error"` or `"failed_assertion"`
