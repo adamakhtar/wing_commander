@@ -27,7 +27,8 @@ func TestNormalizeTestResults(t *testing.T) {
 
 	results := []types.TestResult{
 		{
-			Name:   "Test 1",
+			GroupName:   "Test 1",
+			TestCaseName: "",
 			Status: types.StatusFail,
 			FullBacktrace: []types.StackFrame{
 				{File: "app/test.rb", Line: 10},
@@ -35,7 +36,8 @@ func TestNormalizeTestResults(t *testing.T) {
 			},
 		},
 		{
-			Name:   "Test 2",
+			GroupName:   "Test 2",
+			TestCaseName: "",
 			Status: types.StatusFail,
 			FullBacktrace: []types.StackFrame{
 				{File: "app/another.rb", Line: 30},

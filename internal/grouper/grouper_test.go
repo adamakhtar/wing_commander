@@ -27,8 +27,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 
 	t.Run("No failed tests", func(t *testing.T) {
 		results := []types.TestResult{
-			{Name: "Test 1", Status: types.StatusPass},
-			{Name: "Test 2", Status: types.StatusSkip},
+			{GroupName: "Test 1", TestCaseName: "", Status: types.StatusPass},
+			{GroupName: "Test 2", TestCaseName: "", Status: types.StatusSkip},
 		}
 		groups := grouper.GroupFailures(results)
 		assert.Empty(t, groups)
@@ -37,9 +37,10 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Single failure", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				Name:         "Test 1",
-				Status:       types.StatusFail,
-				ErrorMessage: "Something went wrong",
+				GroupName:     "Test 1",
+				TestCaseName:  "",
+				Status:         types.StatusFail,
+				ErrorMessage:  "Something went wrong",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				},
@@ -52,13 +53,14 @@ func TestGrouper_GroupFailures(t *testing.T) {
 		assert.Equal(t, "Something went wrong", groups[0].ErrorMessage)
 		assert.Equal(t, 1, groups[0].Count)
 		assert.Len(t, groups[0].Tests, 1)
-		assert.Equal(t, "Test 1", groups[0].Tests[0].Name)
+		assert.Equal(t, "Test 1", groups[0].Tests[0].GroupName)
 	})
 
 	t.Run("Multiple failures with same bottom frame", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				Name:         "Test 1",
+				GroupName:     "Test 1",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "Something went wrong",
 				FilteredBacktrace: []types.StackFrame{
@@ -67,7 +69,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 				},
 			},
 			{
-				Name:         "Test 2",
+				GroupName:     "Test 2",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "Another error",
 				FilteredBacktrace: []types.StackFrame{
@@ -87,7 +90,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Multiple failures with different bottom frames", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				Name:         "Test 1",
+				GroupName:     "Test 1",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "Error in user.rb",
 				FilteredBacktrace: []types.StackFrame{
@@ -95,7 +99,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 				},
 			},
 			{
-				Name:         "Test 2",
+				GroupName:     "Test 2",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "Error in product.rb",
 				FilteredBacktrace: []types.StackFrame{
@@ -120,7 +125,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Mixed pass/fail tests", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				Name:         "Test 1",
+				GroupName:     "Test 1",
+				TestCaseName:  "",
 				Status:       types.StatusPass,
 				ErrorMessage: "This should be ignored",
 				FilteredBacktrace: []types.StackFrame{
@@ -128,7 +134,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 				},
 			},
 			{
-				Name:         "Test 2",
+				GroupName:     "Test 2",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "This should be grouped",
 				FilteredBacktrace: []types.StackFrame{
@@ -142,13 +149,14 @@ func TestGrouper_GroupFailures(t *testing.T) {
 		assert.Equal(t, "app/models/user.rb:42", groups[0].Hash)
 		assert.Equal(t, 1, groups[0].Count)
 		assert.Len(t, groups[0].Tests, 1)
-		assert.Equal(t, "Test 2", groups[0].Tests[0].Name)
+		assert.Equal(t, "Test 2", groups[0].Tests[0].GroupName)
 	})
 
 	t.Run("Failures with empty backtraces", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				Name:         "Test 1",
+				GroupName:     "Test 1",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "No backtrace",
 				FilteredBacktrace: []types.StackFrame{},
@@ -164,7 +172,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 		results := []types.TestResult{
 			// Single failure at user.rb:42
 			{
-				Name:         "Test 1",
+				GroupName:     "Test 1",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "Single failure",
 				FilteredBacktrace: []types.StackFrame{
@@ -173,7 +182,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 			},
 			// Two failures at product.rb:50
 			{
-				Name:         "Test 2",
+				GroupName:     "Test 2",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "First product failure",
 				FilteredBacktrace: []types.StackFrame{
@@ -181,7 +191,8 @@ func TestGrouper_GroupFailures(t *testing.T) {
 				},
 			},
 			{
-				Name:         "Test 3",
+				GroupName:     "Test 3",
+				TestCaseName:  "",
 				Status:       types.StatusFail,
 				ErrorMessage: "Second product failure",
 				FilteredBacktrace: []types.StackFrame{
@@ -209,7 +220,8 @@ func TestGrouper_CollectAllFrames(t *testing.T) {
 
 	failedTests := []types.TestResult{
 		{
-			Name:         "Test 1",
+			GroupName:     "Test 1",
+			TestCaseName:  "",
 			Status:       types.StatusFail,
 			ErrorMessage: "Error 1",
 			FilteredBacktrace: []types.StackFrame{
@@ -218,7 +230,8 @@ func TestGrouper_CollectAllFrames(t *testing.T) {
 			},
 		},
 		{
-			Name:         "Test 2",
+			GroupName:     "Test 2",
+			TestCaseName:  "",
 			Status:       types.StatusFail,
 			ErrorMessage: "Error 2",
 			FilteredBacktrace: []types.StackFrame{
@@ -241,7 +254,8 @@ func TestGrouper_GroupFailures_WithChangeDetection(t *testing.T) {
 
 	results := []types.TestResult{
 		{
-			Name:         "Test 1",
+			GroupName:     "Test 1",
+			TestCaseName:  "",
 			Status:       types.StatusFail,
 			ErrorMessage: "Something went wrong",
 			FilteredBacktrace: []types.StackFrame{
@@ -261,15 +275,15 @@ func TestGrouper_GroupFailures_WithChangeDetection(t *testing.T) {
 
 func TestFilterFailedTests(t *testing.T) {
 	results := []types.TestResult{
-		{Name: "Test 1", Status: types.StatusPass},
-		{Name: "Test 2", Status: types.StatusFail},
-		{Name: "Test 3", Status: types.StatusSkip},
-		{Name: "Test 4", Status: types.StatusFail},
+		{GroupName: "Test 1", TestCaseName: "", Status: types.StatusPass},
+		{GroupName: "Test 2", TestCaseName: "", Status: types.StatusFail},
+		{GroupName: "Test 3", TestCaseName: "", Status: types.StatusSkip},
+		{GroupName: "Test 4", TestCaseName: "", Status: types.StatusFail},
 	}
 
 	failed := filterFailedTests(results)
 
 	assert.Len(t, failed, 2)
-	assert.Equal(t, "Test 2", failed[0].Name)
-	assert.Equal(t, "Test 4", failed[1].Name)
+	assert.Equal(t, "Test 2", failed[0].GroupName)
+	assert.Equal(t, "Test 4", failed[1].GroupName)
 }

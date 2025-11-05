@@ -48,8 +48,10 @@ const (
 // TestResult represents a single test execution result
 type TestResult struct {
 	Id               int           // Unique ID for the test result
-	Name             string        // Test name/description
+	GroupName        string        // Test group name
+	TestCaseName     string        // Test case name
 	Status           TestStatus    // Test status
+	FailureCause     FailureCause  // The cause of the failed test - assert failed, error in code etc
 	ErrorMessage     string        // Error message (if failed)
 	ErrorFilePath    string        // File path of the error's location
 	ErrorLineNumber  int           // Line number of the error's location
@@ -58,7 +60,6 @@ type TestResult struct {
 	FailedAssertionLineNumber int  // Line number of the failed assertion's location
 	TestFilePath     string        // File path of the test
 	TestLineNumber   int           // Line number of the test definition
-  FailureCause     FailureCause  // The cause of the failed test - assert failed, error in code etc
 	FullBacktrace    []StackFrame  // Complete backtrace (up to 50 frames)
 	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
 	Duration         float64       // Duration of the test in seconds
@@ -92,12 +93,13 @@ func NewStackFrame(file string, line int, function string) StackFrame {
 }
 
 // NewTestResult creates a new TestResult
-func NewTestResult(name string, status TestStatus) TestResult {
+func NewTestResult(groupName string, testCaseName string, status TestStatus) TestResult {
 	return TestResult{
-		Name:              name,
-		Status:            status,
-		FullBacktrace:     []StackFrame{},
-		FilteredBacktrace: []StackFrame{},
+		GroupName:          groupName,
+		TestCaseName:       testCaseName,
+		Status:             status,
+		FullBacktrace:      []StackFrame{},
+		FilteredBacktrace:  []StackFrame{},
 	}
 }
 

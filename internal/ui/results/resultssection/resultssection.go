@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	columnKeyGroupName    = "group_name"
 	columnKeyTestName    = "test_name"
 	columnKeyFailureCause = "failure_cause"
 	columnKeyMetaId = "test_id"
@@ -26,7 +27,7 @@ type Model struct {
 //================================================
 
 func NewModel(ctx *context.Context) Model {
-	columns := getColumnConfiguration(3, 15)
+	columns := getColumnConfiguration(3, 15, 15)
 
 	resultsTable := table.New(columns).Focused(true).WithBaseStyle(
 		lipgloss.NewStyle().Align(lipgloss.Left),
@@ -87,18 +88,29 @@ func (m *Model) SetSize(width int, height int) {
 	m.resultsTable.WithMinimumHeight(height)
 
 	failureCauseWidth := 3
-	testNameWidth := width - failureCauseWidth
+	groupNameWidth := 15
+	testNameWidth := width - failureCauseWidth - groupNameWidth
 
-	columns := getColumnConfiguration(failureCauseWidth, testNameWidth)
+	columns := getColumnConfiguration(failureCauseWidth, groupNameWidth, testNameWidth)
 	m.resultsTable.WithColumns(columns)
 }
 
 func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 	rows := []table.Row{}
 	for _, test := range testExecutionResult.FailedTests {
+		// Combine group name and test case name for display
+		// testName := test.TestCaseName
+		// if test.GroupName != "" {
+		// 	if testName != "" {
+		// 		testName = fmt.Sprintf("%s#%s", test.GroupName, test.TestCaseName)
+		// 	} else {
+		// 		testName = test.GroupName
+		// 	}
+		// }
 		row := table.NewRow(table.RowData{
 			columnKeyFailureCause: test.FailureCause.Abbreviated(),
-			columnKeyTestName: test.Name,
+			columnKeyGroupName: test.GroupName,
+			columnKeyTestName: test.TestCaseName,
 			columnKeyMetaId: test.Id,
 		})
 		rows = append(rows, row)
@@ -112,17 +124,22 @@ func (m Model) GetSelectedTestResultId() int {
 	if len(highlightedRow.Data) == 0 {
 		return -1
 	}
-	return highlightedRow.Data[columnKeyMetaId].(int)
+	id, ok := highlightedRow.Data[columnKeyMetaId]
+	if !ok {
+		return -1
+	}
+	return id.(int)
 }
 
 //
 // INTERNAL FUNCTIONS
 //================================================
 
-func getColumnConfiguration(failureCauseWidth int, testNameWidth int) []table.Column {
+func getColumnConfiguration(failureCauseWidth int, groupNameWidth int, testNameWidth int) []table.Column {
 	// TODO - syling - refer to https://github.com/Evertras/bubble-table/blob/main/examples/features/main.go
 	return []table.Column{
 		table.NewColumn(columnKeyFailureCause, "", failureCauseWidth).WithStyle(lipgloss.NewStyle().Align(lipgloss.Center)),
+		table.NewFlexColumn(columnKeyGroupName, "Group name", groupNameWidth),
 		table.NewFlexColumn(columnKeyTestName, "Test name", testNameWidth),
 	}
 }

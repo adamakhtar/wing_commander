@@ -196,11 +196,9 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 		fullBacktrace = fullBacktrace[:50]
 	}
 
-	// Create test name combining classname and name if available
-	testName := test.Name
-	if test.Classname != "" && test.Classname != test.Name {
-		testName = fmt.Sprintf("%s %s", test.Classname, test.Name)
-	}
+	// Extract group name (classname) and test case name (name)
+	groupName := test.Classname
+	testCaseName := test.Name
 
     // Classify failure cause if failed
     if status == types.StatusFail {
@@ -230,7 +228,8 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 
     return types.TestResult{
 		Id:                id,
-		Name:              testName,
+		GroupName:         groupName,
+		TestCaseName:      testCaseName,
 		Status:            status,
 		ErrorMessage:      errorMessage,
 		TestFilePath:      testFilePath,
@@ -514,7 +513,8 @@ func extractStringSlice(m map[string]interface{}, key string) []string {
 // convertYAMLMapToTestResult converts a YAML map to our domain type
 func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.TestResult {
 	// Extract basic fields
-	name := extractString(yamlMap, "test_case_name")
+	groupName := extractString(yamlMap, "test_group_name")
+	testCaseName := extractString(yamlMap, "test_case_name")
 	testFilePath := extractString(yamlMap, "test_file_path")
 	testLineNumber := extractInt(yamlMap, "test_line_number")
 
@@ -582,7 +582,8 @@ func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.Te
 
 	return types.TestResult{
 		Id:                        id,
-		Name:                      name,
+		GroupName:                 groupName,
+		TestCaseName:              testCaseName,
 		Status:                    status,
 		ErrorMessage:              errorMessage,
 		ErrorFilePath:             errorFilePath,

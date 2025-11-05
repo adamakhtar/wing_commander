@@ -141,11 +141,11 @@ func TestTestRunner_GetWorkingDirectory(t *testing.T) {
 func TestTestExecutionResult_GetSummary(t *testing.T) {
 	result := &TestExecutionResult{
 		TestResults: []types.TestResult{
-			{Name: "Test 1", Status: types.StatusPass},
-			{Name: "Test 2", Status: types.StatusFail},
-			{Name: "Test 3", Status: types.StatusSkip},
-			{Name: "Test 4", Status: types.StatusPass},
-			{Name: "Test 5", Status: types.StatusFail},
+			{GroupName: "Test 1", TestCaseName: "", Status: types.StatusPass},
+			{GroupName: "Test 2", TestCaseName: "", Status: types.StatusFail},
+			{GroupName: "Test 3", TestCaseName: "", Status: types.StatusSkip},
+			{GroupName: "Test 4", TestCaseName: "", Status: types.StatusPass},
+			{GroupName: "Test 5", TestCaseName: "", Status: types.StatusFail},
 		},
 		ExecutionTime: time.Now(),
 	}
@@ -195,9 +195,11 @@ func TestTestRunner_ParseTestOutput_RSpec(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	assert.Equal(t, "TestSpec should pass", results[0].Name)
+	assert.Equal(t, "TestSpec", results[0].GroupName)
+	assert.Equal(t, "should pass", results[0].TestCaseName)
 	assert.Equal(t, types.StatusPass, results[0].Status)
-	assert.Equal(t, "TestSpec should fail", results[1].Name)
+	assert.Equal(t, "TestSpec", results[1].GroupName)
+	assert.Equal(t, "should fail", results[1].TestCaseName)
 	assert.Equal(t, types.StatusFail, results[1].Status)
 }
 
@@ -224,9 +226,11 @@ func TestTestRunner_ParseTestOutput_Minitest(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
-	assert.Equal(t, "TestClass test_pass", results[0].Name)
+	assert.Equal(t, "TestClass", results[0].GroupName)
+	assert.Equal(t, "test_pass", results[0].TestCaseName)
 	assert.Equal(t, types.StatusPass, results[0].Status)
-	assert.Equal(t, "TestClass test_fail", results[1].Name)
+	assert.Equal(t, "TestClass", results[1].GroupName)
+	assert.Equal(t, "test_fail", results[1].TestCaseName)
 	assert.Equal(t, types.StatusFail, results[1].Status)
 }
 

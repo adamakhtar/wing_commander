@@ -15,9 +15,10 @@ func TestNewStackFrame(t *testing.T) {
 }
 
 func TestNewTestResult(t *testing.T) {
-	test := NewTestResult("User creation", StatusFail)
+	test := NewTestResult("UserTest", "test_user_creation", StatusFail)
 
-	assert.Equal(t, "User creation", test.Name)
+	assert.Equal(t, "UserTest", test.GroupName)
+	assert.Equal(t, "test_user_creation", test.TestCaseName)
 	assert.Equal(t, StatusFail, test.Status)
 	assert.Empty(t, test.ErrorMessage)
 	assert.Empty(t, test.FullBacktrace)
@@ -55,14 +56,16 @@ func TestStackFrameFields(t *testing.T) {
 func TestTestResultFields(t *testing.T) {
 	frame := NewStackFrame("test.rb", 1, "test")
 	test := TestResult{
-		Name:              "Test name",
-		Status:            StatusPass,
-		ErrorMessage:      "Error message",
-		FullBacktrace:     []StackFrame{frame},
-		FilteredBacktrace: []StackFrame{frame},
+		GroupName:          "TestClass",
+		TestCaseName:       "test_method",
+		Status:             StatusPass,
+		ErrorMessage:       "Error message",
+		FullBacktrace:      []StackFrame{frame},
+		FilteredBacktrace:  []StackFrame{frame},
 	}
 
-	assert.Equal(t, "Test name", test.Name)
+	assert.Equal(t, "TestClass", test.GroupName)
+	assert.Equal(t, "test_method", test.TestCaseName)
 	assert.Equal(t, StatusPass, test.Status)
 	assert.Equal(t, "Error message", test.ErrorMessage)
 	assert.Len(t, test.FullBacktrace, 1)
@@ -70,7 +73,7 @@ func TestTestResultFields(t *testing.T) {
 }
 
 func TestFailureGroupFields(t *testing.T) {
-	test := NewTestResult("Test", StatusFail)
+	test := NewTestResult("TestClass", "test_method", StatusFail)
 	group := FailureGroup{
 		Hash:                "hash123",
 		ErrorMessage:        "Error",

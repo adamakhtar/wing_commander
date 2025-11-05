@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 //
@@ -118,10 +119,14 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
 
+		log.Debug("Executing test run", "testRunId", testRunId, "filepaths", testRun.Filepaths, "testResultsPath", m.ctx.Config.TestResultsPath)
+
 		testExecutionResult, err := m.testRunner.ExecuteTests(testRunId, testRun.Filepaths, m.ctx.Config.TestResultsPath)
 		if err != nil {
+			log.Debug("Error executing test run", "testRunId", testRunId, "error", err)
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
+		log.Debug("Test execution completed", "testRunId", testRunId, "testExecutionResult", testExecutionResult)
 		return TestExecutionCompletedMsg{TestRunId: testRunId, TestExecutionResult: testExecutionResult}
 	}
 }
@@ -152,6 +157,7 @@ func (m Model) GetSelectedTestResultId() *types.TestResult {
 
 
 func (m *Model) handleTestExecutionCompletion(testExecutionResult *runner.TestExecutionResult) {
+	log.Debug("Test execution completed", "testExecutionResult", testExecutionResult)
 	m.testExecutionResult = testExecutionResult
 	m.resultsSection.SetRows(testExecutionResult)
 }

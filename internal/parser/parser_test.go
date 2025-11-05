@@ -65,7 +65,8 @@ func TestParseXML_RSpec(t *testing.T) {
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "User should be valid", test.Name)
+	assert.Equal(t, "User", test.GroupName)
+	assert.Equal(t, "should be valid", test.TestCaseName)
 	assert.Equal(t, types.StatusFail, test.Status)
 	assert.Equal(t, "Expected User to be valid", test.ErrorMessage)
     assert.Len(t, test.FullBacktrace, 2)
@@ -101,7 +102,8 @@ func TestParseXML_Minitest(t *testing.T) {
 	assert.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "UserTest test_user_creation", test.Name)
+	assert.Equal(t, "UserTest", test.GroupName)
+	assert.Equal(t, "test_user_creation", test.TestCaseName)
 	assert.Equal(t, types.StatusFail, test.Status)
     // Expect assertion failure classification due to message
     assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
@@ -250,7 +252,7 @@ func TestParseYAMLFile(t *testing.T) {
 
 func TestParseYAML_BasicFields(t *testing.T) {
 	yamlData := `---
-- test_case_name: TestClass
+- test_group_name: TestClass
   test_status: passed
   duration: '1.23'
   test_file_path: "/path/to/test.rb"
@@ -272,7 +274,8 @@ func TestParseYAML_BasicFields(t *testing.T) {
 
 	test := result.Tests[0]
 	assert.Equal(t, 1, test.Id)
-	assert.Equal(t, "TestClass", test.Name)
+	assert.Equal(t, "TestClass", test.GroupName)
+	assert.Equal(t, "", test.TestCaseName)
 	assert.Equal(t, types.StatusPass, test.Status)
 	assert.Equal(t, 1.23, test.Duration)
 	assert.Equal(t, "/path/to/test.rb", test.TestFilePath)
@@ -298,7 +301,7 @@ func TestParseYAML_StatusEnum(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			yamlData := `---
-- test_case_name: Test
+- test_group_name: Test
   test_status: ` + tt.status + `
   duration: '0.00'
   test_file_path: ""
@@ -327,7 +330,7 @@ func TestParseYAML_FailureCauseEnum(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			yamlData := `---
-- test_case_name: Test
+- test_group_name: Test
   test_status: failed
   duration: '0.00'
   test_file_path: ""
@@ -344,7 +347,7 @@ func TestParseYAML_FailureCauseEnum(t *testing.T) {
 
 func TestParseYAML_ErrorFields(t *testing.T) {
 	yamlData := `---
-- test_case_name: TestClass
+- test_group_name: TestClass
   test_status: failed
   duration: '0.50'
   test_file_path: "/path/to/test.rb"
@@ -377,7 +380,7 @@ func TestParseYAML_ErrorFields(t *testing.T) {
 
 func TestParseYAML_AssertionFields(t *testing.T) {
 	yamlData := `---
-- test_case_name: TestClass
+- test_group_name: TestClass
   test_status: failed
   duration: '0.30'
   test_file_path: "/path/to/test.rb"
@@ -408,7 +411,7 @@ func TestParseYAML_AssertionFields(t *testing.T) {
 
 func TestParseYAML_BacktraceParsing(t *testing.T) {
 	yamlData := `---
-- test_case_name: TestClass
+- test_group_name: TestClass
   test_status: failed
   duration: '0.00'
   test_file_path: ""
@@ -457,7 +460,7 @@ func TestParseYAML_EmptyArray(t *testing.T) {
 
 func TestParseYAML_MissingFields(t *testing.T) {
 	yamlData := `---
-- test_case_name: Test
+- test_group_name: Test
   test_status: passed
 `
 
@@ -466,7 +469,8 @@ func TestParseYAML_MissingFields(t *testing.T) {
 	require.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, "Test", test.Name)
+	assert.Equal(t, "Test", test.GroupName)
+	assert.Equal(t, "", test.TestCaseName)
 	assert.Equal(t, types.StatusPass, test.Status)
 	assert.Equal(t, 0.0, test.Duration) // Default when missing
 	assert.Empty(t, test.TestFilePath)
@@ -476,7 +480,7 @@ func TestParseYAML_MissingFields(t *testing.T) {
 
 func TestParseYAML_InvalidDuration(t *testing.T) {
 	yamlData := `---
-- test_case_name: Test
+- test_group_name: Test
   test_status: passed
   duration: "invalid"
 `
@@ -491,20 +495,20 @@ func TestParseYAML_InvalidDuration(t *testing.T) {
 
 func TestParseYAML_MultipleTests(t *testing.T) {
 	yamlData := `---
-- test_case_name: Test1
+- test_group_name: Test1
   test_status: passed
   duration: '1.0'
   test_file_path: ""
   test_line_number: 0
   full_backtrace: []
-- test_case_name: Test2
+- test_group_name: Test2
   test_status: failed
   duration: '2.0'
   test_file_path: ""
   test_line_number: 0
   failure_cause: error
   full_backtrace: []
-- test_case_name: Test3
+- test_group_name: Test3
   test_status: skipped
   duration: '0.5'
   test_file_path: ""
@@ -521,22 +525,25 @@ func TestParseYAML_MultipleTests(t *testing.T) {
 	assert.Equal(t, 1, result.Summary.Failed)
 	assert.Equal(t, 1, result.Summary.Skipped)
 
-	assert.Equal(t, "Test1", result.Tests[0].Name)
+	assert.Equal(t, "Test1", result.Tests[0].GroupName)
+	assert.Equal(t, "", result.Tests[0].TestCaseName)
 	assert.Equal(t, types.StatusPass, result.Tests[0].Status)
 	assert.Equal(t, 1.0, result.Tests[0].Duration)
 
-	assert.Equal(t, "Test2", result.Tests[1].Name)
+	assert.Equal(t, "Test2", result.Tests[1].GroupName)
+	assert.Equal(t, "", result.Tests[1].TestCaseName)
 	assert.Equal(t, types.StatusFail, result.Tests[1].Status)
 	assert.Equal(t, 2.0, result.Tests[1].Duration)
 
-	assert.Equal(t, "Test3", result.Tests[2].Name)
+	assert.Equal(t, "Test3", result.Tests[2].GroupName)
+	assert.Equal(t, "", result.Tests[2].TestCaseName)
 	assert.Equal(t, types.StatusSkip, result.Tests[2].Status)
 	assert.Equal(t, 0.5, result.Tests[2].Duration)
 }
 
 func TestParseYAML_IntAsString(t *testing.T) {
 	yamlData := `---
-- test_case_name: Test
+- test_group_name: Test
   test_status: passed
   duration: '0.00'
   test_file_path: ""
