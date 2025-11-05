@@ -9,6 +9,7 @@ import (
 
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/joshdk/go-junit"
+	"gopkg.in/yaml.v3"
 )
 
 // testPathIndicators lists substrings that indicate frames belonging to test code paths
@@ -413,5 +414,187 @@ func parseStackFrame(frameStr string) types.StackFrame {
 		File:     file,
 		Line:     line,
 		Function: function,
+	}
+}
+
+// ParseYAMLFile parses a YAML test results file
+func ParseYAMLFile(filePath string) (*ParseResult, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	return ParseYAML(data)
+}
+
+// ParseYAML parses YAML test results data
+func ParseYAML(data []byte) (*ParseResult, error) {
+	var yamlTests []map[string]interface{}
+	if err := yaml.Unmarshal(data, &yamlTests); err != nil {
+		return nil, fmt.Errorf("failed to parse YAML: %w", err)
+	}
+
+	result := &ParseResult{
+		Summary: TestSummary{},
+	}
+
+	testIdCounter := 0
+	for _, yamlMap := range yamlTests {
+		testIdCounter++
+		testResult := convertYAMLMapToTestResult(testIdCounter, yamlMap)
+		result.Tests = append(result.Tests, testResult)
+
+		// Update summary counts
+		result.Summary.Total++
+		switch testResult.Status {
+		case types.StatusPass:
+			result.Summary.Passed++
+		case types.StatusFail:
+			result.Summary.Failed++
+		case types.StatusSkip:
+			result.Summary.Skipped++
+		}
+	}
+
+	return result, nil
+}
+
+// extractString safely extracts a string value from a map
+func extractString(m map[string]interface{}, key string) string {
+	val, ok := m[key]
+	if !ok {
+		return ""
+	}
+	if str, ok := val.(string); ok {
+		return str
+	}
+	return ""
+}
+
+// extractInt safely extracts an int value from a map (handles both int and string types)
+func extractInt(m map[string]interface{}, key string) int {
+	val, ok := m[key]
+	if !ok {
+		return 0
+	}
+	switch v := val.(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case string:
+		if parsed, err := strconv.Atoi(v); err == nil {
+			return parsed
+		}
+		return 0
+	default:
+		return 0
+	}
+}
+
+// extractStringSlice safely extracts a []string value from a map
+func extractStringSlice(m map[string]interface{}, key string) []string {
+	val, ok := m[key]
+	if !ok {
+		return []string{}
+	}
+	slice, ok := val.([]interface{})
+	if !ok {
+		return []string{}
+	}
+	result := make([]string, 0, len(slice))
+	for _, item := range slice {
+		if str, ok := item.(string); ok {
+			result = append(result, str)
+		}
+	}
+	return result
+}
+
+// convertYAMLMapToTestResult converts a YAML map to our domain type
+func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.TestResult {
+	// Extract basic fields
+	name := extractString(yamlMap, "test_case_name")
+	testFilePath := extractString(yamlMap, "test_file_path")
+	testLineNumber := extractInt(yamlMap, "test_line_number")
+
+	// Parse status
+	statusStr := extractString(yamlMap, "test_status")
+	var status types.TestStatus
+	switch statusStr {
+	case "passed":
+		status = types.StatusPass
+	case "failed":
+		status = types.StatusFail
+	case "skipped":
+		status = types.StatusSkip
+	default:
+		status = types.StatusFail
+	}
+
+	// Parse duration
+	durationStr := extractString(yamlMap, "duration")
+	duration := 0.0
+	if durationStr != "" {
+		if parsed, err := strconv.ParseFloat(durationStr, 64); err == nil {
+			duration = parsed
+		}
+	}
+
+	// Parse failure cause
+	failureCauseStr := extractString(yamlMap, "failure_cause")
+	var failureCause types.FailureCause
+	switch failureCauseStr {
+	case "error":
+		failureCause = types.FailureCauseProductionCode
+	case "failed_assertion":
+		failureCause = types.FailureCauseAssertion
+	default:
+		// Empty for passed/skipped tests
+		failureCause = ""
+	}
+
+	// Extract error fields
+	errorMessage := extractString(yamlMap, "error_message")
+	errorFilePath := extractString(yamlMap, "error_file_path")
+	errorLineNumber := extractInt(yamlMap, "error_line_number")
+
+	// Extract assertion fields
+	failedAssertionMessage := extractString(yamlMap, "failed_assertion_details")
+	assertionFilePath := extractString(yamlMap, "assertion_file_path")
+	assertionLineNumber := extractInt(yamlMap, "assertion_line_number")
+
+	// Parse backtrace
+	backtraceStrings := extractStringSlice(yamlMap, "full_backtrace")
+	var fullBacktrace []types.StackFrame
+	for _, frameStr := range backtraceStrings {
+		frame := parseStackFrame(frameStr)
+		// Only add frames that have a valid file:line format (check for colon separator)
+		if frame.File != "" && strings.Contains(frameStr, ":") {
+			fullBacktrace = append(fullBacktrace, frame)
+		}
+	}
+
+	// Cap at 50 frames
+	if len(fullBacktrace) > 50 {
+		fullBacktrace = fullBacktrace[:50]
+	}
+
+	return types.TestResult{
+		Id:                        id,
+		Name:                      name,
+		Status:                    status,
+		ErrorMessage:              errorMessage,
+		ErrorFilePath:             errorFilePath,
+		ErrorLineNumber:           errorLineNumber,
+		FailedAssertionMessage:    failedAssertionMessage,
+		FailedAssertionFilePath:   assertionFilePath,
+		FailedAssertionLineNumber: assertionLineNumber,
+		TestFilePath:              testFilePath,
+		TestLineNumber:            testLineNumber,
+		FailureCause:              failureCause,
+		FullBacktrace:             fullBacktrace,
+		FilteredBacktrace:         make([]types.StackFrame, 0),
+		Duration:                   duration,
 	}
 }

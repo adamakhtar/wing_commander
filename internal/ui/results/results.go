@@ -1,15 +1,15 @@
 package results
 
 import (
-	"strings"
-
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
+	"github.com/adamakhtar/wing_commander/internal/ui/results/previewsection"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 //
@@ -22,6 +22,7 @@ type Model struct {
 	testRunner *runner.TestRunner
 	testExecutionResult *runner.TestExecutionResult
 	resultsSection resultssection.Model
+	previewSection previewsection.Model
 	width int
 	height int
 	error error
@@ -54,7 +55,8 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	// selectedTestResult := m.GetSelectedTestResultId()
+	selectedTestResult := m.GetSelectedTestResultId()
+	m.previewSection.SetTestResult(selectedTestResult)
 
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
@@ -77,11 +79,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	sb := strings.Builder{}
-	sb.WriteString("Results Screen!\n")
+	screen := lipgloss.JoinHorizontal(lipgloss.Top, m.resultsSection.View(), m.previewSection.View())
 
-	sb.WriteString(m.resultsSection.View())
-	return sb.String()
+	return screen
 }
 
 //
@@ -164,5 +164,6 @@ func (m *Model) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
 
-	m.resultsSection.SetSize(m.width, m.height)
+	m.resultsSection.SetSize(m.width / 2 , m.height)
+	m.previewSection.SetSize(m.width / 2 , m.height)
 }

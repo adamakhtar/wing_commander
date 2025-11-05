@@ -1,0 +1,213 @@
+---
+- test_case_name: Minitest::Result
+  test_status: failed
+  duration: '0.00'
+  test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  test_line_number: 10
+  failure_cause: error
+  error_message: |-
+    NameError: uninitialized constant ThingTest::Thing
+        test/thing_test.rb:11:in `test_boom_second_case'
+  error_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  error_line_number: 11
+  full_backtrace:
+  - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:11:in
+    `test_boom_second_case'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:95:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:191:in
+    `capture_exceptions'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:90:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:370:in
+    `time_it'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:89:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-reporters-1.7.1/lib/minitest/reporters.rb:48:in
+    `run_with_hooks'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:1210:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:449:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:436:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `each'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:474:in
+    `on_signal'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:461:in
+    `with_info_handler'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:431:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `block in __run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `map'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `__run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:289:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
+    `block in autorun'"
+- test_case_name: Minitest::Result
+  test_status: failed
+  duration: '0.00'
+  test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  test_line_number: 18
+  failure_cause: failed_assertion
+  failed_assertion_details: |-
+    Expected: "foo"
+      Actual: "bar"
+  assertion_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  assertion_line_number: 19
+  full_backtrace:
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/assertions.rb:176:in
+    `assert'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/assertions.rb:216:in
+    `assert_equal'"
+  - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:19:in
+    `test_expectation_not_met'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:95:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:191:in
+    `capture_exceptions'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:90:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:370:in
+    `time_it'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:89:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-reporters-1.7.1/lib/minitest/reporters.rb:48:in
+    `run_with_hooks'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:1210:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:449:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:436:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `each'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:474:in
+    `on_signal'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:461:in
+    `with_info_handler'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:431:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `block in __run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `map'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `__run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:289:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
+    `block in autorun'"
+- test_case_name: Minitest::Result
+  test_status: failed
+  duration: '0.00'
+  test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  test_line_number: 14
+  failure_cause: error
+  error_message: |-
+    RuntimeError: error in test
+        test/thing_test.rb:15:in `test_error_in_test'
+  error_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  error_line_number: 15
+  full_backtrace:
+  - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:15:in
+    `test_error_in_test'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:95:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:191:in
+    `capture_exceptions'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:90:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:370:in
+    `time_it'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:89:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-reporters-1.7.1/lib/minitest/reporters.rb:48:in
+    `run_with_hooks'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:1210:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:449:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:436:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `each'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:474:in
+    `on_signal'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:461:in
+    `with_info_handler'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:431:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `block in __run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `map'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `__run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:289:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
+    `block in autorun'"
+- test_case_name: Minitest::Result
+  test_status: failed
+  duration: '0.00'
+  test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  test_line_number: 6
+  failure_cause: error
+  error_message: |-
+    NameError: uninitialized constant ThingTest::Thing
+        test/thing_test.rb:7:in `test_boom_first_case'
+  error_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  error_line_number: 7
+  full_backtrace:
+  - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:7:in
+    `test_boom_first_case'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:95:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:191:in
+    `capture_exceptions'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:90:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:370:in
+    `time_it'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/test.rb:89:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-reporters-1.7.1/lib/minitest/reporters.rb:48:in
+    `run_with_hooks'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:1210:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:449:in
+    `run_one_method'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:436:in
+    `block (2 levels) in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `each'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:432:in
+    `block in run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:474:in
+    `on_signal'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:461:in
+    `with_info_handler'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:431:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `block in __run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `map'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:334:in
+    `__run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:289:in
+    `run'"
+  - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest.rb:86:in
+    `block in autorun'"

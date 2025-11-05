@@ -109,7 +109,7 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 
 func (m Model) GetSelectedTestResultId() int {
 	highlightedRow := m.resultsTable.HighlightedRow()
-	if highlightedRow == nil {
+	if len(highlightedRow.Data) == 0 {
 		return -1
 	}
 	return highlightedRow.Data[columnKeyMetaId].(int)

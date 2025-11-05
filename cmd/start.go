@@ -108,15 +108,9 @@ func processTestResultsPathOption(projectPath string, providedPath string) strin
         absPath = filepath.Join(projectPath, providedPath)
     }
 
-    // Ensure directory exists
-    if err := os.MkdirAll(absPath, 0755); err != nil {
-        fmt.Printf("❌ Error: unable to create testResultsPath %s: %v\n", absPath, err)
-        os.Exit(1)
-    }
-
     info, err := os.Stat(absPath)
-    if err != nil || !info.IsDir() {
-        fmt.Printf("❌ Error: testResultsPath %s is not a directory or does not exist\n", absPath)
+    if err != nil || info.IsDir() {
+        fmt.Printf("❌ Error: testResultsPath %s must be an existing file\n", absPath)
         os.Exit(1)
     }
 

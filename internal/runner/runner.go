@@ -34,11 +34,15 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
 
-    // Always parse JUnit XML files written by the test framework
-    testResults, err := r.parseTestResultsFromXMLFiles(testResultsPath)
+
+	var testResults []types.TestResult
+
+	// Parse YAML summary file
+	parsed, err := parser.ParseYAMLFile(testResultsPath)
 	if err != nil {
-        return nil, fmt.Errorf("failed to parse test output: %w", err)
+			return nil, fmt.Errorf("failed to parse YAML test output: %w", err)
 	}
+	testResults = parsed.Tests
 
 	// Normalize backtraces
 	normalizer := grouper.NewNormalizer(r.config)
