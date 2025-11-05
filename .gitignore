@@ -36,7 +36,7 @@ testdata/fixtures/*.json
 !testdata/fixtures/example.json
 
 # Dummy tests
-dummy/minitest_example/.wing_commander/test_results/*.xml
+dummy/minitest_example/.wing_commander/test_results/summary.yml
 
 # Documentation (keep context file)
 # CONTEXT.md is intentionally tracked
