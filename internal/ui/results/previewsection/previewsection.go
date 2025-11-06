@@ -37,50 +37,26 @@ func (m Model) View() string {
 	var paddingY = 0
 	var innerWidth = m.width - (2 * paddingX)
 
-	panelStyle := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("63")).
-		Padding(paddingY, paddingX)
+	content := ""
 
-	headingStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Margin(0, 0 , 1, 0)
-	alertStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("198")).
-		Foreground(lipgloss.Color("255")).
-		Align(lipgloss.Left).
-		Width(innerWidth).
-		Padding(1, 1).
-		Margin(0, 0 , 1, 0)
+	content = lipgloss.JoinVertical(
+		lipgloss.Top,
+		content,
+		m.renderTestHeading(innerWidth),
+	)
 
-	// stackFrameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	// codePreviewStyle := lipgloss.NewStyle().Background(lipgloss.Color("0")).Foreground(lipgloss.Color("15"))
-
-	content := headingStyle.Render(m.testResult.GroupName + " " + m.testResult.TestCaseName)
-
-	log.Debug("testResult", "FailedAssertionMessage", m.testResult.FailedAssertionMessage, "ErrorMessage", m.testResult.ErrorMessage)
-
-	switch {
-	case m.testResult.ErrorMessage != "":
-			errorAlert := alertStyle.Render(m.testResult.ErrorMessage)
-
-			content = lipgloss.JoinVertical(
-				lipgloss.Top,
-				content,
-				errorAlert,
-			)
-	case m.testResult.FailedAssertionMessage != "":
-			assertionAlert := alertStyle.Render(m.testResult.FailedAssertionMessage)
-			content = lipgloss.JoinVertical(
-				lipgloss.Top,
-				content,
-				assertionAlert)
-	}
+	content = lipgloss.JoinVertical(
+		lipgloss.Top,
+		content,
+		m.renderFailureMessage(innerWidth),
+	)
 
 	for _, frame := range m.testResult.FilteredBacktrace {
-		stackFrameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		backtraceLineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 		content = lipgloss.JoinVertical(
 			lipgloss.Top,
 			content,
-			stackFrameStyle.Render(frame.RelativeFilePath(m.ctx.Config.ProjectPath) + ":" + fmt.Sprintf("%d", frame.Line)))
+			backtraceLineStyle.Render(frame.RelativeFilePath(m.ctx.Config.ProjectPath) + ":" + fmt.Sprintf("%d", frame.Line)))
 
 		snippet, err := filesnippet.ExtractLines(frame.File, frame.Line, 5)
 		if err != nil {
@@ -94,9 +70,53 @@ func (m Model) View() string {
 			m.renderFileSnippet(snippet, innerWidth))
 	}
 
-	return panelStyle.Render(content)
+	return renderPanel(content, paddingX, paddingY)
 }
 
+func (m Model) renderTestHeading(innerWidth int) string {
+	headingStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("62")).
+		Margin(0, 0 , 1, 0)
+
+	testName := m.testResult.GroupName + " " + m.testResult.TestCaseName
+	return  headingStyle.Width(innerWidth).Render(testName)
+}
+
+
+func (m Model) renderFailureMessage(innerWidth int) string {
+	alertStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("198")).
+		Foreground(lipgloss.Color("255")).
+		Align(lipgloss.Left).
+		Width(innerWidth).
+		Padding(1, 1).
+		Margin(0, 0 , 1, 0)
+
+		switch {
+		case m.testResult.ErrorMessage != "":
+				return alertStyle.Render(m.testResult.ErrorMessage)
+		case m.testResult.FailedAssertionMessage != "":
+				return alertStyle.Render(m.testResult.FailedAssertionMessage)
+		default:
+			return ""
+		}
+}
+
+func (m Model) renderAssertionFailure(assertionMessage string, innerWidth int) string {
+	if m.testResult.FailedAssertionMessage == "" {
+		return ""
+	}
+
+	alertStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("198")).
+		Foreground(lipgloss.Color("255")).
+		Align(lipgloss.Left).
+		Width(innerWidth).
+		Padding(1, 1).
+		Margin(0, 0 , 1, 0)
+
+	return alertStyle.Render(m.testResult.FailedAssertionMessage)
+}
 
 func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth int) string {
 	fileSnippetStyle := lipgloss.NewStyle().Margin(0, 0 , 1, 0)
@@ -118,6 +138,15 @@ func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth in
 	}
 
 	return fileSnippetStyle.Render(content)
+}
+
+func renderPanel(content string, paddingX int, paddingY int) string {
+	panelStyle := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("63")).
+		Padding(paddingY, paddingX)
+
+	return panelStyle.Render(content)
 }
 
 func (m *Model) SetSize(width int, height int) {
