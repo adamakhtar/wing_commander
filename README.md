@@ -1,6 +1,36 @@
+# Heads up
+
+Currently WIP and not in a workable state.
+
+# About the code
+
+I started this project to
+
+1. scratch an itch (see below)
+2. learn Go and TUI development
+3. put LLMs through their paces and see how far they can go
+
+Regarding 3: LLMs start great but can veer off into sloppy code. Useful for learning Go, but needs cleanup. I'm now the primary driver, using LLMs more focused. Until I reach the first working version I'll be moving fast and commits may be a little messy.
+
 # Wing Commander
 
-A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
+A CLI/TUI tool for both running tests and analyzing their results
+
+## Rationale / Impetus
+
+Test frameworks often vomit up slabs of text when tests fail. Not offensive in isolation, but since we spend so much time hopping between code and tests, making them easier to run and parse will be nicer on our already tired minds.
+
+Some problems with tests:
+
+1. Running a single test file is simple, but running multiple (e.g., all controllers, models, and services related to Billing) is tedious. Wouldn't it be great to fuzzy search for tests or save commonly used groups?
+2. Our tests fail because of our project's code, yet backtraces often include filepaths from 3rd party libraries and frameworks. It just gets in the way.
+3. They often show long unwieldy absolute paths when shorter relative paths would work
+4. They don't show you the code so you can quickly ground yourself.
+5. They don't show which backtrace files you've changed since your last commit - the most likely culprits.
+
+I'm aiming to solve all these with this tool.
+
+Currently supports Ruby and minitest. Will expand to RSpec and perhaps JavaScript.
 
 ## Quick Start
 
@@ -22,60 +52,30 @@ wing_commander config
 
 ```
 
-## Keybindings
-
-- `↑↓` - Navigate between items
-- `Tab` - Switch between panes (Groups/Tests/Backtrace)
-- `f` - Toggle full/filtered frames display
-- `o` - Open selected file in editor at specific line
-- `r` - Run tests (or re-run all tests)
-- `q` - Quit
-
-## TUI Panels
-
-- **Panel 1 – Failure Groups**
-
-  - Groups failures by cause (Production Code Error, Test Definition Error, Failed Assertion)
-  - Each section shows: `{count} - {error message}` and `{bottom frame}`
-  - Section headers include failure cause icons: 🚀 (production), 🔧 (test definition), ❌ (assertion)
-  - Count and error message displayed in yellow
-  - Bottom frame shows relative file path and line number
-
-- **Panel 2 – Tests in Selected Group**
-
-  - First line: test name
-  - Second line: tail frames (all frames except the shared bottom frame) shown as a chain: `file1:line → file2:line → ...`
-  - If there are no additional frames, shows `(no additional frames)`
-
-- **Panel 3 – Backtrace**
-  - Full backtrace of the selected test
-  - Frames are highlighted by change intensity as per Git integration
-  - `f` toggles between filtered (project-only) and full frames
-
 ## Supported Test Frameworks
 
-- RSpec (Ruby)
-- Minitest (Ruby)
-- Pytest (Python)
-- Jest (JavaScript)
+- Minitest (Ruby) - in development
 
 ### Minitest setup
 
-If you use Minitest, ensure a JUnit XML reporter is enabled so Wing Commander can parse failures:
+Install this project's companion Minitest reporter gem (Coming soon)
 
 ```ruby
 # test/test_helper.rb
 require 'minitest/reporters'
 Minitest::Reporters.use! [
-  Minitest::Reporters::JUnitReporter.new('.wing_commander')
+  WingCommanderReporter.new(summary_output_path: "....")
 ]
 ```
 
-This produces XML files under `.wing_commander/` with embedded failure/error details. Wing Commander extracts stack frames from both the formatted failure body and any `SystemErr` output, including embedded `file.rb:LINE` tokens like `[test/thing_test.rb:18]`.
+This produces a test run summary at the given path which this CLI tool will read. You will likely want to gitignore the summary file.
 
 ## Development
 
 ```bash
+# Build and launch the cli tool against the dummy minitest suite in this repo
+make dev-minitest
+
 # Build development version
 make dev
 
@@ -85,21 +85,3 @@ make test
 # Clean build artifacts
 make clean
 ```
-
-## Architecture
-
-- **CLI-first configuration**: CLI options > Config file > Sensible defaults
-- **JUnit XML parsing**: Supports standard test output format
-- **Backtrace grouping**: Groups failures by error location similarity
-- **Git integration**: Highlights recently changed files with intensity levels
-- **Interactive TUI**: Built with Bubbletea for smooth navigation
-
-## Failure Cause Classification
-
-Wing Commander assigns each failed test one of three broad causes:
-
-- Test definition error: Failure originates in test code, framework, setup, or teardown.
-- Production code error: Exception raised by the application under test (stack points to app code).
-- Assertion failure: Test body completed; an expectation/matcher reported a mismatch.
-
-Heuristics are intentionally simple: assertion-like messages imply assertion failure; frames that clearly reference test paths/framework internals imply test definition error; otherwise the failure is attributed to production code. Hangs that produce no report are out of scope. Currently, path indicators include RSpec and Minitest conventions and can be extended as more frameworks are supported.
