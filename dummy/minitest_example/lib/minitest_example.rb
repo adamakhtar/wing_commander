@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require_relative "minitest_example/thing"
+require_relative "minitest_example/helper"
+require_relative "minitest_example/worker"
 
 module MinitestExample
   class Error < StandardError; end
