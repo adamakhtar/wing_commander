@@ -54,7 +54,9 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
+	var cmds []tea.Cmd
+	var previewSectionCmd tea.Cmd
+	var resultsSectionCmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
@@ -70,12 +72,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	resultsSection, cmd := m.resultsSection.Update(msg)
+	resultsSection, resultsSectionCmd := m.resultsSection.Update(msg)
 	m.resultsSection = resultsSection.(resultssection.Model)
+
+	previewSection, previewSectionCmd := m.previewSection.Update(msg)
+	m.previewSection = previewSection.(previewsection.Model)
+
 	selectedTestResult := m.GetSelectedTestResultId()
 	m.previewSection.SetTestResult(selectedTestResult)
 
-	return m, cmd
+  cmds = append(cmds, resultsSectionCmd, previewSectionCmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {

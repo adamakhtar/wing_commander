@@ -6,17 +6,23 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/filesnippet"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 )
 
-
+const (
+	paddingX = 1
+	paddingY = 0
+)
 
 type Model struct {
 	ctx *context.Context
 	width int
 	height int
 	testResult *types.TestResult
+	viewport viewport.Model
 }
 
 func NewModel(ctx *context.Context) Model {
@@ -25,17 +31,40 @@ func NewModel(ctx *context.Context) Model {
 		width: 0,
 		height: 0,
 		testResult: nil,
+		viewport: viewport.New(0, 0),
 	}
+}
+
+func (m Model) Init() tea.Cmd {
+	return nil
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	m.viewport, cmd = m.viewport.Update(msg)
+	return m, cmd
+}
+
+
+func (m Model) innerDimensions(width, height int) (innerWidth, innerHeight int) {
+	innerWidth = width - (2 * paddingX)
+	innerHeight = height - 2
+	return innerWidth, innerHeight
 }
 
 func (m Model) View() string {
 	if m.testResult == nil {
-		return "No Test Result Selected\n"
+		return renderPanel("No Test Result Selected\n", paddingX, paddingY)
 	}
 
-	var paddingX = 1
-	var paddingY = 0
-	var innerWidth = m.width - (2 * paddingX)
+	content := m.viewport.View()
+	return renderPanel(content, paddingX, paddingY)
+}
+
+func (m Model) buildContent(innerWidth int) string {
+	if m.testResult == nil {
+		return "No Test Result Selected\n"
+	}
 
 	content := ""
 
@@ -70,7 +99,7 @@ func (m Model) View() string {
 			m.renderFileSnippet(snippet, innerWidth))
 	}
 
-	return renderPanel(content, paddingX, paddingY)
+	return content
 }
 
 func (m Model) renderTestHeading(innerWidth int) string {
@@ -100,22 +129,6 @@ func (m Model) renderFailureMessage(innerWidth int) string {
 		default:
 			return ""
 		}
-}
-
-func (m Model) renderAssertionFailure(assertionMessage string, innerWidth int) string {
-	if m.testResult.FailedAssertionMessage == "" {
-		return ""
-	}
-
-	alertStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("198")).
-		Foreground(lipgloss.Color("255")).
-		Align(lipgloss.Left).
-		Width(innerWidth).
-		Padding(1, 1).
-		Margin(0, 0 , 1, 0)
-
-	return alertStyle.Render(m.testResult.FailedAssertionMessage)
 }
 
 func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth int) string {
@@ -152,8 +165,16 @@ func renderPanel(content string, paddingX int, paddingY int) string {
 func (m *Model) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
+
+	innerWidth, innerHeight := m.innerDimensions(width, height)
+	m.viewport.Width = innerWidth
+	m.viewport.Height = innerHeight
+	m.viewport.SetContent(m.buildContent(innerWidth))
 }
 
 func (m *Model) SetTestResult(testResult *types.TestResult) {
 	m.testResult = testResult
+
+	innerWidth, _ := m.innerDimensions(m.width, m.height)
+	m.viewport.SetContent(m.buildContent(innerWidth))
 }
