@@ -3,6 +3,7 @@ package previewsection
 import (
 	"fmt"
 
+	"github.com/adamakhtar/wing_commander/internal/filesnippet"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/charmbracelet/lipgloss"
@@ -80,9 +81,43 @@ func (m Model) View() string {
 			lipgloss.Top,
 			content,
 			stackFrameStyle.Render(frame.RelativeFilePath(m.ctx.Config.ProjectPath) + ":" + fmt.Sprintf("%d", frame.Line)))
+
+		snippet, err := filesnippet.ExtractLines(frame.File, frame.Line, 5)
+		if err != nil {
+			log.Error("failed to extract lines", "error", err)
+			continue
+		}
+
+		content = lipgloss.JoinVertical(
+			lipgloss.Top,
+			content,
+			m.renderFileSnippet(snippet, innerWidth))
 	}
 
 	return panelStyle.Render(content)
+}
+
+
+func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth int) string {
+	fileSnippetStyle := lipgloss.NewStyle().Margin(0, 0 , 1, 0)
+	fileLineStyle := lipgloss.NewStyle().Background(lipgloss.Color("0")).Foreground(lipgloss.Color("15"))
+	highlightedFileLineStyle := lipgloss.NewStyle().Background(lipgloss.Color("198")).Foreground(lipgloss.Color("255"))
+
+	content := ""
+	for _, line := range snippet.Lines {
+		lineStyle := fileLineStyle
+
+		if line.IsCenter {
+			lineStyle = highlightedFileLineStyle
+		}
+
+		content = lipgloss.JoinVertical(
+			lipgloss.Top,
+			content,
+			lineStyle.Width(innerWidth).Render(fmt.Sprintf("%d: %s", line.Number, line.Content)))
+	}
+
+	return fileSnippetStyle.Render(content)
 }
 
 func (m *Model) SetSize(width int, height int) {
