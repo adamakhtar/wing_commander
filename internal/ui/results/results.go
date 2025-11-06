@@ -10,7 +10,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 //
@@ -41,6 +40,7 @@ func NewModel(ctx *context.Context) Model {
 		testRunner: testRunner,
 		testRuns: NewTestRuns(),
 		resultsSection: resultssection.NewModel(ctx),
+		previewSection: previewsection.NewModel(ctx),
 	}
 	return model
 }
@@ -55,9 +55,6 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-
-	selectedTestResult := m.GetSelectedTestResultId()
-	m.previewSection.SetTestResult(selectedTestResult)
 
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
@@ -75,6 +72,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	resultsSection, cmd := m.resultsSection.Update(msg)
 	m.resultsSection = resultsSection.(resultssection.Model)
+	selectedTestResult := m.GetSelectedTestResultId()
+	m.previewSection.SetTestResult(selectedTestResult)
 
 	return m, cmd
 }
@@ -119,14 +118,10 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
 
-		log.Debug("Executing test run", "testRunId", testRunId, "filepaths", testRun.Filepaths, "testResultsPath", m.ctx.Config.TestResultsPath)
-
 		testExecutionResult, err := m.testRunner.ExecuteTests(testRunId, testRun.Filepaths, m.ctx.Config.TestResultsPath)
 		if err != nil {
-			log.Debug("Error executing test run", "testRunId", testRunId, "error", err)
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
-		log.Debug("Test execution completed", "testRunId", testRunId, "testExecutionResult", testExecutionResult)
 		return TestExecutionCompletedMsg{TestRunId: testRunId, TestExecutionResult: testExecutionResult}
 	}
 }
@@ -157,7 +152,6 @@ func (m Model) GetSelectedTestResultId() *types.TestResult {
 
 
 func (m *Model) handleTestExecutionCompletion(testExecutionResult *runner.TestExecutionResult) {
-	log.Debug("Test execution completed", "testExecutionResult", testExecutionResult)
 	m.testExecutionResult = testExecutionResult
 	m.resultsSection.SetRows(testExecutionResult)
 }

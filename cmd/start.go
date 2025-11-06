@@ -13,7 +13,6 @@ import (
 
 	"github.com/adamakhtar/wing_commander/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -54,8 +53,6 @@ func start(args []string) {
 
 	projectPath := processProjectPathArg(args)
 	testResultsPath := processTestResultsPathOption(projectPath, testResultsPath)
-
-	log.Debug("Starting Wing Commander", "projectPath", projectPath, "-debug", debug, "-command", runCommand, "-test-file-pattern", testFilePattern)
 
 	config := config.NewConfig(projectPath, runCommand, testFilePattern, testResultsPath, debug)
 	model := ui.NewModel(config)

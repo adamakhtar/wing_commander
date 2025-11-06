@@ -21,7 +21,6 @@ func SetupLogger(debug bool) (func() error, error) {
 		log.SetTimeFormat(time.Kitchen)
 		log.SetReportCaller(true)
 		log.SetLevel(logLevel)
-		log.Debug("Logging to debug.log")
 	} else {
 		return nil, fmt.Errorf("failed to open debug file: %w", err)
 	}

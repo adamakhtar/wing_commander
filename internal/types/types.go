@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"path/filepath"
+	"time"
+)
 
 // StackFrame represents a single frame in a backtrace
 type StackFrame struct {
@@ -10,6 +13,18 @@ type StackFrame struct {
 	ChangeIntensity int    // 0-3 (0 = no highlight, 3 = strongest)
 	ChangeReason    string // "uncommitted" | "last_commit" | "previous_commit"
 }
+
+func (s StackFrame) RelativeFilePath(absolutePath string) string {
+	if filepath.IsAbs(s.File) {
+		rel, err := filepath.Rel(absolutePath, s.File)
+		if err != nil {
+			return s.File
+		}
+		return rel
+	}
+	return s.File
+}
+
 
 // TestStatus represents the status of a test
 type TestStatus string
