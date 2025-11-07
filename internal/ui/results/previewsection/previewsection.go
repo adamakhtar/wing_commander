@@ -19,15 +19,17 @@ const (
 
 type Model struct {
 	ctx *context.Context
+	focus bool
 	width int
 	height int
 	testResult *types.TestResult
 	viewport viewport.Model
 }
 
-func NewModel(ctx *context.Context) Model {
+func NewModel(ctx *context.Context, focus bool) Model {
 	return Model{
 		ctx: ctx,
+		focus: focus,
 		width: 0,
 		height: 0,
 		testResult: nil,
@@ -40,6 +42,10 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.isBlurred()  {
+		return m, nil
+	}
+
 	var cmd tea.Cmd
 	m.viewport, cmd = m.viewport.Update(msg)
 	return m, cmd
@@ -54,11 +60,11 @@ func (m Model) innerDimensions(width, height int) (innerWidth, innerHeight int) 
 
 func (m Model) View() string {
 	if m.testResult == nil {
-		return renderPanel("No Test Result Selected\n", paddingX, paddingY)
+		return m.renderPanel("No Test Result Selected\n")
 	}
 
 	content := m.viewport.View()
-	return renderPanel(content, paddingX, paddingY)
+	return m.renderPanel(content)
 }
 
 func (m Model) buildContent(innerWidth int) string {
@@ -153,11 +159,15 @@ func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth in
 	return fileSnippetStyle.Render(content)
 }
 
-func renderPanel(content string, paddingX int, paddingY int) string {
+func (m Model)renderPanel(content string) string {
 	panelStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("63")).
 		Padding(paddingY, paddingX)
+
+	if m.isFocused() {
+		panelStyle = panelStyle.BorderForeground(lipgloss.Color("5"))
+	}
 
 	return panelStyle.Render(content)
 }
@@ -177,4 +187,20 @@ func (m *Model) SetTestResult(testResult *types.TestResult) {
 
 	innerWidth, _ := m.innerDimensions(m.width, m.height)
 	m.viewport.SetContent(m.buildContent(innerWidth))
+}
+
+func (m *Model) ToggleFocus() {
+	m.focus = !m.focus
+}
+
+func (m Model) Focus() bool {
+	return m.focus
+}
+
+func (m Model) isBlurred() bool {
+	return !m.focus
+}
+
+func (m Model) isFocused() bool {
+	return m.focus
 }

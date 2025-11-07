@@ -6,12 +6,17 @@ import (
 
 type KeyMap struct {
 	PickFiles key.Binding
+	SwitchSection key.Binding
 }
 
 var ResultsKeys = KeyMap{
 	PickFiles: key.NewBinding(
 		key.WithKeys("t"),
 		key.WithHelp("t", "pick tests to run"),
+	),
+	SwitchSection: key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "switch section"),
 	),
 }
 

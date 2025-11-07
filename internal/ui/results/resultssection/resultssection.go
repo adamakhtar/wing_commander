@@ -19,6 +19,7 @@ const (
 
 type Model struct {
 	ctx *context.Context
+	focus bool
 	resultsTable table.Model
 }
 
@@ -26,7 +27,7 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel(ctx *context.Context) Model {
+func NewModel(ctx *context.Context, focus bool) Model {
 	columns := getColumnConfiguration(3, 15, 15)
 
 	resultsTable := table.New(columns).Focused(true).WithBaseStyle(
@@ -35,6 +36,7 @@ func NewModel(ctx *context.Context) Model {
 
 	return Model{
 		ctx: ctx,
+		focus: focus,
 		resultsTable: resultsTable,
 	}
 }
@@ -48,7 +50,12 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.isBlurred()  {
+		return m, nil
+	}
+
 	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	// case table.UserEventHighlightedIndexChanged:
 	// 	m.handleResultTableHighlightedRowChange(msg)
@@ -65,6 +72,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	var panelStyle = lipgloss.NewStyle().BorderStyle(lipgloss.NormalBorder()).Padding(1, 1)
+
+	if m.isFocused() {
+		panelStyle = panelStyle.BorderForeground(lipgloss.Color("5"))
+	}
 
 	return panelStyle.Render(m.resultsTable.View())
 }
@@ -131,6 +142,21 @@ func (m Model) GetSelectedTestResultId() int {
 	return id.(int)
 }
 
+func (m *Model) ToggleFocus() {
+	m.focus = !m.focus
+}
+
+func (m Model) Focus() bool {
+	return m.focus
+}
+
+func (m Model) isBlurred() bool {
+	return !m.focus
+}
+
+func (m Model) isFocused() bool {
+	return m.focus
+}
 //
 // INTERNAL FUNCTIONS
 //================================================

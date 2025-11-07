@@ -39,8 +39,8 @@ func NewModel(ctx *context.Context) Model {
 		ctx: ctx,
 		testRunner: testRunner,
 		testRuns: NewTestRuns(),
-		resultsSection: resultssection.NewModel(ctx),
-		previewSection: previewsection.NewModel(ctx),
+		resultsSection: resultssection.NewModel(ctx, true),
+		previewSection: previewsection.NewModel(ctx, false),
 	}
 	return model
 }
@@ -55,8 +55,6 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	var previewSectionCmd tea.Cmd
-	var resultsSectionCmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case TestExecutionCompletedMsg:
@@ -69,19 +67,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, keys.ResultsKeys.PickFiles):
 			return m, switchToFilePickerCmd
+		case key.Matches(msg, keys.ResultsKeys.SwitchSection):
+			m.resultsSection.ToggleFocus()
+			m.previewSection.ToggleFocus()
 		}
 	}
 
 	resultsSection, resultsSectionCmd := m.resultsSection.Update(msg)
 	m.resultsSection = resultsSection.(resultssection.Model)
+	cmds = append(cmds, resultsSectionCmd)
 
 	previewSection, previewSectionCmd := m.previewSection.Update(msg)
 	m.previewSection = previewSection.(previewsection.Model)
+	cmds = append(cmds, previewSectionCmd)
 
 	selectedTestResult := m.GetSelectedTestResultId()
 	m.previewSection.SetTestResult(selectedTestResult)
-
-  cmds = append(cmds, resultsSectionCmd, previewSectionCmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -157,7 +158,6 @@ func (m Model) GetSelectedTestResultId() *types.TestResult {
 	}
 	return nil
 }
-
 
 func (m *Model) handleTestExecutionCompletion(testExecutionResult *runner.TestExecutionResult) {
 	m.testExecutionResult = testExecutionResult
