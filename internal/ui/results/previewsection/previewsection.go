@@ -2,6 +2,7 @@ package previewsection
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/filesnippet"
 	"github.com/adamakhtar/wing_commander/internal/types"
@@ -54,44 +55,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) innerDimensions(width, height int) (innerWidth, innerHeight int) {
 	innerWidth = width - (2 * paddingX)
-	innerHeight = height - 2
+	innerHeight = height - (2 * paddingY)
 	return innerWidth, innerHeight
 }
 
 func (m Model) View() string {
-	if m.testResult == nil {
-		return m.renderPanel("No Test Result Selected\n")
-	}
-
 	content := m.viewport.View()
 	return m.renderPanel(content)
 }
 
 func (m Model) buildContent(innerWidth int) string {
 	if m.testResult == nil {
-		return "No Test Result Selected\n"
+		return lipgloss.PlaceHorizontal(innerWidth, lipgloss.Center, m.ctx.Styles.BodyTextLight.Render("No Test Result Selected"))
 	}
 
-	content := ""
+	sb := strings.Builder{}
 
-	content = lipgloss.JoinVertical(
-		lipgloss.Top,
-		content,
-		m.renderTestHeading(innerWidth),
-	)
+	sb.WriteString(m.renderTestHeading(innerWidth))
+	sb.WriteString("\n")
+	sb.WriteString(m.renderTestFailureType(innerWidth))
+	sb.WriteString("\n")
+	sb.WriteString(m.renderFailureMessage(innerWidth))
+	sb.WriteString("\n")
 
-	content = lipgloss.JoinVertical(
-		lipgloss.Top,
-		content,
-		m.renderFailureMessage(innerWidth),
-	)
 
 	for _, frame := range m.testResult.FilteredBacktrace {
-		backtraceLineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-		content = lipgloss.JoinVertical(
-			lipgloss.Top,
-			content,
-			backtraceLineStyle.Render(frame.RelativeFilePath(m.ctx.Config.ProjectPath) + ":" + fmt.Sprintf("%d", frame.Line)))
+
+		line := frame.RelativeFilePath(m.ctx.Config.ProjectPath) + ":" + fmt.Sprintf("%d", frame.Line)
+		sb.WriteString(m.ctx.Styles.PreviewSection.BacktracePath.Width(innerWidth).Render(line))
 
 		snippet, err := filesnippet.ExtractLines(frame.File, frame.Line, 5)
 		if err != nil {
@@ -99,32 +90,45 @@ func (m Model) buildContent(innerWidth int) string {
 			continue
 		}
 
-		content = lipgloss.JoinVertical(
-			lipgloss.Top,
-			content,
-			m.renderFileSnippet(snippet, innerWidth))
+		sb.WriteString(m.renderFileSnippet(snippet, innerWidth))
+		sb.WriteString("\n")
 	}
 
-	return content
+	// log.Debug("sb", "sb", sb.String())
+
+	return sb.String()
 }
 
 func (m Model) renderTestHeading(innerWidth int) string {
-	headingStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("62")).
-		Margin(0, 0 , 1, 0)
-
 	testName := m.testResult.GroupName + " " + m.testResult.TestCaseName
-	return  headingStyle.Width(innerWidth).Render(testName)
+	testPath := m.testResult.TestFilePath + ":" + fmt.Sprintf("%d", m.testResult.TestLineNumber)
+
+	return lipgloss.JoinVertical(lipgloss.Top,
+		m.ctx.Styles.HeadingTextStyle.Width(innerWidth).Render(testName),
+		m.ctx.Styles.PreviewSection.BacktracePath.Width(innerWidth).Margin(0, 0 , 1).Render(testPath),
+	)
+}
+
+func (m Model) renderTestFailureType(innerWidth int) string {
+	switch m.testResult.FailureCause {
+	case types.FailureCauseTestDefinition:
+		return m.ctx.Styles.TestDefinitionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+	case types.FailureCauseProductionCode:
+		return m.ctx.Styles.ProductionCodeErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+	case types.FailureCauseAssertion:
+		return m.ctx.Styles.AssertionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+	default:
+		return ""
+	}
 }
 
 
 func (m Model) renderFailureMessage(innerWidth int) string {
-	alertStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("198")).
-		Foreground(lipgloss.Color("255")).
+	alertStyle := m.ctx.Styles.Preview.AlertStyle
+	alertStyle = alertStyle.
 		Align(lipgloss.Left).
 		Width(innerWidth).
-		Padding(1, 1).
+		Padding(1, 4).
 		Margin(0, 0 , 1, 0)
 
 		switch {
@@ -138,16 +142,12 @@ func (m Model) renderFailureMessage(innerWidth int) string {
 }
 
 func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth int) string {
-	fileSnippetStyle := lipgloss.NewStyle().Margin(0, 0 , 1, 0)
-	fileLineStyle := lipgloss.NewStyle().Background(lipgloss.Color("0")).Foreground(lipgloss.Color("15"))
-	highlightedFileLineStyle := lipgloss.NewStyle().Background(lipgloss.Color("198")).Foreground(lipgloss.Color("255"))
-
 	content := ""
 	for _, line := range snippet.Lines {
-		lineStyle := fileLineStyle
+		lineStyle := m.ctx.Styles.PreviewSection.CodeLine
 
 		if line.IsCenter {
-			lineStyle = highlightedFileLineStyle
+			lineStyle = m.ctx.Styles.PreviewSection.HighlightedCodeLine
 		}
 
 		content = lipgloss.JoinVertical(
@@ -156,17 +156,16 @@ func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth in
 			lineStyle.Width(innerWidth).Render(fmt.Sprintf("%d: %s", line.Number, line.Content)))
 	}
 
-	return fileSnippetStyle.Render(content)
+	return lipgloss.NewStyle().Margin(0, 0 , 1, 0).Render(content)
 }
 
 func (m Model)renderPanel(content string) string {
-	panelStyle := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("63")).
-		Padding(paddingY, paddingX)
+	panelStyle := m.ctx.Styles.Border.Padding(paddingY, paddingX)
 
 	if m.isFocused() {
-		panelStyle = panelStyle.BorderForeground(lipgloss.Color("5"))
+		panelStyle = panelStyle.Inherit(m.ctx.Styles.BorderActive)
+	} else {
+		panelStyle = panelStyle.Inherit(m.ctx.Styles.BorderMuted)
 	}
 
 	return panelStyle.Render(content)

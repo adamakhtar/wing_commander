@@ -10,6 +10,7 @@ import (
 
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/logger"
+	"github.com/adamakhtar/wing_commander/internal/ui/styles"
 
 	"github.com/adamakhtar/wing_commander/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
@@ -55,7 +56,8 @@ func start(args []string) {
 	testResultsPath := processTestResultsPathOption(projectPath, testResultsPath)
 
 	config := config.NewConfig(projectPath, runCommand, testFilePattern, testResultsPath, debug)
-	model := ui.NewModel(config)
+	styles := styles.BuildStyles(styles.DefaultTheme)
+	model := ui.NewModel(config, styles)
 
 	program := tea.NewProgram(model, tea.WithAltScreen())
 

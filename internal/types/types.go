@@ -51,6 +51,19 @@ func (fc FailureCause) Abbreviated() string {
 	}
 }
 
+func (fc FailureCause) String() string {
+	switch fc {
+	case FailureCauseTestDefinition:
+		return "Test Definition Error"
+	case FailureCauseProductionCode:
+		return "Production Code Error"
+	case FailureCauseAssertion:
+		return "Assertion Failure"
+	default:
+		return ""
+	}
+}
+
 const (
     // FailureCauseTestDefinition indicates the failure originated from test code/framework
     FailureCauseTestDefinition FailureCause = "test_definition_error"

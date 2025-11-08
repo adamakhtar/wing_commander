@@ -6,11 +6,11 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/ui/filepicker"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/adamakhtar/wing_commander/internal/ui/results"
+	"github.com/adamakhtar/wing_commander/internal/ui/styles"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-//
 // TYPES
 //================================================
 
@@ -26,10 +26,11 @@ type Model struct {
 // BUILDERS
 //================================================
 
-func NewModel(cfg *config.Config) tea.Model {
+func NewModel(cfg *config.Config, styles styles.Styles) tea.Model {
 	ctx := &context.Context{
 		CurrentScreen: context.ResultsScreen,
 		Config: cfg,
+		Styles: styles,
 	}
 
 	model := Model{
