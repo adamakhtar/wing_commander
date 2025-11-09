@@ -70,6 +70,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, keys.ResultsKeys.SwitchSection):
 			m.resultsSection.ToggleFocus()
 			m.previewSection.ToggleFocus()
+		case key.Matches(msg, keys.ResultsSectionKeys.RunAllTests):
+			testRun, err := m.AddTestRun([]string{""})
+			if err != nil {
+				// TODO - handle error
+				return m, nil
+			}
+			return m, m.ExecuteTestRunCmd(testRun.Id)
 		}
 	}
 
