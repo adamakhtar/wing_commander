@@ -1,4 +1,4 @@
-package results
+package testruns
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/runner"
 )
 
-var testRunIdCounter int = 0
+var testRunIDCounter int
 
-func generateTestRunId() int {
-	testRunIdCounter++
-	return testRunIdCounter
+func generateTestRunID() int {
+	testRunIDCounter++
+	return testRunIDCounter
 }
 
 type TestRuns struct {
@@ -18,10 +18,10 @@ type TestRuns struct {
 }
 
 type TestRun struct {
-	Id int
+	Id        int
 	Filepaths []string
-	Result *runner.TestExecutionResult
-	Error string
+	Result    *runner.TestExecutionResult
+	Error     string
 }
 
 func NewTestRuns() TestRuns {
@@ -32,7 +32,7 @@ func NewTestRuns() TestRuns {
 
 func (tr *TestRuns) Add(filepaths []string) (TestRun, error) {
 	testRun := TestRun{
-		Id: generateTestRunId(),
+		Id:        generateTestRunID(),
 		Filepaths: filepaths,
 	}
 	_, ok := tr.testRuns[testRun.Id]

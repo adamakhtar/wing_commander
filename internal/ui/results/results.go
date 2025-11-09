@@ -7,6 +7,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/previewsection"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
+	"github.com/adamakhtar/wing_commander/internal/ui/results/testruns"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,15 +18,15 @@ import (
 //================================================
 
 type Model struct {
-	ctx *context.Context
-	testRuns TestRuns
-	testRunner *runner.TestRunner
+	ctx                 *context.Context
+	testRuns            testruns.TestRuns
+	testRunner          *runner.TestRunner
 	testExecutionResult *runner.TestExecutionResult
-	resultsSection resultssection.Model
-	previewSection previewsection.Model
-	width int
-	height int
-	error error
+	resultsSection      resultssection.Model
+	previewSection      previewsection.Model
+	width               int
+	height              int
+	error               error
 }
 
 //
@@ -36,9 +37,9 @@ func NewModel(ctx *context.Context) Model {
 	testRunner := runner.NewTestRunner(ctx.Config)
 
 	model := Model{
-		ctx: ctx,
-		testRunner: testRunner,
-		testRuns: NewTestRuns(),
+		ctx:            ctx,
+		testRunner:     testRunner,
+		testRuns:       testruns.NewTestRuns(),
 		resultsSection: resultssection.NewModel(ctx, true),
 		previewSection: previewsection.NewModel(ctx, false),
 	}
@@ -110,13 +111,13 @@ type TestRunExecutedMsg struct {
 }
 
 type TestExecutionCompletedMsg struct {
-	TestRunId int
-	TestExecutionResult    *runner.TestExecutionResult
+	TestRunId           int
+	TestExecutionResult *runner.TestExecutionResult
 }
 
 type TestExecutionFailedMsg struct {
 	TestRunId int
-	error error
+	error     error
 }
 
 //
@@ -128,7 +129,7 @@ func switchToFilePickerCmd() tea.Msg {
 }
 
 func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
-	return func () tea.Msg {
+	return func() tea.Msg {
 		testRun, err := m.testRuns.Get(testRunId)
 		if err != nil {
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
@@ -145,7 +146,7 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 // EXTERNAL FUNCTIONS
 //================================================
 
-func (m *Model) AddTestRun(filepaths []string) (TestRun, error) {
+func (m *Model) AddTestRun(filepaths []string) (testruns.TestRun, error) {
 	testRun, err := m.testRuns.Add(filepaths)
 	return testRun, err
 }
@@ -179,6 +180,6 @@ func (m *Model) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
 
-	m.resultsSection.SetSize(m.width / 2 , m.height)
-	m.previewSection.SetSize(m.width / 2 , m.height)
+	m.resultsSection.SetSize(m.width/2, m.height)
+	m.previewSection.SetSize(m.width/2, m.height)
 }
