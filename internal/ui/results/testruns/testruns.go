@@ -2,6 +2,7 @@ package testruns
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
 )
@@ -28,6 +29,17 @@ func NewTestRuns() TestRuns {
 	return TestRuns{
 		testRuns: make(map[int]TestRun),
 	}
+}
+
+func (tr *TestRuns) AllRecentFirst() []TestRun {
+	orderedRecentFirst := make([]TestRun, 0, len(tr.testRuns))
+	for _, testRun := range tr.testRuns {
+		orderedRecentFirst = append(orderedRecentFirst, testRun)
+	}
+	sort.Slice(orderedRecentFirst, func(i, j int) bool {
+		return orderedRecentFirst[i].Id > orderedRecentFirst[j].Id
+	})
+	return orderedRecentFirst
 }
 
 func (tr *TestRuns) Add(filepaths []string) (TestRun, error) {

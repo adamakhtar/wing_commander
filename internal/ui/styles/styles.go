@@ -159,6 +159,9 @@ type Styles struct {
 		HighlightedCodeLine lipgloss.Style
 		SnippetBorder lipgloss.Style
 	}
+	TestRunsSection struct {
+		Label lipgloss.Style
+	}
 	// FaintTextStyle lipgloss.Style
 	// Results struct {
 
@@ -193,5 +196,6 @@ func BuildStyles(theme Theme) Styles {
 	s.PreviewSection.HighlightedCodeLine = lipgloss.NewStyle().Background(Pink800).Foreground(White)
 	s.PreviewSection.SnippetBorder = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(theme.PrimaryBorderColor)
 
+	s.TestRunsSection.Label = lipgloss.NewStyle().Foreground(theme.BodyTextLight)
 	return s
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/ui/results/previewsection"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/testruns"
+	"github.com/adamakhtar/wing_commander/internal/ui/results/testrunssection"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -22,11 +23,12 @@ type Model struct {
 	testRuns            testruns.TestRuns
 	testRunner          *runner.TestRunner
 	testExecutionResult *runner.TestExecutionResult
-	resultsSection      resultssection.Model
-	previewSection      previewsection.Model
-	width               int
-	height              int
-	error               error
+	resultsSection resultssection.Model
+	previewSection previewsection.Model
+	testRunsSection testrunssection.Model
+	width int
+	height int
+	error error
 }
 
 //
@@ -35,13 +37,15 @@ type Model struct {
 
 func NewModel(ctx *context.Context) Model {
 	testRunner := runner.NewTestRunner(ctx.Config)
+	testRuns := testruns.NewTestRuns()
 
 	model := Model{
 		ctx:            ctx,
 		testRunner:     testRunner,
-		testRuns:       testruns.NewTestRuns(),
+		testRuns:       testRuns,
 		resultsSection: resultssection.NewModel(ctx, true),
 		previewSection: previewsection.NewModel(ctx, false),
+		testRunsSection: testrunssection.NewModel(ctx, &testRuns),
 	}
 	return model
 }
@@ -96,7 +100,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	screen := lipgloss.JoinHorizontal(lipgloss.Top, m.resultsSection.View(), m.previewSection.View())
+	screen := lipgloss.JoinHorizontal(lipgloss.Top, m.testRunsSection.View(), m.resultsSection.View(), m.previewSection.View())
 
 	return screen
 }
@@ -180,6 +184,7 @@ func (m *Model) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
 
-	m.resultsSection.SetSize(m.width/2, m.height)
-	m.previewSection.SetSize(m.width/2, m.height)
+	m.testRunsSection.SetSize(m.width * 2/10, m.height)
+	m.resultsSection.SetSize(m.width * 4/10, m.height)
+	m.previewSection.SetSize(m.width * 4/10, m.height)
 }
