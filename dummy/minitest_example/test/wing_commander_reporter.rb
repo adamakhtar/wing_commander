@@ -104,13 +104,10 @@ class WingCommanderReporter < Minitest::Reporters::BaseReporter
 
     # Failure cause and details
     if result.failure
-      failure_cause = determine_failure_cause(result)
-      summary['failure_cause'] = failure_cause
-
-      if failure_cause == 'error'
-        extract_error_details(result, summary)
-      elsif failure_cause == 'failed_assertion'
-        extract_assertion_details(result, summary)
+      failure_details = extract_failure_details(result)
+      failure_details.each do |key, value|
+        next if value.nil? || value == ''
+        summary[key] = value
       end
 
       # Full backtrace
@@ -135,53 +132,59 @@ class WingCommanderReporter < Minitest::Reporters::BaseReporter
     end
   end
 
-  def determine_failure_cause(result)
-    return nil unless result.failure
+  def extract_failure_details(result)
+    failure = result.failure
+    return {} unless failure
 
-    if result.error?
-      'error'
-    elsif result.failure.is_a?(Minitest::Assertion)
-      'failed_assertion'
+    if failure.is_a?(Minitest::Assertion) && !result.error?
+      extract_assertion_details(failure)
     else
-      'error'
+      extract_error_details(result)
     end
   end
 
-  def extract_error_details(result, summary)
+  def extract_error_details(result)
     exception = result.failure.exception
-    return unless exception
+    return {} unless exception
 
-    summary['error_message'] = exception.message
+    details = {
+      'failure_details' => exception.message
+    }
 
     # Try to get error location from backtrace_locations first
     if exception.respond_to?(:backtrace_locations) && exception.backtrace_locations&.first
       location = exception.backtrace_locations.first
-      summary['error_file_path'] = File.expand_path(location.path)
-      summary['error_line_number'] = location.lineno
+      details['failure_file_path'] = File.expand_path(location.path)
+      details['failure_line_number'] = location.lineno
     elsif exception.backtrace&.first
       # Fallback to parsing first backtrace line
       file_path, line_number = parse_backtrace_line(exception.backtrace.first)
       if file_path
-        summary['error_file_path'] = File.expand_path(file_path)
-        summary['error_line_number'] = line_number
+        details['failure_file_path'] = File.expand_path(file_path)
+        details['failure_line_number'] = line_number
       end
     end
+
+    details
   end
 
-  def extract_assertion_details(result, summary)
-    failure = result.failure
-    return unless failure
+  def extract_assertion_details(failure)
+    return {} unless failure
 
-    summary['failed_assertion_details'] = failure.message
+    details = {
+      'failure_details' => failure.message
+    }
 
     # Parse location string (format: "file:line" or "file:line:in method")
     if failure.location
       file_path, line_number = parse_location_string(failure.location)
       if file_path
-        summary['assertion_file_path'] = File.expand_path(file_path)
-        summary['assertion_line_number'] = line_number
+        details['failure_file_path'] = File.expand_path(file_path)
+        details['failure_line_number'] = line_number
       end
     end
+
+    details
   end
 
   def parse_location_string(location_str)
