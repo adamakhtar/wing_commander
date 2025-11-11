@@ -2,67 +2,38 @@
 
 ## Project Overview
 
-A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
+A CLI/TUI tool for running tests and reviewing failure details with normalized backtraces. Helps developers quickly inspect failing tests without the noise of third-party frames.
 
 ## Current Status: Steps 1-10 Complete ✅
 
 ### ✅ **Step 1: Project Foundation + Core Types** (COMPLETED)
 
 - Go module initialized with dependencies
-- Core domain types defined (`StackFrame`, `TestResult`, `FailureGroup`)
+- Core domain types defined (`StackFrame`, `TestResult`)
 - Comprehensive unit tests
 - Basic CLI with welcome message
 - Build system (Makefile) configured
 - Clean project structure
 
-### ✅ **Step 2: JUnit XML Parser** (COMPLETED)
+### ✅ **Step 5: Failure List Presentation** (COMPLETED)
 
-- Parser package with JUnit XML schema support
-- RSpec and Minitest JUnit XML format support
-- Backtrace frame parsing (file:line:method)
-- Comprehensive test coverage with fixtures
-- CLI integration for XML file parsing
-- Framework detection removed (user specifies in config)
-
-### ✅ **Step 3: Configuration System - CLI-First Design** (COMPLETED)
-
-- YAML-based configuration system with CLI-first approach
-- **Priority System**: CLI options > Config file > Sensible defaults
-- **CLI Options**: `--project-path`, `--test-command`, `--config` flags
-- **Template Interpolation**: Go `text/template` syntax for test commands
-- Support for multiple test frameworks (RSpec, Minitest, Pytest, Jest)
-- User-configurable exclude patterns
-- CLI config command
-- Clean file organization (test files in `testdata/`)
-
-### ✅ **Step 4: Backtrace Normalizer** (COMPLETED)
-
-- Filter frames using config exclude patterns
-- Normalize test results with filtered backtraces
+- Present flattened failure list without grouping logic
+- Ensure stable ordering and data structures based solely on `TestResult`
 - Comprehensive test coverage
-- CLI integration for frame filtering statistics
-
-### ✅ **Step 5: Failure Grouper** (COMPLETED)
-
-- Strategy pattern implementation for grouping
-- ErrorLocationStrategy groups by bottom frame (file:line)
-- Groups sorted by count (most frequent first)
-- Comprehensive test coverage
-- Ready for CLI integration
+- Ready for CLI/TUI integration
 
 ### ✅ **Step 6: Git Integration** (COMPLETED)
 
 - Line-level change detection with 3 intensity levels
 - Uncommitted changes (intensity 3), last commit (intensity 2), previous commit (intensity 1)
 - Unified diff parsing for precise line number detection
-- Integration with grouper workflow
-- Comprehensive test coverage
+- Integrated with normalized failure workflow
 
 ### ✅ **Step 7: Test Runner Service** (COMPLETED)
 
 - TestRunner service for GUI-driven test execution
 - Execute test commands from config and parse JUnit XML output
-- Complete workflow integration (parse → normalize → group → detect changes)
+- Complete workflow integration (parse → normalize → detect changes)
 - CLI `run` command implementation with `--config` flag support
 - Config file path customization via command line flags
 - Comprehensive test coverage
@@ -138,7 +109,7 @@ wing_commander run
 
 **Features implemented**:
 
-- 3-pane layout (Groups | Tests | Backtrace)
+- 3-pane layout (Test Runs | Tests | Backtrace)
 - Arrow key navigation within panes
 - Tab/Shift+Tab to switch between panes
 - 'q' to quit
@@ -164,7 +135,7 @@ wing_commander run
 
 - `f`: Toggle full/filtered frames display
 - `o`: Open selected file in external editor at specific line
-- `r`: Re-run tests for selected group
+- `r`: Re-run tests for selected entry
 - Async message handling for file opening and test re-running
 - Updated status bar with all available keybindings
 
@@ -194,7 +165,7 @@ wing_commander run
 
 - `f`: Toggle full/filtered frames display
 - `o`: Open selected file in external editor at specific line
-- `r`: Re-run tests for selected group
+- `r`: Re-run tests for selected entry
 - Async message handling for file opening and test re-running
 - Updated status bar with all available keybindings
 
@@ -260,22 +231,21 @@ exclude_patterns:
 - **Backward Compatibility**: Existing usage without flags continues to work
 - **Help Documentation**: `wing_commander run --help` shows all flag usage
 
-### **Grouping Strategy**
+### **Failure Presentation**
 
-- Group by ErrorLocation strategy (bottom frame only: file:line)
-- Store full 50 frames for user viewing
-- Use strategy pattern for future extensibility
-- Groups sorted by count (most frequent failures first)
-- Line-level change detection with 3 intensity levels
+- Display failures as a flat list ordered by recent execution
+- Store full 50 frames for user viewing while showing filtered project frames in the UI
+- Keep the codebase ready for future enhancements without relying on grouping strategies
+- Line-level change detection with 3 intensity levels highlights relevant frames
 
 ## Success Criteria
 
-- Groups 100-1000 test failures efficiently (<1s)
+- Displays 100-1000 test failures efficiently (<1s)
 - Responsive TUI navigation
 - Recently changed files highlighted correctly
 - Can open files in editor at correct line
-- Can re-run specific test groups
-- Simple workflow: run tests → see grouped failures
+- Can re-run selected tests
+- Simple workflow: run tests → review failures
 
 ## Development Workflow
 
@@ -306,13 +276,9 @@ wing_commander/
 │   ├── types/          # Core domain types
 │   ├── parser/         # JSON parsing
 │   ├── config/         # Configuration system
-│   ├── grouper/        # Grouping logic
+│   ├── backtrace/      # Backtrace normalization helpers
 │   │   ├── normalizer.go
-│   │   ├── normalizer_test.go
-│   │   ├── strategy.go
-│   │   ├── strategy_test.go
-│   │   ├── grouper.go
-│   │   └── grouper_test.go
+│   │   └── normalizer_test.go
 │   ├── git/            # Git change detection
 │   │   ├── changes.go
 │   │   └── changes_test.go

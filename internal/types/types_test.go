@@ -25,16 +25,6 @@ func TestNewTestResult(t *testing.T) {
 	assert.Empty(t, test.FilteredBacktrace)
 }
 
-func TestNewFailureGroup(t *testing.T) {
-	group := NewFailureGroup("abc123", "Validation failed")
-
-	assert.Equal(t, "abc123", group.Hash)
-	assert.Equal(t, "Validation failed", group.ErrorMessage)
-	assert.Empty(t, group.NormalizedBacktrace)
-	assert.Empty(t, group.Tests)
-	assert.Equal(t, 0, group.Count)
-}
-
 func TestTestStatusConstants(t *testing.T) {
 	assert.Equal(t, TestStatus("pass"), StatusPass)
 	assert.Equal(t, TestStatus("fail"), StatusFail)
@@ -70,21 +60,4 @@ func TestTestResultFields(t *testing.T) {
 	assert.Equal(t, "Error message", test.FailureDetails)
 	assert.Len(t, test.FullBacktrace, 1)
 	assert.Len(t, test.FilteredBacktrace, 1)
-}
-
-func TestFailureGroupFields(t *testing.T) {
-	test := NewTestResult("TestClass", "test_method", StatusFail)
-	group := FailureGroup{
-		Hash:                "hash123",
-		ErrorMessage:        "Error",
-		NormalizedBacktrace: []StackFrame{},
-		Tests:               []TestResult{test},
-		Count:               1,
-	}
-
-	assert.Equal(t, "hash123", group.Hash)
-	assert.Equal(t, "Error", group.ErrorMessage)
-	assert.Empty(t, group.NormalizedBacktrace)
-	assert.Len(t, group.Tests, 1)
-	assert.Equal(t, 1, group.Count)
 }

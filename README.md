@@ -22,7 +22,7 @@ Test frameworks often vomit up slabs of text when tests fail. Not offensive in i
 
 Some problems with tests:
 
-1. Running a single test file is simple, but running multiple (e.g., all controllers, models, and services related to Billing) is tedious. Wouldn't it be great to fuzzy search for tests or save commonly used groups?
+1. Running a single test file is simple, but running multiple (e.g., all controllers, models, and services related to Billing) is tedious. Wouldn't it be great to fuzzy search for tests or save commonly used selections?
 2. Our tests fail because of our project's code, yet backtraces often include filepaths from 3rd party libraries and frameworks. It just gets in the way.
 3. They often show long unwieldy absolute paths when shorter relative paths would work
 4. They don't show you the code so you can quickly ground yourself.

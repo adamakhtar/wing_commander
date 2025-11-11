@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adamakhtar/wing_commander/internal/backtrace"
 	"github.com/adamakhtar/wing_commander/internal/config"
-	"github.com/adamakhtar/wing_commander/internal/grouper"
 	"github.com/adamakhtar/wing_commander/internal/parser"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
@@ -34,7 +34,6 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
 
-
 	var testResults []types.TestResult
 
 	// Parse YAML summary file
@@ -45,12 +44,12 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 
 	parsed, err := parser.ParseYAMLFile(testResultsPath, parseOpts)
 	if err != nil {
-			return nil, fmt.Errorf("failed to parse YAML test output: %w", err)
+		return nil, fmt.Errorf("failed to parse YAML test output: %w", err)
 	}
 	testResults = parsed.Tests
 
 	// Normalize backtraces
-	normalizer := grouper.NewNormalizer(r.config)
+	normalizer := backtrace.NewNormalizer(r.config)
 	normalizedResults := normalizer.NormalizeTestResults(testResults)
 
 	// Partition results by status (no backtrace grouping)
@@ -136,51 +135,51 @@ func (r *TestRunner) executeTestCommand(filepaths []string) (string, error) {
 // parseTestResultsFromXMLFiles reads JUnit XML files from the project's test results directory
 // and returns aggregated test results. Errors if no XML files are found.
 func (r *TestRunner) parseTestResultsFromXMLFiles(testResultsPath string) ([]types.TestResult, error) {
-    globPattern := filepath.Join(testResultsPath, "*.xml")
+	globPattern := filepath.Join(testResultsPath, "*.xml")
 
-    files, err := filepath.Glob(globPattern)
-    if err != nil {
-        return nil, fmt.Errorf("failed to list JUnit XML files in %s: %w", testResultsPath, err)
-    }
-    if len(files) == 0 {
-        return nil, fmt.Errorf("no JUnit XML files found in %s (expected reporter to write XML)", testResultsPath)
-    }
+	files, err := filepath.Glob(globPattern)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list JUnit XML files in %s: %w", testResultsPath, err)
+	}
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no JUnit XML files found in %s (expected reporter to write XML)", testResultsPath)
+	}
 
-    parseOpts := &parser.ParseOptions{
-        ProjectPath:     r.config.ProjectPath,
-        TestFilePattern: r.config.TestFilePattern,
-    }
+	parseOpts := &parser.ParseOptions{
+		ProjectPath:     r.config.ProjectPath,
+		TestFilePattern: r.config.TestFilePattern,
+	}
 
-    var aggregated []types.TestResult
-    for _, fp := range files {
-        parsed, err := parser.ParseFile(fp, parseOpts)
-        if err != nil {
-            return nil, fmt.Errorf("failed to parse JUnit XML file %s: %w", fp, err)
-        }
-        aggregated = append(aggregated, parsed.Tests...)
-    }
+	var aggregated []types.TestResult
+	for _, fp := range files {
+		parsed, err := parser.ParseFile(fp, parseOpts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse JUnit XML file %s: %w", fp, err)
+		}
+		aggregated = append(aggregated, parsed.Tests...)
+	}
 
-    if len(aggregated) == 0 {
-        return nil, fmt.Errorf("parsed 0 test results from %s", testResultsPath)
-    }
+	if len(aggregated) == 0 {
+		return nil, fmt.Errorf("parsed 0 test results from %s", testResultsPath)
+	}
 
-    return aggregated, nil
+	return aggregated, nil
 }
 
 // TestExecutionResult represents the complete result of a test execution
 type TestExecutionResult struct {
-	TestRunId 		 int // The ID of the test run that was executed
-	TestResults    []types.TestResult  // All test results (normalized)
-	PassedTests    []types.TestResult  // Passed tests
-	FailedTests    []types.TestResult  // Failed tests
-	SkippedTests   []types.TestResult  // Skipped tests
-	ExecutionTime  time.Time           // When the tests were executed
-	Metrics        Metrics             // Metrics of the test execution
-	CommandOutput  string              // Raw output from test command
+	TestRunId     int                // The ID of the test run that was executed
+	TestResults   []types.TestResult // All test results (normalized)
+	PassedTests   []types.TestResult // Passed tests
+	FailedTests   []types.TestResult // Failed tests
+	SkippedTests  []types.TestResult // Skipped tests
+	ExecutionTime time.Time          // When the tests were executed
+	Metrics       Metrics            // Metrics of the test execution
+	CommandOutput string             // Raw output from test command
 }
 
 // GetSummary returns a summary of the test execution
-func  calculateMetrics(testResults []types.TestResult) Metrics {
+func calculateMetrics(testResults []types.TestResult) Metrics {
 	totalTests := len(testResults)
 	failedTests := 0
 	passedTests := 0
@@ -207,10 +206,10 @@ func  calculateMetrics(testResults []types.TestResult) Metrics {
 
 // TestSummary provides a high-level summary of test results
 type Metrics struct {
-	TotalTests     int
-	FailedTests    int
-	PassedTests    int
-	SkippedTests   int
+	TotalTests   int
+	FailedTests  int
+	PassedTests  int
+	SkippedTests int
 }
 
 // ValidateConfig checks if the test configuration is valid

@@ -2,17 +2,17 @@
 
 ## Project Overview
 
-A CLI/TUI tool for analyzing test failures by grouping them by backtrace similarity. Helps developers quickly identify shared root causes among multiple failing tests.
+A CLI/TUI tool for running tests and reviewing failure details with normalized backtraces. Helps developers quickly inspect failing tests without the noise of third-party frames.
 
 ## Key Decisions Made
 
-### 1. **Grouping Strategy**
+### 1. **Failure Presentation**
 
-- **Group by**: ErrorLocation strategy - bottom frame only (file + line number)
+- **Display**: Flat list of failed tests
 - **Store**: Full 50 frames for user viewing
-- **Rationale**: Groups failures by where the error actually surfaced, making it easy to identify root causes
+- **Rationale**: Keeps the UI simple while still surfacing relevant backtrace context
 - **Language Support**: Works across Ruby, Python, JavaScript, Go (file:line format)
-- **Architecture**: Strategy pattern allows easy addition of new grouping strategies (CallPath, ErrorPattern, etc.)
+- **Architecture**: Backtrace normalization is handled via a dedicated package
 - **Change Detection**: Line-level change detection with 3 intensity levels:
   - **Intensity 3**: Uncommitted changes to frame's line number
   - **Intensity 2**: Line changed in last commit
@@ -56,10 +56,10 @@ A CLI/TUI tool for analyzing test failures by grouping them by backtrace similar
 
 ### 6. **Data Flow**
 
-- **V1**: User runs all tests, tool executes test command and groups results
+- **V1**: User runs all tests, tool executes test command and aggregates results
 - **Future**: File watching, selective test runs, incremental results
 - **Input**: JUnit XML from test frameworks (RSpec, Minitest)
-- **Output**: Grouped failures in TUI
+- **Output**: Flat list of failures in TUI
 - **No Caching**: V1 keeps it simple - fresh run every time
 
 ### 7. **Test Framework Support**
@@ -95,14 +95,6 @@ type TestResult struct {
     FailureDetails    string
     FullBacktrace     []StackFrame  // 50 frames max
     FilteredBacktrace []StackFrame  // project frames only
-}
-
-type FailureGroup struct {
-    Hash                string
-    ErrorMessage        string
-    NormalizedBacktrace []StackFrame
-    Tests               []TestResult
-    Count               int
 }
 ```
 
@@ -150,9 +142,7 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 ### Backtrace Normalization Rules
 
 - Remove frames matching exclude patterns from config
-- Generate grouping key from bottom frame only (file:line format)
-- Keep both full and filtered backtraces for display
-- Use ErrorLocationStrategy for V1 grouping
+- Keep both full and filtered backtraces for display (no grouping)
 - Detect line-level changes using git diff commands:
   - `git diff --unified=0` for uncommitted changes
   - `git diff HEAD~1 --unified=0` for last commit changes
@@ -160,7 +150,7 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 
 ### UI Design (LazyGit-style)
 
-- **3 Panes**: Groups | Tests | Backtrace
+- **3 Panes**: Test Runs | Tests | Backtrace
 - **Navigation**: Tab/Shift+Tab between panes, arrows within panes
 - **Keybindings**: f (toggle frames), o (open file), r (re-run), q (quit)
 - **Highlighting**: Line-level change detection with 3 intensity levels:
@@ -176,8 +166,8 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 - **Step 1**: Go module initialized, core types defined and tested
 - **Step 2**: JSON parser with RSpec/Minitest support, comprehensive tests
 - **Step 3**: Configuration system with YAML support, framework specification
-- **Step 4**: Backtrace normalizer (filter using config exclude patterns)
-- **Step 5**: Failure grouper with ErrorLocation strategy (group by bottom frame)
+- **Step 4**: Backtrace normalizer extracted for reuse across the app
+- **Step 5**: Flat failure list replaces grouping logic
 - **Step 6**: Git integration with line-level change detection (3 intensity levels)
 - **Step 7**: Test runner service for GUI-driven test execution
 - **Step 8**: Basic Bubbletea TUI with 3-pane layout
@@ -193,7 +183,7 @@ func (r *TestRunner) executeTestCommand() (string, error) {
 
 ### 🎯 **Future Steps (Steps 10-12)**
 
-- **Step 10**: Multi-pane UI enhancements (groups, tests, backtrace panes)
+- **Step 10**: Multi-pane UI refinements
 - **Step 11**: Polish & documentation (README, help screens)
 - **Step 12**: Production release (error handling, final testing)
 
@@ -257,9 +247,9 @@ wing_commander/
 
 ## Success Criteria
 
-- Groups 100-1000 test failures efficiently (<1s)
+- Displays 100-1000 test failures efficiently (<1s)
 - Responsive TUI navigation
 - Recently changed files highlighted correctly
 - Can open files in editor at correct line
-- Can re-run specific test groups
-- Simple workflow: run tests → see grouped failures
+- Can re-run selected tests
+- Simple workflow: run tests → review failures

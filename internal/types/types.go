@@ -2,7 +2,6 @@ package types
 
 import (
 	"path/filepath"
-	"time"
 )
 
 // StackFrame represents a single frame in a backtrace
@@ -89,22 +88,6 @@ type TestResult struct {
 	Duration          float64      // Duration of the test in seconds
 }
 
-// FailureGroup represents a group of tests that failed with similar backtraces
-type FailureGroup struct {
-	Hash                string       // Hash ID based on normalized backtrace
-	ErrorMessage        string       // Representative error message
-	NormalizedBacktrace []StackFrame // Normalized backtrace signature
-	Tests               []TestResult // All tests in this group
-	Count               int          // Number of failed tests in group
-}
-
-// CacheData represents the structure saved to cache file
-type CacheData struct {
-	Timestamp      time.Time      `json:"timestamp"`
-	FailureGroups  []FailureGroup `json:"failure_groups"`
-	RawTestResults []TestResult   `json:"raw_test_results"`
-}
-
 // NewStackFrame creates a new StackFrame
 func NewStackFrame(file string, line int, function string) StackFrame {
 	return StackFrame{
@@ -124,16 +107,5 @@ func NewTestResult(groupName string, testCaseName string, status TestStatus) Tes
 		Status:            status,
 		FullBacktrace:     []StackFrame{},
 		FilteredBacktrace: []StackFrame{},
-	}
-}
-
-// NewFailureGroup creates a new FailureGroup
-func NewFailureGroup(hash string, errorMessage string) FailureGroup {
-	return FailureGroup{
-		Hash:                hash,
-		ErrorMessage:        errorMessage,
-		NormalizedBacktrace: []StackFrame{},
-		Tests:               []TestResult{},
-		Count:               0,
 	}
 }
