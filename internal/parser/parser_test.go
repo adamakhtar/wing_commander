@@ -68,10 +68,12 @@ func TestParseXML_RSpec(t *testing.T) {
 	assert.Equal(t, "User", test.GroupName)
 	assert.Equal(t, "should be valid", test.TestCaseName)
 	assert.Equal(t, types.StatusFail, test.Status)
-	assert.Equal(t, "Expected User to be valid", test.ErrorMessage)
-    assert.Len(t, test.FullBacktrace, 2)
-    // Expect assertion failure classification due to message
-    assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
+	assert.Equal(t, "Expected User to be valid", test.FailureDetails)
+	assert.Equal(t, "app/models/user.rb", test.FailureFilePath)
+	assert.Equal(t, 42, test.FailureLineNumber)
+	assert.Len(t, test.FullBacktrace, 2)
+	// Expect assertion failure classification due to message
+	assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
 
 	// Check first frame
 	frame := test.FullBacktrace[0]
@@ -105,8 +107,9 @@ func TestParseXML_Minitest(t *testing.T) {
 	assert.Equal(t, "UserTest", test.GroupName)
 	assert.Equal(t, "test_user_creation", test.TestCaseName)
 	assert.Equal(t, types.StatusFail, test.Status)
-    // Expect assertion failure classification due to message
-    assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
+	assert.Equal(t, "Expected User to be valid", test.FailureDetails)
+	// Expect assertion failure classification due to message
+	assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
 }
 
 func TestClassifyFailure_Heuristics(t *testing.T) {
@@ -257,13 +260,9 @@ func TestParseYAML_BasicFields(t *testing.T) {
   duration: '1.23'
   test_file_path: "/path/to/test.rb"
   test_line_number: 42
-  failure_cause:
-  error_message:
-  error_file_path:
-  error_line_number: 0
-  failed_assertion_details:
-  assertion_file_path:
-  assertion_line_number: 0
+  failure_details:
+  failure_file_path:
+  failure_line_number: 0
   full_backtrace: []
 `
 
@@ -281,8 +280,8 @@ func TestParseYAML_BasicFields(t *testing.T) {
 	assert.Equal(t, "/path/to/test.rb", test.TestFilePath)
 	assert.Equal(t, 42, test.TestLineNumber)
 	assert.Equal(t, types.FailureCause(""), test.FailureCause)
-	assert.Empty(t, test.ErrorMessage)
-	assert.Empty(t, test.FailedAssertionMessage)
+	assert.Empty(t, test.FailureDetails)
+	assert.Empty(t, test.FailureFilePath)
 	assert.Empty(t, test.FullBacktrace)
 }
 
@@ -315,50 +314,84 @@ func TestParseYAML_StatusEnum(t *testing.T) {
 	}
 }
 
-func TestParseYAML_FailureCauseEnum(t *testing.T) {
+func TestParseYAML_FailureCauseClassification(t *testing.T) {
 	tests := []struct {
-		name         string
-		failureCause string
-		expected     types.FailureCause
+		name     string
+		yamlData string
+		expected types.FailureCause
 	}{
-		{"error", "error", types.FailureCauseProductionCode},
-		{"failed_assertion", "failed_assertion", types.FailureCauseAssertion},
-		{"empty", "", types.FailureCause("")},
-		{"unknown", "unknown", types.FailureCause("")},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			yamlData := `---
+		{
+			name: "assertion by message",
+			yamlData: `---
 - test_group_name: Test
   test_status: failed
   duration: '0.00'
   test_file_path: ""
   test_line_number: 0
-  failure_cause: ` + tt.failureCause + `
-  full_backtrace: []
-`
-			result, err := ParseYAML([]byte(yamlData))
+  failure_details: "Expected: foo\n  Actual: bar"
+  failure_file_path: "/path/to/test.rb"
+  failure_line_number: 21
+  full_backtrace:
+    - "/path/to/test.rb:21:in 'test_method'"
+`,
+			expected: types.FailureCauseAssertion,
+		},
+		{
+			name: "production code by app frame",
+			yamlData: `---
+- test_group_name: Test
+  test_status: failed
+  duration: '0.00'
+  test_file_path: ""
+  test_line_number: 0
+  failure_details: "RuntimeError: boom"
+  failure_file_path: "/app/models/user.rb"
+  failure_line_number: 14
+  full_backtrace:
+    - "/app/models/user.rb:14:in 'explode'"
+    - "/Users/me/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest/test.rb:90:in 'run'"
+`,
+			expected: types.FailureCauseProductionCode,
+		},
+		{
+			name: "test definition by test frame",
+			yamlData: `---
+- test_group_name: Test
+  test_status: failed
+  duration: '0.00'
+  test_file_path: ""
+  test_line_number: 0
+  failure_details: "NoMethodError: undefined method"
+  failure_file_path: "/test/models/user_test.rb"
+  failure_line_number: 10
+  full_backtrace:
+    - "/test/models/user_test.rb:10:in 'block in <class:UserTest>'"
+    - "/Users/me/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest/test.rb:90:in 'run'"
+`,
+			expected: types.FailureCauseTestDefinition,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ParseYAML([]byte(tt.yamlData))
 			require.NoError(t, err)
+			require.Len(t, result.Tests, 1)
 			assert.Equal(t, tt.expected, result.Tests[0].FailureCause)
 		})
 	}
 }
 
-func TestParseYAML_ErrorFields(t *testing.T) {
+func TestParseYAML_FailureFields(t *testing.T) {
 	yamlData := `---
 - test_group_name: TestClass
   test_status: failed
   duration: '0.50'
   test_file_path: "/path/to/test.rb"
   test_line_number: 10
-  failure_cause: error
-  error_message: "NameError: undefined method"
-  error_file_path: "/path/to/error.rb"
-  error_line_number: 15
-  failed_assertion_details:
-  assertion_file_path:
-  assertion_line_number: 0
+  failure_details: "NameError: undefined method"
+  failure_file_path: "/path/to/error.rb"
+  failure_line_number: 15
   full_backtrace:
     - "/path/to/error.rb:15:in 'method'"
 `
@@ -370,9 +403,9 @@ func TestParseYAML_ErrorFields(t *testing.T) {
 	test := result.Tests[0]
 	assert.Equal(t, types.StatusFail, test.Status)
 	assert.Equal(t, types.FailureCauseProductionCode, test.FailureCause)
-	assert.Equal(t, "NameError: undefined method", test.ErrorMessage)
-	assert.Equal(t, "/path/to/error.rb", test.ErrorFilePath)
-	assert.Equal(t, 15, test.ErrorLineNumber)
+	assert.Equal(t, "NameError: undefined method", test.FailureDetails)
+	assert.Equal(t, "/path/to/error.rb", test.FailureFilePath)
+	assert.Equal(t, 15, test.FailureLineNumber)
 	assert.Len(t, test.FullBacktrace, 1)
 	assert.Equal(t, "/path/to/error.rb", test.FullBacktrace[0].File)
 	assert.Equal(t, 15, test.FullBacktrace[0].Line)
@@ -385,13 +418,9 @@ func TestParseYAML_AssertionFields(t *testing.T) {
   duration: '0.30'
   test_file_path: "/path/to/test.rb"
   test_line_number: 20
-  failure_cause: failed_assertion
-  error_message:
-  error_file_path:
-  error_line_number: 0
-  failed_assertion_details: "Expected: foo\n  Actual: bar"
-  assertion_file_path: "/path/to/test.rb"
-  assertion_line_number: 21
+  failure_details: "Expected: foo\n  Actual: bar"
+  failure_file_path: "/path/to/test.rb"
+  failure_line_number: 21
   full_backtrace:
     - "/path/to/test.rb:21:in 'test_method'"
 `
@@ -403,10 +432,9 @@ func TestParseYAML_AssertionFields(t *testing.T) {
 	test := result.Tests[0]
 	assert.Equal(t, types.StatusFail, test.Status)
 	assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
-	assert.Equal(t, "Expected: foo\n  Actual: bar", test.FailedAssertionMessage)
-	assert.Equal(t, "/path/to/test.rb", test.FailedAssertionFilePath)
-	assert.Equal(t, 21, test.FailedAssertionLineNumber)
-	assert.Empty(t, test.ErrorMessage)
+	assert.Equal(t, "Expected: foo\n  Actual: bar", test.FailureDetails)
+	assert.Equal(t, "/path/to/test.rb", test.FailureFilePath)
+	assert.Equal(t, 21, test.FailureLineNumber)
 }
 
 func TestParseYAML_BacktraceParsing(t *testing.T) {
@@ -416,7 +444,6 @@ func TestParseYAML_BacktraceParsing(t *testing.T) {
   duration: '0.00'
   test_file_path: ""
   test_line_number: 0
-  failure_cause: error
   full_backtrace:
     - "/path/to/file.rb:42:in 'method_name'"
     - "/path/to/other.rb:10"
@@ -475,7 +502,7 @@ func TestParseYAML_MissingFields(t *testing.T) {
 	assert.Equal(t, 0.0, test.Duration) // Default when missing
 	assert.Empty(t, test.TestFilePath)
 	assert.Equal(t, 0, test.TestLineNumber)
-	assert.Empty(t, test.ErrorMessage)
+	assert.Empty(t, test.FailureDetails)
 }
 
 func TestParseYAML_InvalidDuration(t *testing.T) {
@@ -506,7 +533,6 @@ func TestParseYAML_MultipleTests(t *testing.T) {
   duration: '2.0'
   test_file_path: ""
   test_line_number: 0
-  failure_cause: error
   full_backtrace: []
 - test_group_name: Test3
   test_status: skipped

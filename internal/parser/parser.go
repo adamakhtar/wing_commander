@@ -154,24 +154,25 @@ func ParseXML(data []byte) (*ParseResult, error) {
 func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) types.TestResult {
 	// Determine status based on JUnit test result
 	var status types.TestStatus
-	var errorMessage string
+	var failureDetails string
 	var backtrace []string
-    var failureCause types.FailureCause
+	var failureCause types.FailureCause
+	var failureFilePath string
+	var failureLineNumber int
 
-    switch test.Status {
+	switch test.Status {
 	case junit.StatusPassed:
 		status = types.StatusPass
 	case junit.StatusSkipped:
 		status = types.StatusSkip
-		errorMessage = test.Message
-    case junit.StatusFailed, junit.StatusError:
-        status = types.StatusFail
-        errorMessage = test.Message
-        // Parse stacktrace from error output
-        if test.Error != nil {
-            // Library provides an error value; parse its string form
-            backtrace = parseStacktraceFromError(test.Error.Error())
-        }
+	case junit.StatusFailed, junit.StatusError:
+		status = types.StatusFail
+		failureDetails = strings.TrimSpace(test.Message)
+		// Parse stacktrace from error output
+		if test.Error != nil {
+			// Library provides an error value; parse its string form
+			backtrace = parseStacktraceFromError(test.Error.Error())
+		}
 		// Also check SystemErr for additional stacktrace info
 		if test.SystemErr != "" {
 			additionalBacktrace := parseStacktraceFromError(test.SystemErr)
@@ -179,7 +180,7 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 		}
 	default:
 		status = types.StatusFail
-		errorMessage = "Unknown test status"
+		failureDetails = "Unknown test status"
 	}
 
 	// Parse backtrace into StackFrames
@@ -199,11 +200,6 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 	// Extract group name (classname) and test case name (name)
 	groupName := test.Classname
 	testCaseName := test.Name
-
-    // Classify failure cause if failed
-    if status == types.StatusFail {
-        failureCause = classifyFailure(errorMessage, fullBacktrace)
-    }
 
 	// Extract test file path and line number from XML attributes
 	testFilePath := attrs.File
@@ -226,15 +222,30 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 		}
 	}
 
-    return types.TestResult{
+	if status == types.StatusFail {
+		// Derive failure location from backtrace if available; otherwise fall back to test definition
+		if len(fullBacktrace) > 0 {
+			failureFilePath = fullBacktrace[0].File
+			failureLineNumber = fullBacktrace[0].Line
+		}
+		if failureFilePath == "" && testFilePath != "" {
+			failureFilePath = testFilePath
+			failureLineNumber = testLineNumber
+		}
+		failureCause = classifyFailure(failureDetails, fullBacktrace)
+	}
+
+	return types.TestResult{
 		Id:                id,
 		GroupName:         groupName,
 		TestCaseName:      testCaseName,
 		Status:            status,
-		ErrorMessage:      errorMessage,
+		FailureCause:      failureCause,
+		FailureDetails:    failureDetails,
+		FailureFilePath:   failureFilePath,
+		FailureLineNumber: failureLineNumber,
 		TestFilePath:      testFilePath,
 		TestLineNumber:    testLineNumber,
-        FailureCause:      failureCause,
 		FullBacktrace:     fullBacktrace,
 		FilteredBacktrace: make([]types.StackFrame, 0), // Will be populated by normalizer
 	}
@@ -541,28 +552,30 @@ func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.Te
 		}
 	}
 
-	// Parse failure cause
-	failureCauseStr := extractString(yamlMap, "failure_cause")
-	var failureCause types.FailureCause
-	switch failureCauseStr {
-	case "error":
-		failureCause = types.FailureCauseProductionCode
-	case "failed_assertion":
-		failureCause = types.FailureCauseAssertion
-	default:
-		// Empty for passed/skipped tests
-		failureCause = ""
+	// Extract unified failure fields (new schema)
+	failureDetails := extractString(yamlMap, "failure_details")
+	failureFilePath := extractString(yamlMap, "failure_file_path")
+	failureLineNumber := extractInt(yamlMap, "failure_line_number")
+
+	// Backwards compatibility with legacy schema
+	if failureDetails == "" {
+		failureDetails = extractString(yamlMap, "error_message")
 	}
-
-	// Extract error fields
-	errorMessage := extractString(yamlMap, "error_message")
-	errorFilePath := extractString(yamlMap, "error_file_path")
-	errorLineNumber := extractInt(yamlMap, "error_line_number")
-
-	// Extract assertion fields
-	failedAssertionMessage := extractString(yamlMap, "failed_assertion_details")
-	assertionFilePath := extractString(yamlMap, "assertion_file_path")
-	assertionLineNumber := extractInt(yamlMap, "assertion_line_number")
+	if failureDetails == "" {
+		failureDetails = extractString(yamlMap, "failed_assertion_details")
+	}
+	if failureFilePath == "" {
+		failureFilePath = extractString(yamlMap, "error_file_path")
+	}
+	if failureFilePath == "" {
+		failureFilePath = extractString(yamlMap, "assertion_file_path")
+	}
+	if failureLineNumber == 0 {
+		failureLineNumber = extractInt(yamlMap, "error_line_number")
+	}
+	if failureLineNumber == 0 {
+		failureLineNumber = extractInt(yamlMap, "assertion_line_number")
+	}
 
 	// Parse backtrace
 	backtraceStrings := extractStringSlice(yamlMap, "full_backtrace")
@@ -580,22 +593,24 @@ func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.Te
 		fullBacktrace = fullBacktrace[:50]
 	}
 
+	var failureCause types.FailureCause
+	if status == types.StatusFail {
+		failureCause = classifyFailure(failureDetails, fullBacktrace)
+	}
+
 	return types.TestResult{
-		Id:                        id,
-		GroupName:                 groupName,
-		TestCaseName:              testCaseName,
-		Status:                    status,
-		ErrorMessage:              errorMessage,
-		ErrorFilePath:             errorFilePath,
-		ErrorLineNumber:           errorLineNumber,
-		FailedAssertionMessage:    failedAssertionMessage,
-		FailedAssertionFilePath:   assertionFilePath,
-		FailedAssertionLineNumber: assertionLineNumber,
-		TestFilePath:              testFilePath,
-		TestLineNumber:            testLineNumber,
-		FailureCause:              failureCause,
-		FullBacktrace:             fullBacktrace,
-		FilteredBacktrace:         make([]types.StackFrame, 0),
-		Duration:                   duration,
+		Id:                 id,
+		GroupName:          groupName,
+		TestCaseName:       testCaseName,
+		Status:             status,
+		FailureCause:       failureCause,
+		FailureDetails:     failureDetails,
+		FailureFilePath:    failureFilePath,
+		FailureLineNumber:  failureLineNumber,
+		TestFilePath:       testFilePath,
+		TestLineNumber:     testLineNumber,
+		FullBacktrace:      fullBacktrace,
+		FilteredBacktrace:  make([]types.StackFrame, 0),
+		Duration:           duration,
 	}
 }

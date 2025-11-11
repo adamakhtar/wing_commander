@@ -79,13 +79,10 @@ type TestResult struct {
 	GroupName        string        // Test group name
 	TestCaseName     string        // Test case name
 	Status           TestStatus    // Test status
-	FailureCause     FailureCause  // The cause of the failed test - assert failed, error in code etc
-	ErrorMessage     string        // Error message (if failed)
-	ErrorFilePath    string        // File path of the error's location
-	ErrorLineNumber  int           // Line number of the error's location
-	FailedAssertionMessage string  // Failed assertion details (if failed)
-	FailedAssertionFilePath string // File path of the failed assertion's location
-	FailedAssertionLineNumber int  // Line number of the failed assertion's location
+	FailureCause     FailureCause  // Cause of the failure, derived from failure details/backtrace
+	FailureDetails   string        // Human-readable description of the failure
+	FailureFilePath  string        // File path where the failure originated
+	FailureLineNumber int          // Line number where the failure originated
 	TestFilePath     string        // File path of the test
 	TestLineNumber   int           // Line number of the test definition
 	FullBacktrace    []StackFrame  // Complete backtrace (up to 50 frames)
