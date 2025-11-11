@@ -19,22 +19,22 @@ const (
 )
 
 type Model struct {
-	ctx *context.Context
-	focus bool
-	width int
-	height int
+	ctx        *context.Context
+	focus      bool
+	width      int
+	height     int
 	testResult *types.TestResult
-	viewport viewport.Model
+	viewport   viewport.Model
 }
 
 func NewModel(ctx *context.Context, focus bool) Model {
 	return Model{
-		ctx: ctx,
-		focus: focus,
-		width: 0,
-		height: 0,
+		ctx:        ctx,
+		focus:      focus,
+		width:      0,
+		height:     0,
 		testResult: nil,
-		viewport: viewport.New(0, 0),
+		viewport:   viewport.New(0, 0),
 	}
 }
 
@@ -43,7 +43,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.isBlurred()  {
+	if m.isBlurred() {
 		return m, nil
 	}
 
@@ -51,7 +51,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.viewport, cmd = m.viewport.Update(msg)
 	return m, cmd
 }
-
 
 func (m Model) innerDimensions(width, height int) (innerWidth, innerHeight int) {
 	innerWidth = width - (2 * paddingX)
@@ -77,7 +76,6 @@ func (m Model) buildContent(innerWidth int) string {
 	sb.WriteString("\n")
 	sb.WriteString(m.renderFailureMessage(innerWidth))
 	sb.WriteString("\n")
-
 
 	for _, frame := range m.testResult.FilteredBacktrace {
 
@@ -105,7 +103,7 @@ func (m Model) renderTestHeading(innerWidth int) string {
 
 	return lipgloss.JoinVertical(lipgloss.Top,
 		m.ctx.Styles.HeadingTextStyle.Width(innerWidth).Render(testName),
-		m.ctx.Styles.PreviewSection.BacktracePath.Width(innerWidth).Margin(0, 0 , 1).Render(testPath),
+		m.ctx.Styles.PreviewSection.BacktracePath.Width(innerWidth).Margin(0, 0, 1).Render(testPath),
 	)
 }
 
@@ -122,23 +120,18 @@ func (m Model) renderTestFailureType(innerWidth int) string {
 	}
 }
 
-
 func (m Model) renderFailureMessage(innerWidth int) string {
 	alertStyle := m.ctx.Styles.Preview.AlertStyle
 	alertStyle = alertStyle.
 		Align(lipgloss.Left).
 		Width(innerWidth).
 		Padding(1, 4).
-		Margin(0, 0 , 1, 0)
+		Margin(0, 0, 1, 0)
 
-		switch {
-		case m.testResult.ErrorMessage != "":
-				return alertStyle.Render(m.testResult.ErrorMessage)
-		case m.testResult.FailedAssertionMessage != "":
-				return alertStyle.Render(m.testResult.FailedAssertionMessage)
-		default:
-			return ""
-		}
+	if m.testResult.FailureDetails != "" {
+		return alertStyle.Render(m.testResult.FailureDetails)
+	}
+	return ""
 }
 
 func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth int) string {
@@ -156,10 +149,10 @@ func (m Model) renderFileSnippet(snippet *filesnippet.FileSnippet, innerWidth in
 			lineStyle.Width(innerWidth).Render(fmt.Sprintf("%d: %s", line.Number, line.Content)))
 	}
 
-	return lipgloss.NewStyle().Margin(0, 0 , 1, 0).Render(content)
+	return lipgloss.NewStyle().Margin(0, 0, 1, 0).Render(content)
 }
 
-func (m Model)renderPanel(content string) string {
+func (m Model) renderPanel(content string) string {
 	panelStyle := m.ctx.Styles.Border.Padding(paddingY, paddingX)
 
 	if m.isFocused() {

@@ -33,7 +33,7 @@ func TestParseFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseFile(tt.filename)
+			result, err := ParseFile(tt.filename, nil)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -58,7 +58,7 @@ func TestParseXML_RSpec(t *testing.T) {
   </testsuite>
 </testsuites>`
 
-	result, err := ParseXML([]byte(xmlData))
+	result, err := ParseXML([]byte(xmlData), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
@@ -95,7 +95,7 @@ func TestParseXML_Minitest(t *testing.T) {
   </testsuite>
 </testsuites>`
 
-	result, err := ParseXML([]byte(xmlData))
+	result, err := ParseXML([]byte(xmlData), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
@@ -113,50 +113,94 @@ func TestParseXML_Minitest(t *testing.T) {
 }
 
 func TestClassifyFailure_Heuristics(t *testing.T) {
-    cases := []struct {
-        name    string
-        message string
-        frames  []types.StackFrame
-        want    types.FailureCause
-    }{
-        {
-            name:    "assertion by message",
-            message: "Expected 2 to equal 3",
-            frames:  nil,
-            want:    types.FailureCauseAssertion,
-        },
-        {
-            name:    "test definition by spec path",
-            message: "NoMethodError: undefined method",
-            frames: []types.StackFrame{
-                {File: "spec/models/user_spec.rb", Line: 10},
-                {File: "app/models/user.rb", Line: 20},
-            },
-            want: types.FailureCauseTestDefinition,
-        },
-        {
-            name:    "production by app path",
-            message: "NoMethodError: undefined method",
-            frames: []types.StackFrame{
-                {File: "app/models/user.rb", Line: 20},
-                {File: "gems/rspec-core/example.rb", Line: 100},
-            },
-            want: types.FailureCauseProductionCode,
-        },
-        {
-            name:    "no frames -> test definition",
-            message: "",
-            frames:  nil,
-            want:    types.FailureCauseTestDefinition,
-        },
-    }
+	cases := []struct {
+		name     string
+		message  string
+		topFrame *types.StackFrame
+		want     types.FailureCause
+	}{
+		{
+			name:    "assertion by message",
+			message: "Expected 2 to equal 3",
+			want:    types.FailureCauseAssertion,
+		},
+		{
+			name:    "test definition by spec path",
+			message: "NoMethodError: undefined method",
+			topFrame: &types.StackFrame{
+				File: "spec/models/user_spec.rb",
+				Line: 10,
+			},
+			want: types.FailureCauseTestDefinition,
+		},
+		{
+			name:    "production by app path",
+			message: "NoMethodError: undefined method",
+			topFrame: &types.StackFrame{
+				File: "app/models/user.rb",
+				Line: 20,
+			},
+			want: types.FailureCauseProductionCode,
+		},
+		{
+			name:    "no frames -> test definition",
+			message: "",
+			want:    types.FailureCauseTestDefinition,
+		},
+	}
 
-    for _, tc := range cases {
-        t.Run(tc.name, func(t *testing.T) {
-            got := classifyFailure(tc.message, tc.frames)
-            assert.Equal(t, tc.want, got)
-        })
-    }
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := classifyFailure(tc.message, tc.topFrame, nil)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
+	ctx, err := newParseContext(&ParseOptions{
+		ProjectPath:     "/abs/project",
+		TestFilePattern: "test/**/*.rb",
+	})
+	require.NoError(t, err)
+
+	cases := []struct {
+		name     string
+		topFrame *types.StackFrame
+		want     types.FailureCause
+	}{
+		{
+			name: "absolute path match",
+			topFrame: &types.StackFrame{
+				File: "/abs/project/test/models/user_test.rb",
+				Line: 12,
+			},
+			want: types.FailureCauseTestDefinition,
+		},
+		{
+			name: "relative path match",
+			topFrame: &types.StackFrame{
+				File: "/abs/project/custom/subdir/test/models/user_test.rb",
+				Line: 8,
+			},
+			want: types.FailureCauseTestDefinition,
+		},
+		{
+			name: "non matching path",
+			topFrame: &types.StackFrame{
+				File: "/abs/project/app/models/user.rb",
+				Line: 33,
+			},
+			want: types.FailureCauseProductionCode,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := classifyFailure("boom", tc.topFrame, ctx)
+			assert.Equal(t, tc.want, got)
+		})
+	}
 }
 
 func TestParseStackFrame(t *testing.T) {
@@ -211,11 +255,10 @@ func TestParseStackFrame(t *testing.T) {
 	}
 }
 
-
 func TestInvalidXML(t *testing.T) {
 	invalidXML := `<?xml version="1.0"?><invalid>xml`
 
-	result, err := ParseXML([]byte(invalidXML))
+	result, err := ParseXML([]byte(invalidXML), nil)
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }
@@ -240,7 +283,7 @@ func TestParseYAMLFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseYAMLFile(tt.filename)
+			result, err := ParseYAMLFile(tt.filename, nil)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -266,7 +309,7 @@ func TestParseYAML_BasicFields(t *testing.T) {
   full_backtrace: []
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Len(t, result.Tests, 1)
@@ -307,7 +350,7 @@ func TestParseYAML_StatusEnum(t *testing.T) {
   test_line_number: 0
   full_backtrace: []
 `
-			result, err := ParseYAML([]byte(yamlData))
+			result, err := ParseYAML([]byte(yamlData), nil)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, result.Tests[0].Status)
 		})
@@ -374,7 +417,7 @@ func TestParseYAML_FailureCauseClassification(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseYAML([]byte(tt.yamlData))
+			result, err := ParseYAML([]byte(tt.yamlData), nil)
 			require.NoError(t, err)
 			require.Len(t, result.Tests, 1)
 			assert.Equal(t, tt.expected, result.Tests[0].FailureCause)
@@ -396,7 +439,7 @@ func TestParseYAML_FailureFields(t *testing.T) {
     - "/path/to/error.rb:15:in 'method'"
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -425,7 +468,7 @@ func TestParseYAML_AssertionFields(t *testing.T) {
     - "/path/to/test.rb:21:in 'test_method'"
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -435,6 +478,33 @@ func TestParseYAML_AssertionFields(t *testing.T) {
 	assert.Equal(t, "Expected: foo\n  Actual: bar", test.FailureDetails)
 	assert.Equal(t, "/path/to/test.rb", test.FailureFilePath)
 	assert.Equal(t, 21, test.FailureLineNumber)
+}
+
+func TestParseYAML_FailureCause_UsesPattern(t *testing.T) {
+	yamlData := `---
+- test_group_name: CustomSuite
+  test_status: failed
+  duration: '0.10'
+  test_file_path: "/abs/project/custom_specs/user_case.rb"
+  test_line_number: 5
+  failure_details: "Boom"
+  failure_file_path: "/abs/project/custom_specs/user_case.rb"
+  failure_line_number: 7
+  full_backtrace:
+    - "/abs/project/custom_specs/user_case.rb:7:in 'test_case'"
+`
+
+	opts := &ParseOptions{
+		ProjectPath:     "/abs/project",
+		TestFilePattern: "custom_specs/**/*.rb",
+	}
+
+	result, err := ParseYAML([]byte(yamlData), opts)
+	require.NoError(t, err)
+	require.Len(t, result.Tests, 1)
+
+	test := result.Tests[0]
+	assert.Equal(t, types.FailureCauseTestDefinition, test.FailureCause)
 }
 
 func TestParseYAML_BacktraceParsing(t *testing.T) {
@@ -451,7 +521,7 @@ func TestParseYAML_BacktraceParsing(t *testing.T) {
     - "/valid/path.rb:5:in 'valid_method'"
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -475,7 +545,7 @@ func TestParseYAML_BacktraceParsing(t *testing.T) {
 func TestParseYAML_EmptyArray(t *testing.T) {
 	yamlData := `--- []`
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	assert.Len(t, result.Tests, 0)
@@ -491,7 +561,7 @@ func TestParseYAML_MissingFields(t *testing.T) {
   test_status: passed
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -512,7 +582,7 @@ func TestParseYAML_InvalidDuration(t *testing.T) {
   duration: "invalid"
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -542,7 +612,7 @@ func TestParseYAML_MultipleTests(t *testing.T) {
   full_backtrace: []
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 3)
 
@@ -577,7 +647,7 @@ func TestParseYAML_IntAsString(t *testing.T) {
   full_backtrace: []
 `
 
-	result, err := ParseYAML([]byte(yamlData))
+	result, err := ParseYAML([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -588,7 +658,7 @@ func TestParseYAML_IntAsString(t *testing.T) {
 func TestParseYAML_InvalidYAML(t *testing.T) {
 	invalidYAML := `--- invalid: yaml: content`
 
-	result, err := ParseYAML([]byte(invalidYAML))
+	result, err := ParseYAML([]byte(invalidYAML), nil)
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }

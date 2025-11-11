@@ -37,10 +37,10 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Single failure", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				GroupName:     "Test 1",
-				TestCaseName:  "",
+				GroupName:      "Test 1",
+				TestCaseName:   "",
 				Status:         types.StatusFail,
-				ErrorMessage:  "Something went wrong",
+				FailureDetails: "Something went wrong",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				},
@@ -59,20 +59,20 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Multiple failures with same bottom frame", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				GroupName:     "Test 1",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "Something went wrong",
+				GroupName:      "Test 1",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "Something went wrong",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 					{File: "app/controllers/users_controller.rb", Line: 10, Function: "create"},
 				},
 			},
 			{
-				GroupName:     "Test 2",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "Another error",
+				GroupName:      "Test 2",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "Another error",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 					{File: "app/services/user_service.rb", Line: 25, Function: "process"},
@@ -90,19 +90,19 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Multiple failures with different bottom frames", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				GroupName:     "Test 1",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "Error in user.rb",
+				GroupName:      "Test 1",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "Error in user.rb",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				},
 			},
 			{
-				GroupName:     "Test 2",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "Error in product.rb",
+				GroupName:      "Test 2",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "Error in product.rb",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/product.rb", Line: 50, Function: "create_product"},
 				},
@@ -125,19 +125,19 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Mixed pass/fail tests", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				GroupName:     "Test 1",
-				TestCaseName:  "",
-				Status:       types.StatusPass,
-				ErrorMessage: "This should be ignored",
+				GroupName:      "Test 1",
+				TestCaseName:   "",
+				Status:         types.StatusPass,
+				FailureDetails: "This should be ignored",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				},
 			},
 			{
-				GroupName:     "Test 2",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "This should be grouped",
+				GroupName:      "Test 2",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "This should be grouped",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				},
@@ -155,10 +155,10 @@ func TestGrouper_GroupFailures(t *testing.T) {
 	t.Run("Failures with empty backtraces", func(t *testing.T) {
 		results := []types.TestResult{
 			{
-				GroupName:     "Test 1",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "No backtrace",
+				GroupName:         "Test 1",
+				TestCaseName:      "",
+				Status:            types.StatusFail,
+				FailureDetails:    "No backtrace",
 				FilteredBacktrace: []types.StackFrame{},
 			},
 		}
@@ -172,29 +172,29 @@ func TestGrouper_GroupFailures(t *testing.T) {
 		results := []types.TestResult{
 			// Single failure at user.rb:42
 			{
-				GroupName:     "Test 1",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "Single failure",
+				GroupName:      "Test 1",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "Single failure",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				},
 			},
 			// Two failures at product.rb:50
 			{
-				GroupName:     "Test 2",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "First product failure",
+				GroupName:      "Test 2",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "First product failure",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/product.rb", Line: 50, Function: "create_product"},
 				},
 			},
 			{
-				GroupName:     "Test 3",
-				TestCaseName:  "",
-				Status:       types.StatusFail,
-				ErrorMessage: "Second product failure",
+				GroupName:      "Test 3",
+				TestCaseName:   "",
+				Status:         types.StatusFail,
+				FailureDetails: "Second product failure",
 				FilteredBacktrace: []types.StackFrame{
 					{File: "app/models/product.rb", Line: 50, Function: "create_product"},
 				},
@@ -220,20 +220,20 @@ func TestGrouper_CollectAllFrames(t *testing.T) {
 
 	failedTests := []types.TestResult{
 		{
-			GroupName:     "Test 1",
-			TestCaseName:  "",
-			Status:       types.StatusFail,
-			ErrorMessage: "Error 1",
+			GroupName:      "Test 1",
+			TestCaseName:   "",
+			Status:         types.StatusFail,
+			FailureDetails: "Error 1",
 			FilteredBacktrace: []types.StackFrame{
 				{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 				{File: "app/services/user_service.rb", Line: 25, Function: "process"},
 			},
 		},
 		{
-			GroupName:     "Test 2",
-			TestCaseName:  "",
-			Status:       types.StatusFail,
-			ErrorMessage: "Error 2",
+			GroupName:      "Test 2",
+			TestCaseName:   "",
+			Status:         types.StatusFail,
+			FailureDetails: "Error 2",
 			FilteredBacktrace: []types.StackFrame{
 				{File: "app/models/product.rb", Line: 30, Function: "create_product"},
 			},
@@ -254,10 +254,10 @@ func TestGrouper_GroupFailures_WithChangeDetection(t *testing.T) {
 
 	results := []types.TestResult{
 		{
-			GroupName:     "Test 1",
-			TestCaseName:  "",
-			Status:       types.StatusFail,
-			ErrorMessage: "Something went wrong",
+			GroupName:      "Test 1",
+			TestCaseName:   "",
+			Status:         types.StatusFail,
+			FailureDetails: "Something went wrong",
 			FilteredBacktrace: []types.StackFrame{
 				{File: "app/models/user.rb", Line: 42, Function: "create_user"},
 			},

@@ -38,7 +38,12 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 	var testResults []types.TestResult
 
 	// Parse YAML summary file
-	parsed, err := parser.ParseYAMLFile(testResultsPath)
+	parseOpts := &parser.ParseOptions{
+		ProjectPath:     r.config.ProjectPath,
+		TestFilePattern: r.config.TestFilePattern,
+	}
+
+	parsed, err := parser.ParseYAMLFile(testResultsPath, parseOpts)
 	if err != nil {
 			return nil, fmt.Errorf("failed to parse YAML test output: %w", err)
 	}
@@ -141,9 +146,14 @@ func (r *TestRunner) parseTestResultsFromXMLFiles(testResultsPath string) ([]typ
         return nil, fmt.Errorf("no JUnit XML files found in %s (expected reporter to write XML)", testResultsPath)
     }
 
+    parseOpts := &parser.ParseOptions{
+        ProjectPath:     r.config.ProjectPath,
+        TestFilePattern: r.config.TestFilePattern,
+    }
+
     var aggregated []types.TestResult
     for _, fp := range files {
-        parsed, err := parser.ParseFile(fp)
+        parsed, err := parser.ParseFile(fp, parseOpts)
         if err != nil {
             return nil, fmt.Errorf("failed to parse JUnit XML file %s: %w", fp, err)
         }

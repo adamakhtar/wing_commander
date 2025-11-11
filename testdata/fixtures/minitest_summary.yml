@@ -4,12 +4,11 @@
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
   test_line_number: 10
-  failure_cause: error
-  error_message: |-
+  failure_details: |-
     NameError: uninitialized constant ThingTest::Thing
         test/thing_test.rb:11:in `test_boom_second_case'
-  error_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
-  error_line_number: 11
+  failure_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  failure_line_number: 11
   full_backtrace:
   - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:11:in
     `test_boom_second_case'"
@@ -56,12 +55,11 @@
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
   test_line_number: 18
-  failure_cause: failed_assertion
-  failed_assertion_details: |-
+  failure_details: |-
     Expected: "foo"
       Actual: "bar"
-  assertion_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
-  assertion_line_number: 19
+  failure_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  failure_line_number: 19
   full_backtrace:
   - "/Users/adamakhtar/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest-5.26.0/lib/minitest/assertions.rb:176:in
     `assert'"
@@ -112,12 +110,11 @@
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
   test_line_number: 14
-  failure_cause: error
-  error_message: |-
+  failure_details: |-
     RuntimeError: error in test
         test/thing_test.rb:15:in `test_error_in_test'
-  error_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
-  error_line_number: 15
+  failure_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  failure_line_number: 15
   full_backtrace:
   - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:15:in
     `test_error_in_test'"
@@ -164,12 +161,11 @@
   duration: '0.00'
   test_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
   test_line_number: 6
-  failure_cause: error
-  error_message: |-
+  failure_details: |-
     NameError: uninitialized constant ThingTest::Thing
         test/thing_test.rb:7:in `test_boom_first_case'
-  error_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
-  error_line_number: 7
+  failure_file_path: "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb"
+  failure_line_number: 7
   full_backtrace:
   - "/Users/adamakhtar/Projects/active/wing_commander/dummy/minitest_example/test/thing_test.rb:7:in
     `test_boom_first_case'"

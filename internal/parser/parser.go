@@ -4,10 +4,12 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/gobwas/glob"
 	"github.com/joshdk/go-junit"
 	"gopkg.in/yaml.v3"
 )
@@ -15,32 +17,85 @@ import (
 // testPathIndicators lists substrings that indicate frames belonging to test code paths
 // Limited to Ruby frameworks for now (RSpec and Minitest). Extend as more frameworks are supported.
 var testPathIndicators = []string{
-    "/spec/",
-    "/test/",
-    "_spec.rb",
+	"/spec/",
+	"/test/",
+	"_spec.rb",
 }
 
 // frameworkPathIndicators lists substrings that indicate frames from test frameworks/runners
 var frameworkPathIndicators = []string{
-    "/rspec/",
-    "/minitest/",
-    "/junit/",
-    "/jest/",
-    "/node_modules/",
-    "/gems/",
+	"/rspec/",
+	"/minitest/",
+	"/junit/",
+	"/jest/",
+	"/node_modules/",
+	"/gems/",
 }
-
 
 // InputTestResult represents a test result from JUnit XML input
 type InputTestResult struct {
-	Name        string
-	ClassName   string
-	Status      string
-	Message     string
-	Backtrace   []string
-	Duration    float64
-	File        string
-	Line        int
+	Name      string
+	ClassName string
+	Status    string
+	Message   string
+	Backtrace []string
+	Duration  float64
+	File      string
+	Line      int
+}
+
+// ParseOptions controls optional parsing behaviour.
+type ParseOptions struct {
+	ProjectPath     string
+	TestFilePattern string
+}
+
+type parseContext struct {
+	projectPath     string
+	testFileMatcher glob.Glob
+}
+
+func newParseContext(opts *ParseOptions) (*parseContext, error) {
+	if opts == nil {
+		return &parseContext{}, nil
+	}
+
+	ctx := &parseContext{
+		projectPath: opts.ProjectPath,
+	}
+
+	if opts.TestFilePattern != "" {
+		pattern := strings.ToLower(filepath.ToSlash(opts.TestFilePattern))
+		compiled, err := glob.Compile(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to compile test file pattern %q: %w", opts.TestFilePattern, err)
+		}
+		ctx.testFileMatcher = compiled
+	}
+
+	return ctx, nil
+}
+
+func (c *parseContext) matchesTestFile(path string) bool {
+	if c == nil || c.testFileMatcher == nil || path == "" {
+		return false
+	}
+
+	normalized := strings.ToLower(filepath.ToSlash(path))
+	if c.testFileMatcher.Match(normalized) {
+		return true
+	}
+
+	if c.projectPath != "" {
+		if rel, err := filepath.Rel(c.projectPath, path); err == nil {
+			relNormalized := strings.ToLower(filepath.ToSlash(rel))
+			if c.testFileMatcher.Match(relNormalized) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // ParseResult contains parsed test results and metadata
@@ -58,13 +113,13 @@ type TestSummary struct {
 }
 
 // ParseFile parses a JUnit XML test results file
-func ParseFile(filePath string) (*ParseResult, error) {
+func ParseFile(filePath string, opts *ParseOptions) (*ParseResult, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
 
-	return ParseXML(data)
+	return ParseXML(data, opts)
 }
 
 // testcaseAttrs represents XML attributes for a testcase element
@@ -74,7 +129,12 @@ type testcaseAttrs struct {
 }
 
 // ParseXML parses JUnit XML test results data
-func ParseXML(data []byte) (*ParseResult, error) {
+func ParseXML(data []byte, opts *ParseOptions) (*ParseResult, error) {
+	ctx, err := newParseContext(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	// First, parse XML directly to extract file and lineno attributes
 	testcaseMap := make(map[string]testcaseAttrs)
 	decoder := xml.NewDecoder(strings.NewReader(string(data)))
@@ -135,7 +195,7 @@ func ParseXML(data []byte) (*ParseResult, error) {
 			if found, ok := testcaseMap[test.Name]; ok {
 				attrs = found
 			}
-			testResult := convertJUnitTestToTestResult(testIdCounter, test, attrs)
+			testResult := convertJUnitTestToTestResult(testIdCounter, test, attrs, ctx)
 			result.Tests = append(result.Tests, testResult)
 		}
 	}
@@ -151,7 +211,7 @@ func ParseXML(data []byte) (*ParseResult, error) {
 }
 
 // convertJUnitTestToTestResult converts JUnit test to our domain type
-func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) types.TestResult {
+func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs, ctx *parseContext) types.TestResult {
 	// Determine status based on JUnit test result
 	var status types.TestStatus
 	var failureDetails string
@@ -232,7 +292,14 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 			failureFilePath = testFilePath
 			failureLineNumber = testLineNumber
 		}
-		failureCause = classifyFailure(failureDetails, fullBacktrace)
+		topFrame := firstFrameWithFile(fullBacktrace)
+		if topFrame == nil && failureFilePath != "" {
+			topFrame = &types.StackFrame{
+				File: failureFilePath,
+				Line: failureLineNumber,
+			}
+		}
+		failureCause = classifyFailure(failureDetails, topFrame, ctx)
 	}
 
 	return types.TestResult{
@@ -251,46 +318,51 @@ func convertJUnitTestToTestResult(id int, test junit.Test, attrs testcaseAttrs) 
 	}
 }
 
+func firstFrameWithFile(frames []types.StackFrame) *types.StackFrame {
+	for _, frame := range frames {
+		if frame.File != "" {
+			frameCopy := frame
+			return &frameCopy
+		}
+	}
+	return nil
+}
+
 // classifyFailure decides the FailureCause from parsed failure fields using simple heuristics
-// Inputs: error message and parsed stack frames (project/app and test paths if present)
+// Inputs: error message and top stack frame (project/app and test paths if present)
 // 1) Assertion-like messages -> AssertionFailure
 // 2) If no frames or top frames point to test/spec -> TestDefinitionError
 // 3) Otherwise -> ProductionCodeError
-func classifyFailure(message string, frames []types.StackFrame) types.FailureCause {
-    m := strings.ToLower(message)
-    if m != "" {
-        if strings.Contains(m, "assertionerror") || strings.Contains(m, "expected ") || strings.HasPrefix(m, "expected:") || strings.Contains(m, "expected:") {
-            return types.FailureCauseAssertion
-        }
-    }
+func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseContext) types.FailureCause {
+	m := strings.ToLower(message)
+	if m != "" {
+		if strings.Contains(m, "assertionerror") || strings.Contains(m, "expected ") || strings.HasPrefix(m, "expected:") || strings.Contains(m, "expected:") {
+			return types.FailureCauseAssertion
+		}
+	}
 
-    // If we have no frames, treat as test definition error (runner/setup/teardown/unmapped)
-    if len(frames) == 0 {
-        return types.FailureCauseTestDefinition
-    }
+	// If we have no frames, treat as test definition error (runner/setup/teardown/unmapped)
+	if topFrame == nil || topFrame.File == "" {
+		return types.FailureCauseTestDefinition
+	}
 
-    // Check if any of the first few frames clearly reference test code paths
-    limit := len(frames)
-    if limit > 5 {
-        limit = 5
-    }
-    for i := 0; i < limit; i++ {
-        f := frames[i]
-        lp := strings.ToLower(f.File)
-        for _, ind := range testPathIndicators {
-            if strings.Contains(lp, ind) || strings.HasSuffix(lp, ind) {
-                return types.FailureCauseTestDefinition
-            }
-        }
-        // Common framework indicators
-        for _, ind := range frameworkPathIndicators {
-            if strings.Contains(lp, ind) {
-                return types.FailureCauseTestDefinition
-            }
-        }
-    }
+	if ctx != nil && ctx.matchesTestFile(topFrame.File) {
+		return types.FailureCauseTestDefinition
+	}
 
-    return types.FailureCauseProductionCode
+	lp := strings.ToLower(topFrame.File)
+	for _, ind := range testPathIndicators {
+		if strings.Contains(lp, ind) || strings.HasSuffix(lp, ind) {
+			return types.FailureCauseTestDefinition
+		}
+	}
+	for _, ind := range frameworkPathIndicators {
+		if strings.Contains(lp, ind) {
+			return types.FailureCauseTestDefinition
+		}
+	}
+
+	return types.FailureCauseProductionCode
 }
 
 // parseStacktraceFromError extracts stacktrace lines from error output
@@ -302,24 +374,24 @@ func parseStacktraceFromError(output string) []string {
 	lines := strings.Split(output, "\n")
 	var stacktrace []string
 
-    for _, line := range lines {
+	for _, line := range lines {
 		// Don't trim the line yet - we need to check indentation
 		// Skip empty lines and common non-stacktrace lines
 		if strings.TrimSpace(line) == "" || strings.HasPrefix(strings.TrimSpace(line), "Error:") || strings.HasPrefix(strings.TrimSpace(line), "Failure:") {
 			continue
 		}
-        // Look for lines that look like stack frames (indented with 4 spaces and contain file:line pattern)
-        if strings.HasPrefix(line, "    ") && strings.Contains(line, ":") &&
-           (strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
-            stacktrace = append(stacktrace, strings.TrimSpace(line))
-            continue
-        }
+		// Look for lines that look like stack frames (indented with 4 spaces and contain file:line pattern)
+		if strings.HasPrefix(line, "    ") && strings.Contains(line, ":") &&
+			(strings.Contains(line, ".rb:") || strings.Contains(line, ".py:") || strings.Contains(line, ".js:")) {
+			stacktrace = append(stacktrace, strings.TrimSpace(line))
+			continue
+		}
 
-        // Fallback: detect embedded file:line anywhere in the line, including bracketed forms
-        trimmed := strings.TrimSpace(line)
-        if embedded := extractFileLine(trimmed); embedded != "" {
-            stacktrace = append(stacktrace, embedded)
-        }
+		// Fallback: detect embedded file:line anywhere in the line, including bracketed forms
+		trimmed := strings.TrimSpace(line)
+		if embedded := extractFileLine(trimmed); embedded != "" {
+			stacktrace = append(stacktrace, embedded)
+		}
 	}
 
 	return stacktrace
@@ -328,49 +400,49 @@ func parseStacktraceFromError(output string) []string {
 // extractFileLine attempts to find a substring like "path/to/file.rb:123" inside an arbitrary line
 // and returns it; returns empty string if not found.
 func extractFileLine(s string) string {
-    // Quick exits for common non-frame lines
-    if strings.HasPrefix(s, "Expected:") || strings.HasPrefix(s, "Actual:") {
-        return ""
-    }
+	// Quick exits for common non-frame lines
+	if strings.HasPrefix(s, "Expected:") || strings.HasPrefix(s, "Actual:") {
+		return ""
+	}
 
-    // Find a ruby/python/js file marker
-    idx := strings.Index(s, ".rb:")
-    ext := ".rb:"
-    if idx == -1 {
-        idx = strings.Index(s, ".py:")
-        ext = ".py:"
-    }
-    if idx == -1 {
-        idx = strings.Index(s, ".js:")
-        ext = ".js:"
-    }
-    if idx == -1 {
-        return ""
-    }
+	// Find a ruby/python/js file marker
+	idx := strings.Index(s, ".rb:")
+	ext := ".rb:"
+	if idx == -1 {
+		idx = strings.Index(s, ".py:")
+		ext = ".py:"
+	}
+	if idx == -1 {
+		idx = strings.Index(s, ".js:")
+		ext = ".js:"
+	}
+	if idx == -1 {
+		return ""
+	}
 
-    // Walk backwards to find start of path (stop at whitespace or '[')
-    start := idx
-    for start > 0 {
-        c := s[start-1]
-        if c == ' ' || c == '\t' || c == '[' || c == '(' {
-            break
-        }
-        start--
-    }
+	// Walk backwards to find start of path (stop at whitespace or '[')
+	start := idx
+	for start > 0 {
+		c := s[start-1]
+		if c == ' ' || c == '\t' || c == '[' || c == '(' {
+			break
+		}
+		start--
+	}
 
-    // Walk forwards from after the colon to consume digits of the line number
-    end := idx + len(ext)
-    for end < len(s) && s[end] >= '0' && s[end] <= '9' {
-        end++
-    }
+	// Walk forwards from after the colon to consume digits of the line number
+	end := idx + len(ext)
+	for end < len(s) && s[end] >= '0' && s[end] <= '9' {
+		end++
+	}
 
-    candidate := s[start:end]
-    // Basic sanity: ensure there's at least one slash and a colon digit
-    if strings.Contains(candidate, "/") && strings.Count(candidate, ":") >= 1 {
-        return candidate
-    }
+	candidate := s[start:end]
+	// Basic sanity: ensure there's at least one slash and a colon digit
+	if strings.Contains(candidate, "/") && strings.Count(candidate, ":") >= 1 {
+		return candidate
+	}
 
-    return ""
+	return ""
 }
 
 // parseStackFrame parses a backtrace frame string into a StackFrame
@@ -428,17 +500,22 @@ func parseStackFrame(frameStr string) types.StackFrame {
 }
 
 // ParseYAMLFile parses a YAML test results file
-func ParseYAMLFile(filePath string) (*ParseResult, error) {
+func ParseYAMLFile(filePath string, opts *ParseOptions) (*ParseResult, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
 	}
 
-	return ParseYAML(data)
+	return ParseYAML(data, opts)
 }
 
 // ParseYAML parses YAML test results data
-func ParseYAML(data []byte) (*ParseResult, error) {
+func ParseYAML(data []byte, opts *ParseOptions) (*ParseResult, error) {
+	ctx, err := newParseContext(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	var yamlTests []map[string]interface{}
 	if err := yaml.Unmarshal(data, &yamlTests); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
@@ -451,7 +528,7 @@ func ParseYAML(data []byte) (*ParseResult, error) {
 	testIdCounter := 0
 	for _, yamlMap := range yamlTests {
 		testIdCounter++
-		testResult := convertYAMLMapToTestResult(testIdCounter, yamlMap)
+		testResult := convertYAMLMapToTestResult(testIdCounter, yamlMap, ctx)
 		result.Tests = append(result.Tests, testResult)
 
 		// Update summary counts
@@ -522,7 +599,7 @@ func extractStringSlice(m map[string]interface{}, key string) []string {
 }
 
 // convertYAMLMapToTestResult converts a YAML map to our domain type
-func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.TestResult {
+func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}, ctx *parseContext) types.TestResult {
 	// Extract basic fields
 	groupName := extractString(yamlMap, "test_group_name")
 	testCaseName := extractString(yamlMap, "test_case_name")
@@ -595,22 +672,29 @@ func convertYAMLMapToTestResult(id int, yamlMap map[string]interface{}) types.Te
 
 	var failureCause types.FailureCause
 	if status == types.StatusFail {
-		failureCause = classifyFailure(failureDetails, fullBacktrace)
+		topFrame := firstFrameWithFile(fullBacktrace)
+		if topFrame == nil && failureFilePath != "" {
+			topFrame = &types.StackFrame{
+				File: failureFilePath,
+				Line: failureLineNumber,
+			}
+		}
+		failureCause = classifyFailure(failureDetails, topFrame, ctx)
 	}
 
 	return types.TestResult{
-		Id:                 id,
-		GroupName:          groupName,
-		TestCaseName:       testCaseName,
-		Status:             status,
-		FailureCause:       failureCause,
-		FailureDetails:     failureDetails,
-		FailureFilePath:    failureFilePath,
-		FailureLineNumber:  failureLineNumber,
-		TestFilePath:       testFilePath,
-		TestLineNumber:     testLineNumber,
-		FullBacktrace:      fullBacktrace,
-		FilteredBacktrace:  make([]types.StackFrame, 0),
-		Duration:           duration,
+		Id:                id,
+		GroupName:         groupName,
+		TestCaseName:      testCaseName,
+		Status:            status,
+		FailureCause:      failureCause,
+		FailureDetails:    failureDetails,
+		FailureFilePath:   failureFilePath,
+		FailureLineNumber: failureLineNumber,
+		TestFilePath:      testFilePath,
+		TestLineNumber:    testLineNumber,
+		FullBacktrace:     fullBacktrace,
+		FilteredBacktrace: make([]types.StackFrame, 0),
+		Duration:          duration,
 	}
 }

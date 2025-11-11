@@ -55,7 +55,7 @@ func (g *Grouper) GroupFailures(results []types.TestResult) []types.FailureGroup
 		if !exists {
 			group = &types.FailureGroup{
 				Hash:                groupKey,
-				ErrorMessage:        test.ErrorMessage,
+				ErrorMessage:        test.FailureDetails,
 				NormalizedBacktrace: frames,
 				Tests:               []types.TestResult{},
 				Count:               0,

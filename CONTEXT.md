@@ -92,7 +92,7 @@ type StackFrame struct {
 type TestResult struct {
     Name              string
     Status            TestStatus
-    ErrorMessage      string
+    FailureDetails    string
     FullBacktrace     []StackFrame  // 50 frames max
     FilteredBacktrace []StackFrame  // project frames only
 }

@@ -25,7 +25,6 @@ func (s StackFrame) RelativeFilePath(absolutePath string) string {
 	return s.File
 }
 
-
 // TestStatus represents the status of a test
 type TestStatus string
 
@@ -65,45 +64,45 @@ func (fc FailureCause) String() string {
 }
 
 const (
-    // FailureCauseTestDefinition indicates the failure originated from test code/framework
-    FailureCauseTestDefinition FailureCause = "test_definition_error"
-    // FailureCauseProductionCode indicates the failure was raised by the application under test
-    FailureCauseProductionCode FailureCause = "production_code_error"
-    // FailureCauseAssertion indicates the test completed but an expectation failed
-    FailureCauseAssertion FailureCause = "assertion_failure"
+	// FailureCauseTestDefinition indicates the failure originated from test code/framework
+	FailureCauseTestDefinition FailureCause = "test_definition_error"
+	// FailureCauseProductionCode indicates the failure was raised by the application under test
+	FailureCauseProductionCode FailureCause = "production_code_error"
+	// FailureCauseAssertion indicates the test completed but an expectation failed
+	FailureCauseAssertion FailureCause = "assertion_failure"
 )
 
 // TestResult represents a single test execution result
 type TestResult struct {
-	Id               int           // Unique ID for the test result
-	GroupName        string        // Test group name
-	TestCaseName     string        // Test case name
-	Status           TestStatus    // Test status
-	FailureCause     FailureCause  // Cause of the failure, derived from failure details/backtrace
-	FailureDetails   string        // Human-readable description of the failure
-	FailureFilePath  string        // File path where the failure originated
+	Id                int          // Unique ID for the test result
+	GroupName         string       // Test group name
+	TestCaseName      string       // Test case name
+	Status            TestStatus   // Test status
+	FailureCause      FailureCause // Cause of the failure, derived from failure details/backtrace
+	FailureDetails    string       // Human-readable description of the failure
+	FailureFilePath   string       // File path where the failure originated
 	FailureLineNumber int          // Line number where the failure originated
-	TestFilePath     string        // File path of the test
-	TestLineNumber   int           // Line number of the test definition
-	FullBacktrace    []StackFrame  // Complete backtrace (up to 50 frames)
+	TestFilePath      string       // File path of the test
+	TestLineNumber    int          // Line number of the test definition
+	FullBacktrace     []StackFrame // Complete backtrace (up to 50 frames)
 	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
-	Duration         float64       // Duration of the test in seconds
+	Duration          float64      // Duration of the test in seconds
 }
 
 // FailureGroup represents a group of tests that failed with similar backtraces
 type FailureGroup struct {
-	Hash              string        // Hash ID based on normalized backtrace
-	ErrorMessage      string        // Representative error message
+	Hash                string       // Hash ID based on normalized backtrace
+	ErrorMessage        string       // Representative error message
 	NormalizedBacktrace []StackFrame // Normalized backtrace signature
-	Tests             []TestResult  // All tests in this group
-	Count             int           // Number of failed tests in group
+	Tests               []TestResult // All tests in this group
+	Count               int          // Number of failed tests in group
 }
 
 // CacheData represents the structure saved to cache file
 type CacheData struct {
-	Timestamp      time.Time       `json:"timestamp"`
-	FailureGroups  []FailureGroup  `json:"failure_groups"`
-	RawTestResults []TestResult    `json:"raw_test_results"`
+	Timestamp      time.Time      `json:"timestamp"`
+	FailureGroups  []FailureGroup `json:"failure_groups"`
+	RawTestResults []TestResult   `json:"raw_test_results"`
 }
 
 // NewStackFrame creates a new StackFrame
@@ -120,11 +119,11 @@ func NewStackFrame(file string, line int, function string) StackFrame {
 // NewTestResult creates a new TestResult
 func NewTestResult(groupName string, testCaseName string, status TestStatus) TestResult {
 	return TestResult{
-		GroupName:          groupName,
-		TestCaseName:       testCaseName,
-		Status:             status,
-		FullBacktrace:      []StackFrame{},
-		FilteredBacktrace:  []StackFrame{},
+		GroupName:         groupName,
+		TestCaseName:      testCaseName,
+		Status:            status,
+		FullBacktrace:     []StackFrame{},
+		FilteredBacktrace: []StackFrame{},
 	}
 }
 

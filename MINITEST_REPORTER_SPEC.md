@@ -68,26 +68,18 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 - test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 6
-  failure_cause:
-  error_message:
-  error_file_path:
-  error_line_number:
-  failed_assertion_details:
-  assertion_file_path:
-  assertion_line_number:
+  failure_details:
+  failure_file_path:
+  failure_line_number:
   full_backtrace:
   test_status: passed
   duration: "0.05"
 - test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 10
-  failure_cause: error
-  error_message: NameError: uninitialized constant ThingTest::Thing
-  error_file_path: /absolute/path/to/test/thing_test.rb
-  error_line_number: 11
-  failed_assertion_details:
-  assertion_file_path:
-  assertion_line_number:
+  failure_details: NameError: uninitialized constant ThingTest::Thing
+  failure_file_path: /absolute/path/to/test/thing_test.rb
+  failure_line_number: 11
   full_backtrace:
     - /absolute/path/to/test/thing_test.rb:11:in `test_boom_second_case'
     - /absolute/path/to/gems/minitest-5.16.0/lib/minitest/test.rb:98:in `block in run'
@@ -97,13 +89,9 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 - test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 14
-  failure_cause: error
-  error_message: RuntimeError: error in test
-  error_file_path: /absolute/path/to/test/thing_test.rb
-  error_line_number: 15
-  failed_assertion_details:
-  assertion_file_path:
-  assertion_line_number:
+  failure_details: RuntimeError: error in test
+  failure_file_path: /absolute/path/to/test/thing_test.rb
+  failure_line_number: 15
   full_backtrace:
     - /absolute/path/to/test/thing_test.rb:15:in `test_error_in_test'
     - /absolute/path/to/gems/minitest-5.16.0/lib/minitest/test.rb:98:in `block in run'
@@ -112,13 +100,9 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 - test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 18
-  failure_cause: failed_assertion
-  error_message:
-  error_file_path:
-  error_line_number:
-  failed_assertion_details: Expected: "foo"\n  Actual: "bar"
-  assertion_file_path: /absolute/path/to/test/thing_test.rb
-  assertion_line_number: 19
+  failure_details: Expected: "foo"\n  Actual: "bar"
+  failure_file_path: /absolute/path/to/test/thing_test.rb
+  failure_line_number: 19
   full_backtrace:
     - /absolute/path/to/test/thing_test.rb:19:in `test_expectation_not_met'
     - /absolute/path/to/gems/minitest-5.16.0/lib/minitest/test.rb:98:in `block in run'
@@ -127,13 +111,9 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 - test_group_name: ThingTest
   test_file_path: /absolute/path/to/test/thing_test.rb
   test_line_number: 21
-  failure_cause:
-  error_message:
-  error_file_path:
-  error_line_number:
-  failed_assertion_details:
-  assertion_file_path:
-  assertion_line_number:
+  failure_details:
+  failure_file_path:
+  failure_line_number:
   full_backtrace:
   test_status: skipped
   duration: "0.00"
@@ -146,23 +126,17 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 []
 ```
 
-### Required Fields (13 total)
+### Required Fields (9 total)
 
 1. **test_group_name** - Test class name (`result.klass.name`)
 2. **test_file_path** - Absolute file path of test file (from `source_location`, expanded)
 3. **test_line_number** - Line number of test definition (from `source_location`)
-4. **failure_cause** - Either `"error"` or `"failed_assertion"`
-   - `"error"` for `Minitest::UnexpectedError` (detected via `result.error?`)
-   - `"failed_assertion"` for `Minitest::Assertion` failures
-5. **error_message** - Error message (only when `failure_cause == "error"`)
-6. **error_file_path** - Absolute file path where error occurred (only when `failure_cause == "error"`)
-7. **error_line_number** - Line number where error occurred (only when `failure_cause == "error"`)
-8. **failed_assertion_details** - Assertion failure message (only when `failure_cause == "failed_assertion"`)
-9. **assertion_file_path** - Absolute file path of assertion failure (only when `failure_cause == "failed_assertion"`)
-10. **assertion_line_number** - Line number of assertion failure (only when `failure_cause == "failed_assertion"`)
-11. **full_backtrace** - Array of backtrace strings (limited to `backtrace_depth` lines)
-12. **test_status** - String: `"passed"`, `"failed"`, or `"skipped"`
-13. **duration** - String format with exactly 2 decimal places (e.g., `"2.00"`, `"2.54"`)
+4. **failure_details** - Combined error/assertion message describing the failure (empty for passed/skipped)
+5. **failure_file_path** - Absolute file path where the failure originated (blank if unknown)
+6. **failure_line_number** - Line number of the failure origin (0 if unknown)
+7. **full_backtrace** - Array of backtrace strings (limited to `backtrace_depth` lines; may be empty)
+8. **test_status** - String: `"passed"`, `"failed"`, or `"skipped"`
+9. **duration** - String format with exactly 2 decimal places (e.g., `"2.00"`, `"2.54"`)
 
 ## Data Extraction Requirements
 
@@ -172,17 +146,11 @@ This document specifies the requirements for the `WingCommanderReporter` - a cus
 - Pattern: Check `result.respond_to?(:klass)`, then use `result.source_location`, else use `result.method(result.name).source_location`
 - Always expand to absolute path using `File.expand_path`
 
-### Error Details (when `failure_cause == "error"`)
+### Failure Details
 
-- Extract from `result.failure.exception`
-- Prefer `exception.backtrace_locations.first` for file path and line number
-- Fallback to parsing first backtrace line if `backtrace_locations` unavailable
-- Parse format: `"file:line"` or `"file:line:in method"`
-
-### Assertion Details (when `failure_cause == "failed_assertion"`)
-
-- Extract from `result.failure.message` for assertion details
-- Parse `result.failure.location` string for file path and line number
+- Extract human-readable message from `result.failure`
+- Prefer `exception.backtrace_locations.first` for file path and line number when available
+- Fallback to parsing first backtrace line or assertion location (`result.failure.location`)
 - Parse format: `"file:line"` or `"file:line:in method"`
 
 ### Backtrace

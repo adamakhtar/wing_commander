@@ -20,7 +20,7 @@ func TestNewTestResult(t *testing.T) {
 	assert.Equal(t, "UserTest", test.GroupName)
 	assert.Equal(t, "test_user_creation", test.TestCaseName)
 	assert.Equal(t, StatusFail, test.Status)
-	assert.Empty(t, test.ErrorMessage)
+	assert.Empty(t, test.FailureDetails)
 	assert.Empty(t, test.FullBacktrace)
 	assert.Empty(t, test.FilteredBacktrace)
 }
@@ -56,18 +56,18 @@ func TestStackFrameFields(t *testing.T) {
 func TestTestResultFields(t *testing.T) {
 	frame := NewStackFrame("test.rb", 1, "test")
 	test := TestResult{
-		GroupName:          "TestClass",
-		TestCaseName:       "test_method",
-		Status:             StatusPass,
-		ErrorMessage:       "Error message",
-		FullBacktrace:      []StackFrame{frame},
-		FilteredBacktrace:  []StackFrame{frame},
+		GroupName:         "TestClass",
+		TestCaseName:      "test_method",
+		Status:            StatusPass,
+		FailureDetails:    "Error message",
+		FullBacktrace:     []StackFrame{frame},
+		FilteredBacktrace: []StackFrame{frame},
 	}
 
 	assert.Equal(t, "TestClass", test.GroupName)
 	assert.Equal(t, "test_method", test.TestCaseName)
 	assert.Equal(t, StatusPass, test.Status)
-	assert.Equal(t, "Error message", test.ErrorMessage)
+	assert.Equal(t, "Error message", test.FailureDetails)
 	assert.Len(t, test.FullBacktrace, 1)
 	assert.Len(t, test.FilteredBacktrace, 1)
 }

@@ -57,6 +57,7 @@ alwaysApply: true
 
 #### 7. **Code Style and Formatting**
 
+- Only format new code or code you are refactoring. Do not perform formatting on code unrelated to the task at hand as this makes commits very noisy.
 - Follow `gofmt` strictly. No custom indentation rules.
 - Keep lines under 100–120 characters for readability.
 - Use Go naming conventions:
