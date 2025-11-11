@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 //
@@ -59,9 +60,13 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case resultssection.RunTestMsg:
+		cmd = m.handleRunTestsRequested([]string{msg.TestPattern})
+		return m, cmd
 	case TestExecutionCompletedMsg:
 		m.handleTestExecutionCompletion(msg.TestExecutionResult)
 		return m, nil
@@ -124,6 +129,15 @@ type TestExecutionFailedMsg struct {
 	error     error
 }
 
+func (m *Model) handleRunTestsRequested(testPatterns []string) tea.Cmd {
+	testRun, err := m.AddTestRun(testPatterns)
+	if err != nil {
+		// TODO - handle error
+		return nil
+	}
+	return m.ExecuteTestRunCmd(testRun.Id)
+}
+
 //
 // COMMANDS
 //================================================
@@ -139,10 +153,15 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
 
+		log.Debugf("Executing tests for test run %d: %v", testRunId, testRun.Filepaths)
+
 		testExecutionResult, err := m.testRunner.ExecuteTests(testRunId, testRun.Filepaths, m.ctx.Config.TestResultsPath)
 		if err != nil {
+			log.Debugf("Failed to execute tests for test run %d: %v", testRunId, err)
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
+		log.Debugf("Tests executed for test run %d: %v, metrics: %v", testRunId, len(testExecutionResult.TestResults), testExecutionResult.Metrics)
+
 		return TestExecutionCompletedMsg{TestRunId: testRunId, TestExecutionResult: testExecutionResult}
 	}
 }

@@ -1,6 +1,8 @@
 package resultssection
 
 import (
+	"fmt"
+
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
@@ -34,6 +36,7 @@ const (
 	columnKeyTestName    = "test_name"
 	columnKeyFailureCause = "failure_cause"
 	columnKeyMetaId = "test_id"
+	columnKeyMetaTestPattern = "test_pattern"
 )
 
 const (
@@ -93,6 +96,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.resultsTable, cmd = m.resultsTable.Update(msg)
 		case key.Matches(msg, keys.ResultsSectionKeys.LineDown):
 			m.resultsTable, cmd = m.resultsTable.Update(msg)
+		case key.Matches(msg, keys.ResultsSectionKeys.RunSelectedTest):
+			testPattern, ok := m.getSelectedTestPattern()
+			if ok {
+				cmd = runTestCmd(testPattern)
+			}
 		}
 	}
 	return m, cmd
@@ -114,10 +122,19 @@ func (m Model) View() string {
 //================================================
 
 
+type RunTestMsg struct {
+	TestPattern string
+}
+
 //
 // COMMANDS
 //================================================
 
+func runTestCmd(testPattern string) tea.Cmd {
+	return func() tea.Msg {
+		return RunTestMsg{TestPattern: testPattern}
+	}
+}
 
 //
 // EXTERNAL FUNCTIONS
@@ -144,6 +161,7 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 			columnKeyFailureCause: renderFailureType(test.FailureCause, &m.ctx.Styles),
 			columnKeyTestName: test.GroupName + " " + test.TestCaseName,
 			columnKeyMetaId: test.Id,
+			columnKeyMetaTestPattern: test.TestFilePath + ":" + fmt.Sprintf("%d", test.TestLineNumber),
 		}).WithStyle(lipgloss.NewStyle().Foreground(m.ctx.Styles.ResultsSection.TableRowTextColor))
 		rows = append(rows, row)
 	}
@@ -161,6 +179,27 @@ func (m Model) GetSelectedTestResultId() int {
 		return -1
 	}
 	return id.(int)
+}
+
+func (m Model) getSelectedRow() (table.Row, bool)	 {
+	row := m.resultsTable.HighlightedRow()
+
+	if len(row.Data) == 0 {
+		return table.Row{}, false
+	}
+	return row, true
+}
+
+func (m Model) getSelectedTestPattern() (string, bool) {
+	row, ok := m.getSelectedRow()
+	if !ok {
+		return "", false
+	}
+	path, ok := row.Data[columnKeyMetaTestPattern]
+	if !ok {
+		return "", false
+	}
+	return path.(string), ok
 }
 
 func (m *Model) ToggleFocus() {

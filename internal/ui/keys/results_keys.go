@@ -24,6 +24,7 @@ type ResultsSectionKeyMap struct {
 	LineUp key.Binding
 	LineDown key.Binding
 	RunAllTests key.Binding
+	RunSelectedTest key.Binding
 }
 var ResultsSectionKeys = ResultsSectionKeyMap{
 	LineUp: key.NewBinding(
@@ -35,7 +36,11 @@ var ResultsSectionKeys = ResultsSectionKeyMap{
 		key.WithHelp("down", "scroll down"),
 	),
 	RunAllTests: key.NewBinding(
-		key.WithKeys("ctrl+r"),
-		key.WithHelp("ctrl+r", "run all tests"),
+		key.WithKeys("a"),
+		key.WithHelp("a", "run all tests"),
+	),
+	RunSelectedTest: key.NewBinding(
+		key.WithKeys("r"),
+		key.WithHelp("r", "run selected test result"),
 	),
 }
