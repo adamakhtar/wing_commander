@@ -14,6 +14,7 @@ func TestDefaultConfig(t *testing.T) {
 
 	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 	assert.Equal(t, defaultMinitestCommand, config.TestCommand)
+	assert.Equal(t, config.TestCommand, config.RunTestCaseCommand)
 	assert.Equal(t, defaultResultsPath, config.TestResultsPath)
 	assert.NotEmpty(t, config.ExcludePatterns)
 	assert.Contains(t, config.ExcludePatterns, "/gems/")
@@ -26,6 +27,7 @@ func TestLoadConfig_MissingFileReturnsDefaults(t *testing.T) {
 
 	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 	assert.Equal(t, defaultMinitestCommand, config.TestCommand)
+	assert.Equal(t, config.TestCommand, config.RunTestCaseCommand)
 	assert.Equal(t, defaultResultsPath, config.TestResultsPath)
 }
 
@@ -41,7 +43,8 @@ test_command: "bundle exec rake test test/workers/user_worker_test.rb"
 test_results_path: "/tmp/project/.wing_commander/test_results/summary.yml"
 exclude_patterns:
   - "/gems/"
-  - "/custom/"`
+  - "/custom/"
+run_test_case_command: "bundle exec ruby -Itest %{test_case_name}"`
 
 	err = os.WriteFile(configPath, []byte(configContent), 0o644)
 	require.NoError(t, err)
@@ -57,6 +60,7 @@ exclude_patterns:
 	assert.Equal(t, "/tmp/project", config.ProjectPath)
 	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 	assert.Equal(t, "bundle exec rake test test/workers/user_worker_test.rb", config.TestCommand)
+	assert.Equal(t, "bundle exec ruby -Itest %{test_case_name}", config.RunTestCaseCommand)
 	assert.Equal(t, "/tmp/project/.wing_commander/test_results/summary.yml", config.TestResultsPath)
 	assert.Equal(t, []string{"/gems/", "/custom/"}, config.ExcludePatterns)
 }
@@ -85,11 +89,12 @@ invalid: yaml: content`
 
 func TestSaveConfig(t *testing.T) {
 	cfg := &Config{
-		ProjectPath:     "/tmp/project",
-		TestFramework:   FrameworkMinitest,
-		TestCommand:     "bundle exec rake test test/models/user_test.rb",
-		TestResultsPath: "/tmp/project/.wing_commander/test_results/summary.yml",
-		ExcludePatterns: []string{"/vendor/bundle/"},
+		ProjectPath:        "/tmp/project",
+		TestFramework:      FrameworkMinitest,
+		TestCommand:        "bundle exec rake test test/models/user_test.rb",
+		RunTestCaseCommand: "bundle exec ruby -Itest %{test_case_name}",
+		TestResultsPath:    "/tmp/project/.wing_commander/test_results/summary.yml",
+		ExcludePatterns:    []string{"/vendor/bundle/"},
 	}
 
 	err := SaveConfig(cfg)
@@ -104,6 +109,7 @@ func TestSaveConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, cfg.ProjectPath, loaded.ProjectPath)
 	assert.Equal(t, cfg.TestCommand, loaded.TestCommand)
+	assert.Equal(t, cfg.RunTestCaseCommand, loaded.RunTestCaseCommand)
 	assert.Equal(t, cfg.TestResultsPath, loaded.TestResultsPath)
 	assert.Equal(t, cfg.ExcludePatterns, loaded.ExcludePatterns)
 }
@@ -172,6 +178,17 @@ func TestConfigWithMissingFieldsUsesDefaults(t *testing.T) {
 
 	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 	assert.Equal(t, defaultMinitestCommand, config.TestCommand)
+	assert.Equal(t, config.TestCommand, config.RunTestCaseCommand)
 	assert.Equal(t, defaultResultsPath, config.TestResultsPath)
 	assert.Equal(t, defaultExcludePatterns, config.ExcludePatterns)
+}
+
+func TestRunTestCaseCommandFallsBackToTestCommand(t *testing.T) {
+	cfg := NewConfig("/tmp/project", "bundle exec rake test", "", defaultResultsPath, "", false)
+	assert.Equal(t, cfg.TestCommand, cfg.RunTestCaseCommand)
+}
+
+func TestRunTestCaseCommandOverride(t *testing.T) {
+	cfg := NewConfig("/tmp/project", "bundle exec rake test", "", defaultResultsPath, "bundle exec ruby -Itest %{test_case_name}", false)
+	assert.Equal(t, "bundle exec ruby -Itest %{test_case_name}", cfg.RunTestCaseCommand)
 }

@@ -22,17 +22,18 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start wing commander",
 	Args:  cobra.MaximumNArgs(1),
-	Long: "",
+	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
 		start(args)
 	},
 }
 
 var (
-	testFilePattern string
-	runCommand string
-	testResultsPath string
-	debug bool
+	testFilePattern    string
+	runCommand         string
+	runTestCaseCommand string
+	testResultsPath    string
+	debug              bool
 )
 
 func init() {
@@ -42,10 +43,16 @@ func init() {
 	startCmd.Flags().StringVarP(&testFilePattern, "test-file-pattern", "p", "", "A pattern to use to match test files in the project (e.g. 'test/**/*.rb')")
 
 	startCmd.Flags().StringVarP(&runCommand, "run-command", "r", "", "The command to execute tests on the command line (e.g. 'rake test')")
-	if err := startCmd.MarkFlagRequired("run-command"); err != nil { panic(err) }
+	if err := startCmd.MarkFlagRequired("run-command"); err != nil {
+		panic(err)
+	}
+
+	startCmd.Flags().StringVar(&runTestCaseCommand, "run-test-case-command", "", "Optional command template for running a single test case (supports %{test_case_name} and %{line_number} placeholders)")
 
 	startCmd.Flags().StringVarP(&testResultsPath, "test-results-path", "t", "", "path to the directory where the test results are written (e.g. '.wing_commander/test_results')")
-	if err := startCmd.MarkFlagRequired("test-results-path"); err != nil { panic(err) }
+	if err := startCmd.MarkFlagRequired("test-results-path"); err != nil {
+		panic(err)
+	}
 }
 
 func start(args []string) {
@@ -55,7 +62,12 @@ func start(args []string) {
 	projectPath := processProjectPathArg(args)
 	testResultsPath := processTestResultsPathOption(projectPath, testResultsPath)
 
-	config := config.NewConfig(projectPath, runCommand, testFilePattern, testResultsPath, debug)
+	rtcCommand := runTestCaseCommand
+	if rtcCommand == "" {
+		rtcCommand = runCommand
+	}
+
+	config := config.NewConfig(projectPath, runCommand, testFilePattern, testResultsPath, rtcCommand, debug)
 	styles := styles.BuildStyles(styles.DefaultTheme)
 	model := ui.NewModel(config, styles)
 
@@ -67,7 +79,7 @@ func start(args []string) {
 	}
 }
 
-func processProjectPathArg(args []string) (string) {
+func processProjectPathArg(args []string) string {
 	var projectPath string
 	var err error
 
@@ -100,23 +112,23 @@ func processProjectPathArg(args []string) (string) {
 }
 
 func processTestResultsPathOption(projectPath string, providedPath string) string {
-    var absPath string
-    if filepath.IsAbs(providedPath) {
-        absPath = providedPath
-    } else {
-        absPath = filepath.Join(projectPath, providedPath)
-    }
+	var absPath string
+	if filepath.IsAbs(providedPath) {
+		absPath = providedPath
+	} else {
+		absPath = filepath.Join(projectPath, providedPath)
+	}
 
-    info, err := os.Stat(absPath)
-    if err != nil || info.IsDir() {
-        fmt.Printf("❌ Error: testResultsPath %s must be an existing file\n", absPath)
-        os.Exit(1)
-    }
+	info, err := os.Stat(absPath)
+	if err != nil || info.IsDir() {
+		fmt.Printf("❌ Error: testResultsPath %s must be an existing file\n", absPath)
+		os.Exit(1)
+	}
 
-    return absPath
+	return absPath
 }
 
-func setupLogger() (func() error) {
+func setupLogger() func() error {
 	closeLogger, err := logger.SetupLogger(debug)
 	if err != nil {
 		fmt.Printf("Error setting up logger: %v\n", err)

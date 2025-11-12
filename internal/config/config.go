@@ -32,18 +32,19 @@ var defaultExcludePatterns = []string{
 
 // Config represents the Wing Commander configuration.
 type Config struct {
-	ProjectPath     string        `yaml:"project_path"`
-	TestFramework   TestFramework `yaml:"test_framework"`
-	TestCommand     string        `yaml:"test_command"`
-	TestFilePattern string        `yaml:"test_file_pattern"`
-	TestResultsPath string        `yaml:"test_results_path"`
-	Debug           bool          `yaml:"debug"`
-	ExcludePatterns []string      `yaml:"exclude_patterns"`
+	ProjectPath        string        `yaml:"project_path"`
+	TestFramework      TestFramework `yaml:"test_framework"`
+	TestCommand        string        `yaml:"test_command"`
+	RunTestCaseCommand string        `yaml:"run_test_case_command"`
+	TestFilePattern    string        `yaml:"test_file_pattern"`
+	TestResultsPath    string        `yaml:"test_results_path"`
+	Debug              bool          `yaml:"debug"`
+	ExcludePatterns    []string      `yaml:"exclude_patterns"`
 }
 
 // NewConfig creates a new configuration instance, applying sensible defaults for
 // WingCommanderReporter-based YAML summaries when values are omitted.
-func NewConfig(projectPath string, testCommand string, testFilePattern string, testResultsPath string, debug bool) *Config {
+func NewConfig(projectPath string, testCommand string, testFilePattern string, testResultsPath string, runTestCaseCommand string, debug bool) *Config {
 	cfg := DefaultConfig()
 
 	if projectPath != "" {
@@ -52,12 +53,16 @@ func NewConfig(projectPath string, testCommand string, testFilePattern string, t
 	if testCommand != "" {
 		cfg.TestCommand = testCommand
 	}
+	if runTestCaseCommand != "" {
+		cfg.RunTestCaseCommand = runTestCaseCommand
+	}
 	if testFilePattern != "" {
 		cfg.TestFilePattern = testFilePattern
 	}
 	if testResultsPath != "" {
 		cfg.TestResultsPath = testResultsPath
 	}
+	cfg.ensureRunTestCaseCommand()
 	cfg.Debug = debug
 
 	return cfg
@@ -65,15 +70,19 @@ func NewConfig(projectPath string, testCommand string, testFilePattern string, t
 
 // DefaultConfig returns the baseline configuration for the Wing Commander CLI.
 func DefaultConfig() *Config {
-	return &Config{
-		ProjectPath:     "",
-		TestFramework:   FrameworkMinitest,
-		TestCommand:     defaultMinitestCommand,
-		TestFilePattern: "",
-		TestResultsPath: defaultResultsPath,
-		Debug:           false,
-		ExcludePatterns: append([]string{}, defaultExcludePatterns...),
+	cfg := &Config{
+		ProjectPath:        "",
+		TestFramework:      FrameworkMinitest,
+		TestCommand:        defaultMinitestCommand,
+		RunTestCaseCommand: "",
+		TestFilePattern:    "",
+		TestResultsPath:    defaultResultsPath,
+		Debug:              false,
+		ExcludePatterns:    append([]string{}, defaultExcludePatterns...),
 	}
+
+	cfg.ensureRunTestCaseCommand()
+	return cfg
 }
 
 // LoadConfig reads configuration from disk, falling back to defaults if the file
@@ -116,6 +125,9 @@ func LoadConfig(path string) (*Config, error) {
 	if loaded.TestCommand != "" {
 		cfg.TestCommand = loaded.TestCommand
 	}
+	if loaded.RunTestCaseCommand != "" {
+		cfg.RunTestCaseCommand = loaded.RunTestCaseCommand
+	}
 	if loaded.TestFilePattern != "" {
 		cfg.TestFilePattern = loaded.TestFilePattern
 	}
@@ -129,6 +141,7 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Debug = true
 	}
 
+	cfg.ensureRunTestCaseCommand()
 	return cfg, nil
 }
 
@@ -137,6 +150,8 @@ func SaveConfig(cfg *Config) error {
 	if cfg == nil {
 		return fmt.Errorf("cannot save nil config")
 	}
+
+	cfg.ensureRunTestCaseCommand()
 
 	if err := os.MkdirAll(defaultConfigDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create config directory %s: %w", defaultConfigDir, err)
@@ -169,4 +184,10 @@ func ValidateFramework(value string) (TestFramework, error) {
 // GetDefaultTestCommand returns the WingCommanderReporter-aware test command.
 func GetDefaultTestCommand(framework TestFramework) string {
 	return defaultMinitestCommand
+}
+
+func (cfg *Config) ensureRunTestCaseCommand() {
+	if cfg.RunTestCaseCommand == "" {
+		cfg.RunTestCaseCommand = cfg.TestCommand
+	}
 }
