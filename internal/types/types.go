@@ -33,6 +33,19 @@ const (
 	StatusSkip TestStatus = "skip"
 )
 
+func (ts TestStatus) Abbreviated() string {
+	switch ts {
+	case StatusPass:
+		return "P"
+	case StatusFail:
+		return "F"
+	case StatusSkip:
+		return "S"
+	default:
+		return "?"
+	}
+}
+
 // FailureCause represents the coarse-grained cause of a test failure
 type FailureCause string
 
@@ -76,7 +89,7 @@ type TestResult struct {
 	Id                int          // Unique ID for the test result
 	GroupName         string       // Test group name
 	TestCaseName      string       // Test case name
-	Status            TestStatus   // Test status
+	Status            TestStatus   // Test status (pass, fail, skip)
 	FailureCause      FailureCause // Cause of the failure, derived from failure details/backtrace
 	FailureDetails    string       // Human-readable description of the failure
 	FailureFilePath   string       // File path where the failure originated
@@ -86,6 +99,18 @@ type TestResult struct {
 	FullBacktrace     []StackFrame // Complete backtrace (up to 50 frames)
 	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
 	Duration          float64      // Duration of the test in seconds
+}
+
+func (tr *TestResult) AbbreviatedResult() string {
+	if tr.isFailed() {
+		return tr.FailureCause.Abbreviated()
+	} else {
+		return tr.Status.Abbreviated()
+	}
+}
+
+func (tr *TestResult) isFailed() bool {
+	return tr.Status == StatusFail
 }
 
 // NewStackFrame creates a new StackFrame

@@ -31,24 +31,13 @@ func NewTestRuns() TestRuns {
 	}
 }
 
-func (tr *TestRuns) AllRecentFirst() []TestRun {
-	orderedRecentFirst := make([]TestRun, 0, len(tr.testRuns))
-	for _, testRun := range tr.testRuns {
-		orderedRecentFirst = append(orderedRecentFirst, testRun)
-	}
-	sort.Slice(orderedRecentFirst, func(i, j int) bool {
-		return orderedRecentFirst[i].Id > orderedRecentFirst[j].Id
-	})
-	return orderedRecentFirst
-}
-
 func (tr *TestRuns) Add(filepaths []string) (TestRun, error) {
 	testRun := TestRun{
 		Id:        generateTestRunID(),
 		Filepaths: filepaths,
 	}
-	_, ok := tr.testRuns[testRun.Id]
-	if ok {
+
+	if _, exists := tr.testRuns[testRun.Id]; exists {
 		return TestRun{}, fmt.Errorf("test run already exists")
 	}
 
@@ -64,12 +53,14 @@ func (tr *TestRuns) Get(id int) (TestRun, error) {
 	return testRun, nil
 }
 
-func (tr *TestRuns) UpdateError(id int, error string) (TestRun, error) {
+func (tr *TestRuns) UpdateError(id int, errMsg string) (TestRun, error) {
 	testRun, err := tr.Get(id)
 	if err != nil {
 		return TestRun{}, err
 	}
-	testRun.Error = error
+
+	testRun.Error = errMsg
+	tr.testRuns[id] = testRun
 	return testRun, nil
 }
 
@@ -78,7 +69,9 @@ func (tr *TestRuns) UpdateResult(id int, result *runner.TestExecutionResult) (Te
 	if err != nil {
 		return TestRun{}, err
 	}
+
 	testRun.Result = result
+	tr.testRuns[id] = testRun
 	return testRun, nil
 }
 
@@ -87,13 +80,26 @@ func (tr *TestRuns) MostRecent() (TestRun, bool) {
 		return TestRun{}, false
 	}
 
-	maxId := 0
+	maxID := 0
 	for id := range tr.testRuns {
-		if id > maxId {
-			maxId = id
+		if id > maxID {
+			maxID = id
 		}
 	}
 
-	testRun, ok := tr.testRuns[maxId]
+	testRun, ok := tr.testRuns[maxID]
 	return testRun, ok
+}
+
+func (tr *TestRuns) AllRecentFirst() []TestRun {
+	orderedRecentFirst := make([]TestRun, 0, len(tr.testRuns))
+	for _, testRun := range tr.testRuns {
+		orderedRecentFirst = append(orderedRecentFirst, testRun)
+	}
+
+	sort.Slice(orderedRecentFirst, func(i, j int) bool {
+		return orderedRecentFirst[i].Id > orderedRecentFirst[j].Id
+	})
+
+	return orderedRecentFirst
 }

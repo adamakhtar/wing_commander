@@ -2,6 +2,8 @@ package resultssection
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
@@ -15,27 +17,26 @@ import (
 )
 
 var customBorder = table.Border{
-		Top:          "─",
-		Bottom:       "─",
-		Left:         "│",
-		Right:        "│",
-		TopLeft:      "┌",
-		TopRight:     "┐",
-		BottomLeft:   "└",
-		BottomRight:  "┘",
-		TopJunction:    "┬",
-		LeftJunction:   "├",
-		RightJunction:  "┤",
-		BottomJunction: "┴",
-		InnerJunction: "┼",
-		InnerDivider: "│",
+	Top:            "─",
+	Bottom:         "─",
+	Left:           "│",
+	Right:          "│",
+	TopLeft:        "┌",
+	TopRight:       "┐",
+	BottomLeft:     "└",
+	BottomRight:    "┘",
+	TopJunction:    "┬",
+	LeftJunction:   "├",
+	RightJunction:  "┤",
+	BottomJunction: "┴",
+	InnerJunction:  "┼",
+	InnerDivider:   "│",
 }
 
 const (
-	columnKeyGroupName    = "group_name"
-	columnKeyTestName    = "test_name"
-	columnKeyFailureCause = "failure_cause"
-	columnKeyMetaId = "test_id"
+	columnKeyTestName        = "test_name"
+	columnKeyTestResult    = "test_result"
+	columnKeyMetaId          = "test_id"
 	columnKeyMetaTestPattern = "test_pattern"
 )
 
@@ -45,11 +46,11 @@ const (
 )
 
 type Model struct {
-	ctx *context.Context
-	focus bool
+	ctx          *context.Context
+	focus        bool
 	resultsTable table.Model
-	width int
-	height int
+	width        int
+	height       int
 }
 
 //
@@ -66,8 +67,8 @@ func NewModel(ctx *context.Context, focus bool) Model {
 		Border(customBorder)
 
 	return Model{
-		ctx: ctx,
-		focus: focus,
+		ctx:          ctx,
+		focus:        focus,
 		resultsTable: resultsTable,
 	}
 }
@@ -81,7 +82,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.isBlurred()  {
+	if m.isBlurred() {
 		return m, nil
 	}
 
@@ -121,7 +122,6 @@ func (m Model) View() string {
 // MESSAGES & HANDLERS
 //================================================
 
-
 type RunTestMsg struct {
 	TestPattern string
 }
@@ -143,8 +143,8 @@ func runTestCmd(testPattern string) tea.Cmd {
 func (m *Model) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
-	m.resultsTable = m.resultsTable.WithTargetWidth(m.width - 2 * paddingX)
-	m.resultsTable = m.resultsTable.WithMinimumHeight(m.height - 2 * paddingY)
+	m.resultsTable = m.resultsTable.WithTargetWidth(m.width - 2*paddingX)
+	m.resultsTable = m.resultsTable.WithMinimumHeight(m.height - 2*paddingY)
 
 	failureCauseWidth := 3
 	groupNameWidth := 15
@@ -155,12 +155,42 @@ func (m *Model) SetSize(width int, height int) {
 }
 
 func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
+	if testExecutionResult == nil {
+		m.resultsTable = m.resultsTable.WithRows([]table.Row{})
+		return
+	}
+
+	results := make([]types.TestResult, len(testExecutionResult.TestResults))
+	copy(results, testExecutionResult.TestResults)
+
+	sort.SliceStable(results, func(i, j int) bool {
+		pi := sortPriority(results[i])
+		pj := sortPriority(results[j])
+		if pi != pj {
+			return pi < pj
+		}
+
+		groupI := strings.ToLower(results[i].GroupName)
+		groupJ := strings.ToLower(results[j].GroupName)
+		if groupI != groupJ {
+			return groupI < groupJ
+		}
+
+		caseI := strings.ToLower(results[i].TestCaseName)
+		caseJ := strings.ToLower(results[j].TestCaseName)
+		if caseI != caseJ {
+			return caseI < caseJ
+		}
+
+		return results[i].Id < results[j].Id
+	})
+
 	rows := []table.Row{}
-	for _, test := range testExecutionResult.FailedTests {
+	for _, test := range results {
 		row := table.NewRow(table.RowData{
-			columnKeyFailureCause: renderFailureType(test.FailureCause, &m.ctx.Styles),
-			columnKeyTestName: test.GroupName + " " + test.TestCaseName,
-			columnKeyMetaId: test.Id,
+			columnKeyTestResult:    renderFailureType(test.AbbreviatedResult(), &m.ctx.Styles),
+			columnKeyTestName:        test.GroupName + " " + test.TestCaseName,
+			columnKeyMetaId:          test.Id,
 			columnKeyMetaTestPattern: test.TestFilePath + ":" + fmt.Sprintf("%d", test.TestLineNumber),
 		}).WithStyle(lipgloss.NewStyle().Foreground(m.ctx.Styles.ResultsSection.TableRowTextColor))
 		rows = append(rows, row)
@@ -181,7 +211,7 @@ func (m Model) GetSelectedTestResultId() int {
 	return id.(int)
 }
 
-func (m Model) getSelectedRow() (table.Row, bool)	 {
+func (m Model) getSelectedRow() (table.Row, bool) {
 	row := m.resultsTable.HighlightedRow()
 
 	if len(row.Data) == 0 {
@@ -217,6 +247,7 @@ func (m Model) isBlurred() bool {
 func (m Model) isFocused() bool {
 	return m.focus
 }
+
 //
 // INTERNAL FUNCTIONS
 //================================================
@@ -226,21 +257,47 @@ func getColumnConfiguration(failureCauseWidth int, groupNameWidth int, testNameW
 	headerStyle := lipgloss.NewStyle().Foreground(styles.ResultsSection.TableHeaderTextColor)
 
 	return []table.Column{
-		table.NewColumn(columnKeyFailureCause, "", failureCauseWidth).WithStyle(headerStyle.Align(lipgloss.Center)),
+		table.NewColumn(columnKeyTestResult, "", failureCauseWidth).WithStyle(headerStyle.Align(lipgloss.Center)),
 		// table.NewFlexColumn(columnKeyGroupName, "Group name", groupNameWidth).WithStyle(headerStyle),
 		table.NewFlexColumn(columnKeyTestName, "Test name", testNameWidth).WithStyle(headerStyle),
 	}
 }
 
-func renderFailureType(failureCause types.FailureCause, styles *styles.Styles) string {
-	switch failureCause {
-	case types.FailureCauseTestDefinition:
-		return styles.TestDefinitionErrorBadge.Width(3).Render(failureCause.Abbreviated())
-	case types.FailureCauseProductionCode:
-		return styles.ProductionCodeErrorBadge.Width(3).Render(failureCause.Abbreviated())
-	case types.FailureCauseAssertion:
-		return styles.AssertionErrorBadge.Width(3).Render(failureCause.Abbreviated())
+func renderFailureType(result string, styles *styles.Styles) string {
+	switch result {
+	case "P":
+		return styles.PassBadge.Width(3).Render(result)
+	case "S":
+		return styles.SkipBadge.Width(3).Render(result)
+	case "T":
+		return styles.TestDefinitionErrorBadge.Width(3).Render(result)
+	case "C":
+		return styles.ProductionCodeErrorBadge.Width(3).Render(result)
+	case "A":
+		return styles.AssertionErrorBadge.Width(3).Render(result)
 	default:
 		return ""
+	}
+}
+
+func sortPriority(result types.TestResult) int {
+	switch result.Status {
+	case types.StatusFail:
+		switch result.FailureCause {
+		case types.FailureCauseProductionCode:
+			return 0
+		case types.FailureCauseTestDefinition:
+			return 1
+		case types.FailureCauseAssertion:
+			return 2
+		default:
+			return 3
+		}
+	case types.StatusPass:
+		return 3
+	case types.StatusSkip:
+		return 4
+	default:
+		return 5
 	}
 }
