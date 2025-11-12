@@ -80,8 +80,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, keys.ResultsKeys.SwitchSection):
 			m.resultsSection.ToggleFocus()
 			m.previewSection.ToggleFocus()
-		case key.Matches(msg, keys.ResultsSectionKeys.RunAllTests):
+		case key.Matches(msg, keys.ResultsKeys.RunAllTests):
 			testRun, err := m.AddTestRun([]string{""})
+			if err != nil {
+				// TODO - handle error
+				return m, nil
+			}
+			return m, m.ExecuteTestRunCmd(testRun.Id)
+		case key.Matches(msg, keys.ResultsKeys.RunFailedTests):
+			testRun, err := m.AddTestRunForFailedTests()
 			if err != nil {
 				// TODO - handle error
 				return m, nil
@@ -172,6 +179,17 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 func (m *Model) AddTestRun(filepaths []string) (testruns.TestRun, error) {
 	testRun, err := m.testRuns.Add(filepaths)
 	return testRun, err
+}
+
+func (m *Model) AddTestRunForFailedTests() (testruns.TestRun, error) {
+	// TODO - create a TestResultsCollection type and move this logic to that type
+	var filepaths []string
+
+	for _, testResult := range m.testExecutionResult.FailedTests {
+		filepaths = append(filepaths, testResult.TestFilePath)
+	}
+
+	return m.AddTestRun(filepaths)
 }
 
 func (m Model) GetSelectedTestResultId() *types.TestResult {

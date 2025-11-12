@@ -7,6 +7,8 @@ import (
 type KeyMap struct {
 	PickFiles key.Binding
 	SwitchSection key.Binding
+	RunAllTests key.Binding
+	RunFailedTests key.Binding
 }
 
 var ResultsKeys = KeyMap{
@@ -18,12 +20,19 @@ var ResultsKeys = KeyMap{
 		key.WithKeys("tab"),
 		key.WithHelp("tab", "switch section"),
 	),
+	RunAllTests: key.NewBinding(
+		key.WithKeys("a"),
+		key.WithHelp("a", "run all tests"),
+	),
+	RunFailedTests: key.NewBinding(
+		key.WithKeys("f"),
+		key.WithHelp("f", "run failed tests"),
+	),
 }
 
 type ResultsSectionKeyMap struct {
 	LineUp key.Binding
 	LineDown key.Binding
-	RunAllTests key.Binding
 	RunSelectedTest key.Binding
 }
 var ResultsSectionKeys = ResultsSectionKeyMap{
@@ -34,10 +43,6 @@ var ResultsSectionKeys = ResultsSectionKeyMap{
 	LineDown: key.NewBinding(
 		key.WithKeys("down"),
 		key.WithHelp("down", "scroll down"),
-	),
-	RunAllTests: key.NewBinding(
-		key.WithKeys("a"),
-		key.WithHelp("a", "run all tests"),
 	),
 	RunSelectedTest: key.NewBinding(
 		key.WithKeys("r"),
