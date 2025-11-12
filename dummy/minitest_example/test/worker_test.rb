@@ -20,4 +20,8 @@ class WorkerTest < Minitest::Test
     result = worker.addition(5, 3, raise_error: false)
     assert_equal 10, result  # Fails (expected 10, got 8), backtrace shows Worker -> Helper
   end
+
+  def test_success
+    assert true
+  end
 end
