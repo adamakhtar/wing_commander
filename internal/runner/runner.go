@@ -26,9 +26,9 @@ func NewTestRunner(cfg *config.Config) *TestRunner {
 }
 
 // ExecuteTests runs the configured test command and returns parsed results
-func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResultsPath string) (*TestExecutionResult, error) {
+func (r *TestRunner) ExecuteTests(testRun types.TestRun) (*TestExecutionResult, error) {
 	// Execute the test command
-	output, err := r.executeTestCommand(filepaths)
+	output, err := r.executeTestCommand(testRun.Filepaths)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
@@ -41,7 +41,7 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 		TestFilePattern: r.config.TestFilePattern,
 	}
 
-	parsed, err := parser.ParseFile(testResultsPath, parseOpts)
+	parsed, err := parser.ParseFile(r.config.TestResultsPath, parseOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse test output summary: %w", err)
 	}
@@ -70,7 +70,7 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 	metrics := calculateMetrics(normalizedResults)
 
 	return &TestExecutionResult{
-		TestRunId:     testRunId,
+		TestRunId:     testRun.Id,
 		TestResults:   normalizedResults,
 		Metrics:       metrics,
 		PassedTests:   passedTests,

@@ -174,7 +174,7 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 
 		log.Debugf("Executing tests for test run %d: %v", testRunId, testRun.Filepaths)
 
-		testExecutionResult, err := m.testRunner.ExecuteTests(testRunId, testRun.Filepaths, m.ctx.Config.TestResultsPath)
+		testExecutionResult, err := m.testRunner.ExecuteTests(testRun.TestRun)
 		if err != nil {
 			log.Debugf("Failed to execute tests for test run %d: %v", testRunId, err)
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}

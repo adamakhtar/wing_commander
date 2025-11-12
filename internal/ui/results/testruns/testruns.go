@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/adamakhtar/wing_commander/internal/runner"
+	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
 var testRunIDCounter int
@@ -30,11 +30,7 @@ type TestRuns struct {
 }
 
 type TestRun struct {
-	Id        int
-	Filepaths []string
-	Result    *runner.TestExecutionResult
-	Error     string
-	Mode      Mode
+	types.TestRun
 }
 
 func NewTestRuns() TestRuns {
@@ -45,9 +41,11 @@ func NewTestRuns() TestRuns {
 
 func (tr *TestRuns) Add(filepaths []string, mode Mode) (TestRun, error) {
 	testRun := TestRun{
-		Id:        generateTestRunID(),
-		Filepaths: filepaths,
-		Mode:      mode,
+		TestRun: types.TestRun{
+			Id:        generateTestRunID(),
+			Filepaths: filepaths,
+			Mode:      string(mode),
+		},
 	}
 
 	tr.testRuns[testRun.Id] = testRun
@@ -59,28 +57,6 @@ func (tr *TestRuns) Get(id int) (TestRun, error) {
 	if !ok {
 		return TestRun{}, fmt.Errorf("test run not found")
 	}
-	return testRun, nil
-}
-
-func (tr *TestRuns) UpdateError(id int, errMsg string) (TestRun, error) {
-	testRun, err := tr.Get(id)
-	if err != nil {
-		return TestRun{}, err
-	}
-
-	testRun.Error = errMsg
-	tr.testRuns[id] = testRun
-	return testRun, nil
-}
-
-func (tr *TestRuns) UpdateResult(id int, result *runner.TestExecutionResult) (TestRun, error) {
-	testRun, err := tr.Get(id)
-	if err != nil {
-		return TestRun{}, err
-	}
-
-	testRun.Result = result
-	tr.testRuns[id] = testRun
 	return testRun, nil
 }
 
@@ -114,7 +90,7 @@ func (tr *TestRuns) AllRecentFirst() []TestRun {
 }
 
 func (t TestRun) Label() string {
-	switch t.Mode {
+	switch Mode(t.Mode) {
 	case ModeRunWholeSuite:
 		return "Run whole suite"
 	case ModeRunSelectedPatterns:
