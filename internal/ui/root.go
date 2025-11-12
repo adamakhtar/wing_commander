@@ -16,9 +16,9 @@ import (
 
 type Model struct {
 	// Data
-	ctx *context.Context
-	ready bool
-	resultsScreen results.Model
+	ctx              *context.Context
+	ready            bool
+	resultsScreen    results.Model
 	filepickerScreen filepicker.Model
 }
 
@@ -29,13 +29,13 @@ type Model struct {
 func NewModel(cfg *config.Config, styles styles.Styles) tea.Model {
 	ctx := &context.Context{
 		CurrentScreen: context.ResultsScreen,
-		Config: cfg,
-		Styles: styles,
+		Config:        cfg,
+		Styles:        styles,
 	}
 
 	model := Model{
 		ready: false,
-		ctx: ctx,
+		ctx:   ctx,
 	}
 
 	model.resultsScreen = results.NewModel(model.ctx)
@@ -63,18 +63,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case filepicker.CancelMsg:
 		m.ctx.CurrentScreen = context.ResultsScreen
 		cmd = m.resultsScreen.Prepare()
-		return m, cmd
-	case filepicker.TestsSelectedMsg:
-		m.ctx.CurrentScreen = context.ResultsScreen
-		// TODO - consider running a command here that the results screen listens to and it then
-		//  performs the test run
-		testRun, err := m.resultsScreen.AddTestRun(msg.Filepaths)
-		if err != nil {
-			// TODO - handle error
-			return m, nil
-		}
-
-		cmd = m.resultsScreen.ExecuteTestRunCmd(testRun.Id)
 		return m, cmd
 	case tea.WindowSizeMsg:
 		m.setSize(msg.Width, msg.Height)
@@ -127,7 +115,6 @@ func (m *Model) onWindowResize(msg tea.WindowSizeMsg) {
 //
 // COMMANDS
 //================================================
-
 
 // INTERNAL FUNCTIONS
 //================================================

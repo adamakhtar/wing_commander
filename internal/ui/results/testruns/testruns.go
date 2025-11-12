@@ -14,6 +14,17 @@ func generateTestRunID() int {
 	return testRunIDCounter
 }
 
+type Option func(*TestRun)
+
+type Mode string
+
+const (
+	ModeRunWholeSuite       Mode = "run_whole_suite"
+	ModeRunSelectedPatterns Mode = "run_selected_patterns"
+	ModeReRunSingleFailure  Mode = "rerun_single_failure"
+	ModeReRunAllFailures    Mode = "rerun_all_failures"
+)
+
 type TestRuns struct {
 	testRuns map[int]TestRun
 }
@@ -23,6 +34,7 @@ type TestRun struct {
 	Filepaths []string
 	Result    *runner.TestExecutionResult
 	Error     string
+	Mode      Mode
 }
 
 func NewTestRuns() TestRuns {
@@ -31,14 +43,11 @@ func NewTestRuns() TestRuns {
 	}
 }
 
-func (tr *TestRuns) Add(filepaths []string) (TestRun, error) {
+func (tr *TestRuns) Add(filepaths []string, mode Mode) (TestRun, error) {
 	testRun := TestRun{
 		Id:        generateTestRunID(),
 		Filepaths: filepaths,
-	}
-
-	if _, exists := tr.testRuns[testRun.Id]; exists {
-		return TestRun{}, fmt.Errorf("test run already exists")
+		Mode:      mode,
 	}
 
 	tr.testRuns[testRun.Id] = testRun
@@ -102,4 +111,30 @@ func (tr *TestRuns) AllRecentFirst() []TestRun {
 	})
 
 	return orderedRecentFirst
+}
+
+func (t TestRun) Label() string {
+	switch t.Mode {
+	case ModeRunWholeSuite:
+		return "Run whole suite"
+	case ModeRunSelectedPatterns:
+		return formatSelectedPatternsLabel(len(t.Filepaths))
+	case ModeReRunSingleFailure:
+		return "Re-run failure"
+	case ModeReRunAllFailures:
+		return "Re-run all failed"
+	default:
+		return formatSelectedPatternsLabel(len(t.Filepaths))
+	}
+}
+
+func formatSelectedPatternsLabel(count int) string {
+	switch count {
+	case 0:
+		return "Run 0 patterns"
+	case 1:
+		return "Run 1 pattern"
+	default:
+		return fmt.Sprintf("Run %d patterns", count)
+	}
 }

@@ -1,9 +1,12 @@
 package results
 
 import (
+	"fmt"
+
 	"github.com/adamakhtar/wing_commander/internal/runner"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
+	"github.com/adamakhtar/wing_commander/internal/ui/filepicker"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/previewsection"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
@@ -24,12 +27,12 @@ type Model struct {
 	testRuns            testruns.TestRuns
 	testRunner          *runner.TestRunner
 	testExecutionResult *runner.TestExecutionResult
-	resultsSection resultssection.Model
-	previewSection previewsection.Model
-	testRunsSection testrunssection.Model
-	width int
-	height int
-	error error
+	resultsSection      resultssection.Model
+	previewSection      previewsection.Model
+	testRunsSection     testrunssection.Model
+	width               int
+	height              int
+	error               error
 }
 
 //
@@ -41,11 +44,11 @@ func NewModel(ctx *context.Context) Model {
 	testRuns := testruns.NewTestRuns()
 
 	model := Model{
-		ctx:            ctx,
-		testRunner:     testRunner,
-		testRuns:       testRuns,
-		resultsSection: resultssection.NewModel(ctx, true),
-		previewSection: previewsection.NewModel(ctx, false),
+		ctx:             ctx,
+		testRunner:      testRunner,
+		testRuns:        testRuns,
+		resultsSection:  resultssection.NewModel(ctx, true),
+		previewSection:  previewsection.NewModel(ctx, false),
 		testRunsSection: testrunssection.NewModel(ctx, &testRuns),
 	}
 	return model
@@ -60,13 +63,31 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case resultssection.RunTestMsg:
-		cmd = m.handleRunTestsRequested([]string{msg.TestPattern})
-		return m, cmd
+
+		testRun, err := m.testRuns.Add(
+			[]string{msg.TestPattern},
+			testruns.ModeReRunSingleFailure,
+		)
+		if err != nil {
+			// TODO - handle error
+			return m, nil
+		}
+		return m, m.ExecuteTestRunCmd(testRun.Id)
+	case filepicker.TestsSelectedMsg:
+		m.ctx.CurrentScreen = context.ResultsScreen
+		// TODO - consider running a command here that the results screen listens to and it then
+		//  performs the test run
+		testRun, err := m.testRuns.Add(msg.Filepaths, testruns.ModeRunSelectedPatterns)
+		if err != nil {
+			// TODO - handle error
+			return m, nil
+		}
+
+		return m, m.ExecuteTestRunCmd(testRun.Id)
 	case TestExecutionCompletedMsg:
 		m.handleTestExecutionCompletion(msg.TestExecutionResult)
 		return m, nil
@@ -81,7 +102,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.resultsSection.ToggleFocus()
 			m.previewSection.ToggleFocus()
 		case key.Matches(msg, keys.ResultsKeys.RunAllTests):
-			testRun, err := m.AddTestRun([]string{""})
+			testRun, err := m.testRuns.Add([]string{""}, testruns.ModeRunWholeSuite)
 			if err != nil {
 				// TODO - handle error
 				return m, nil
@@ -136,15 +157,6 @@ type TestExecutionFailedMsg struct {
 	error     error
 }
 
-func (m *Model) handleRunTestsRequested(testPatterns []string) tea.Cmd {
-	testRun, err := m.AddTestRun(testPatterns)
-	if err != nil {
-		// TODO - handle error
-		return nil
-	}
-	return m.ExecuteTestRunCmd(testRun.Id)
-}
-
 //
 // COMMANDS
 //================================================
@@ -176,20 +188,23 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 // EXTERNAL FUNCTIONS
 //================================================
 
-func (m *Model) AddTestRun(filepaths []string) (testruns.TestRun, error) {
-	testRun, err := m.testRuns.Add(filepaths)
-	return testRun, err
-}
-
 func (m *Model) AddTestRunForFailedTests() (testruns.TestRun, error) {
 	// TODO - create a TestResultsCollection type and move this logic to that type
 	var filepaths []string
+
+	if m.testExecutionResult == nil {
+		return testruns.TestRun{}, fmt.Errorf("no previous test execution available")
+	}
 
 	for _, testResult := range m.testExecutionResult.FailedTests {
 		filepaths = append(filepaths, testResult.TestFilePath)
 	}
 
-	return m.AddTestRun(filepaths)
+	testRun, err := m.testRuns.Add(filepaths, testruns.ModeReRunAllFailures)
+	if err != nil {
+		return testruns.TestRun{}, err
+	}
+	return testRun, nil
 }
 
 func (m Model) GetSelectedTestResultId() *types.TestResult {
@@ -221,7 +236,7 @@ func (m *Model) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
 
-	m.testRunsSection.SetSize(m.width * 2/10, m.height)
-	m.resultsSection.SetSize(m.width * 4/10, m.height)
-	m.previewSection.SetSize(m.width * 4/10, m.height)
+	m.testRunsSection.SetSize(m.width*2/10, m.height)
+	m.resultsSection.SetSize(m.width*4/10, m.height)
+	m.previewSection.SetSize(m.width*4/10, m.height)
 }
