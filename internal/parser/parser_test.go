@@ -8,110 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseFile(t *testing.T) {
-	tests := []struct {
-		name     string
-		filename string
-		wantErr  bool
-	}{
-		{
-			name:     "valid RSpec XML file",
-			filename: "../../testdata/fixtures/rspec_failures.xml",
-			wantErr:  false,
-		},
-		{
-			name:     "valid Minitest XML file",
-			filename: "../../testdata/fixtures/minitest_failures.xml",
-			wantErr:  false,
-		},
-		{
-			name:     "non-existent file",
-			filename: "testdata/fixtures/nonexistent.xml",
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseFile(tt.filename, nil)
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, result)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-			}
-		})
-	}
-}
-
-func TestParseXML_RSpec(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-  <testsuite name="RSpec" tests="1" failures="1" skipped="0" time="0.123">
-    <testcase classname="User" name="should be valid" time="0.123">
-      <failure message="Expected User to be valid">
-        app/models/user.rb:42:in 'create_user'
-        spec/models/user_spec.rb:15:in 'block (2 levels) in &lt;top (required)&gt;'
-      </failure>
-    </testcase>
-  </testsuite>
-</testsuites>`
-
-	result, err := ParseXML([]byte(xmlData), nil)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-
-	assert.Len(t, result.Tests, 1)
-
-	test := result.Tests[0]
-	assert.Equal(t, "User", test.GroupName)
-	assert.Equal(t, "should be valid", test.TestCaseName)
-	assert.Equal(t, types.StatusFail, test.Status)
-	assert.Equal(t, "Expected User to be valid", test.FailureDetails)
-	assert.Equal(t, "app/models/user.rb", test.FailureFilePath)
-	assert.Equal(t, 42, test.FailureLineNumber)
-	assert.Len(t, test.FullBacktrace, 2)
-	// Expect assertion failure classification due to message
-	assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
-
-	// Check first frame
-	frame := test.FullBacktrace[0]
-	assert.Equal(t, "app/models/user.rb", frame.File)
-	assert.Equal(t, 42, frame.Line)
-	assert.Equal(t, "create_user", frame.Function)
-}
-
-func TestParseXML_Minitest(t *testing.T) {
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-  <testsuite name="Minitest" tests="1" failures="1" skipped="0" time="0.156">
-    <testcase classname="UserTest" name="test_user_creation" time="0.156">
-      <failure message="Expected User to be valid">
-        app/models/user.rb:42:in 'create_user'
-        test/models/user_test.rb:15:in 'test_user_creation'
-      </failure>
-    </testcase>
-  </testsuite>
-</testsuites>`
-
-	result, err := ParseXML([]byte(xmlData), nil)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-
-	assert.Equal(t, 1, result.Summary.Total)
-	assert.Equal(t, 1, result.Summary.Failed)
-	assert.Len(t, result.Tests, 1)
-
-	test := result.Tests[0]
-	assert.Equal(t, "UserTest", test.GroupName)
-	assert.Equal(t, "test_user_creation", test.TestCaseName)
-	assert.Equal(t, types.StatusFail, test.Status)
-	assert.Equal(t, "Expected User to be valid", test.FailureDetails)
-	// Expect assertion failure classification due to message
-	assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
-}
-
 func TestClassifyFailure_Heuristics(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -255,22 +151,14 @@ func TestParseStackFrame(t *testing.T) {
 	}
 }
 
-func TestInvalidXML(t *testing.T) {
-	invalidXML := `<?xml version="1.0"?><invalid>xml`
-
-	result, err := ParseXML([]byte(invalidXML), nil)
-	assert.Error(t, err)
-	assert.Nil(t, result)
-}
-
-func TestParseYAMLFile(t *testing.T) {
+func TestParseFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		filename string
 		wantErr  bool
 	}{
 		{
-			name:     "valid YAML summary file",
+			name:     "valid summary file",
 			filename: "../../testdata/fixtures/minitest_summary.yml",
 			wantErr:  false,
 		},
@@ -283,7 +171,7 @@ func TestParseYAMLFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseYAMLFile(tt.filename, nil)
+			result, err := ParseFile(tt.filename, nil)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -296,7 +184,7 @@ func TestParseYAMLFile(t *testing.T) {
 	}
 }
 
-func TestParseYAML_BasicFields(t *testing.T) {
+func TestParse_BasicFields(t *testing.T) {
 	yamlData := `---
 - test_group_name: TestClass
   test_status: passed
@@ -309,7 +197,7 @@ func TestParseYAML_BasicFields(t *testing.T) {
   full_backtrace: []
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Len(t, result.Tests, 1)
@@ -328,7 +216,7 @@ func TestParseYAML_BasicFields(t *testing.T) {
 	assert.Empty(t, test.FullBacktrace)
 }
 
-func TestParseYAML_StatusEnum(t *testing.T) {
+func TestParse_StatusEnum(t *testing.T) {
 	tests := []struct {
 		name     string
 		status   string
@@ -350,14 +238,14 @@ func TestParseYAML_StatusEnum(t *testing.T) {
   test_line_number: 0
   full_backtrace: []
 `
-			result, err := ParseYAML([]byte(yamlData), nil)
+			result, err := Parse([]byte(yamlData), nil)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, result.Tests[0].Status)
 		})
 	}
 }
 
-func TestParseYAML_FailureCauseClassification(t *testing.T) {
+func TestParse_FailureCauseClassification(t *testing.T) {
 	tests := []struct {
 		name     string
 		yamlData string
@@ -417,7 +305,7 @@ func TestParseYAML_FailureCauseClassification(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseYAML([]byte(tt.yamlData), nil)
+			result, err := Parse([]byte(tt.yamlData), nil)
 			require.NoError(t, err)
 			require.Len(t, result.Tests, 1)
 			assert.Equal(t, tt.expected, result.Tests[0].FailureCause)
@@ -425,7 +313,7 @@ func TestParseYAML_FailureCauseClassification(t *testing.T) {
 	}
 }
 
-func TestParseYAML_FailureFields(t *testing.T) {
+func TestParse_FailureFields(t *testing.T) {
 	yamlData := `---
 - test_group_name: TestClass
   test_status: failed
@@ -439,7 +327,7 @@ func TestParseYAML_FailureFields(t *testing.T) {
     - "/path/to/error.rb:15:in 'method'"
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -454,7 +342,7 @@ func TestParseYAML_FailureFields(t *testing.T) {
 	assert.Equal(t, 15, test.FullBacktrace[0].Line)
 }
 
-func TestParseYAML_AssertionFields(t *testing.T) {
+func TestParse_AssertionFields(t *testing.T) {
 	yamlData := `---
 - test_group_name: TestClass
   test_status: failed
@@ -468,7 +356,7 @@ func TestParseYAML_AssertionFields(t *testing.T) {
     - "/path/to/test.rb:21:in 'test_method'"
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -480,7 +368,7 @@ func TestParseYAML_AssertionFields(t *testing.T) {
 	assert.Equal(t, 21, test.FailureLineNumber)
 }
 
-func TestParseYAML_FailureCause_UsesPattern(t *testing.T) {
+func TestParse_FailureCause_UsesPattern(t *testing.T) {
 	yamlData := `---
 - test_group_name: CustomSuite
   test_status: failed
@@ -499,7 +387,7 @@ func TestParseYAML_FailureCause_UsesPattern(t *testing.T) {
 		TestFilePattern: "custom_specs/**/*.rb",
 	}
 
-	result, err := ParseYAML([]byte(yamlData), opts)
+	result, err := Parse([]byte(yamlData), opts)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -507,7 +395,7 @@ func TestParseYAML_FailureCause_UsesPattern(t *testing.T) {
 	assert.Equal(t, types.FailureCauseTestDefinition, test.FailureCause)
 }
 
-func TestParseYAML_BacktraceParsing(t *testing.T) {
+func TestParse_BacktraceParsing(t *testing.T) {
 	yamlData := `---
 - test_group_name: TestClass
   test_status: failed
@@ -521,7 +409,7 @@ func TestParseYAML_BacktraceParsing(t *testing.T) {
     - "/valid/path.rb:5:in 'valid_method'"
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -542,10 +430,10 @@ func TestParseYAML_BacktraceParsing(t *testing.T) {
 	assert.Equal(t, 5, test.FullBacktrace[2].Line)
 }
 
-func TestParseYAML_EmptyArray(t *testing.T) {
+func TestParse_EmptyArray(t *testing.T) {
 	yamlData := `--- []`
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	assert.Len(t, result.Tests, 0)
@@ -555,13 +443,13 @@ func TestParseYAML_EmptyArray(t *testing.T) {
 	assert.Equal(t, 0, result.Summary.Skipped)
 }
 
-func TestParseYAML_MissingFields(t *testing.T) {
+func TestParse_MissingFields(t *testing.T) {
 	yamlData := `---
 - test_group_name: Test
   test_status: passed
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -575,14 +463,14 @@ func TestParseYAML_MissingFields(t *testing.T) {
 	assert.Empty(t, test.FailureDetails)
 }
 
-func TestParseYAML_InvalidDuration(t *testing.T) {
+func TestParse_InvalidDuration(t *testing.T) {
 	yamlData := `---
 - test_group_name: Test
   test_status: passed
   duration: "invalid"
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -590,7 +478,7 @@ func TestParseYAML_InvalidDuration(t *testing.T) {
 	assert.Equal(t, 0.0, test.Duration) // Default on parse error
 }
 
-func TestParseYAML_MultipleTests(t *testing.T) {
+func TestParse_MultipleTests(t *testing.T) {
 	yamlData := `---
 - test_group_name: Test1
   test_status: passed
@@ -612,7 +500,7 @@ func TestParseYAML_MultipleTests(t *testing.T) {
   full_backtrace: []
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 3)
 
@@ -637,7 +525,7 @@ func TestParseYAML_MultipleTests(t *testing.T) {
 	assert.Equal(t, 0.5, result.Tests[2].Duration)
 }
 
-func TestParseYAML_IntAsString(t *testing.T) {
+func TestParse_IntAsString(t *testing.T) {
 	yamlData := `---
 - test_group_name: Test
   test_status: passed
@@ -647,7 +535,7 @@ func TestParseYAML_IntAsString(t *testing.T) {
   full_backtrace: []
 `
 
-	result, err := ParseYAML([]byte(yamlData), nil)
+	result, err := Parse([]byte(yamlData), nil)
 	require.NoError(t, err)
 	require.Len(t, result.Tests, 1)
 
@@ -655,10 +543,10 @@ func TestParseYAML_IntAsString(t *testing.T) {
 	assert.Equal(t, 42, test.TestLineNumber) // Should parse string to int
 }
 
-func TestParseYAML_InvalidYAML(t *testing.T) {
+func TestParse_InvalidData(t *testing.T) {
 	invalidYAML := `--- invalid: yaml: content`
 
-	result, err := ParseYAML([]byte(invalidYAML), nil)
+	result, err := Parse([]byte(invalidYAML), nil)
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }

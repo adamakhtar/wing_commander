@@ -58,17 +58,17 @@ A CLI/TUI tool for running tests and reviewing failure details with normalized b
 
 - **V1**: User runs all tests, tool executes test command and aggregates results
 - **Future**: File watching, selective test runs, incremental results
-- **Input**: JUnit XML from test frameworks (RSpec, Minitest)
+- **Input**: YAML summaries produced by WingCommanderReporter (Minitest)
 - **Output**: Flat list of failures in TUI
 - **No Caching**: V1 keeps it simple - fresh run every time
 
 ### 7. **Test Framework Support**
 
 - **Dummy Projects**: `dummy/` directory contains test projects for each supported framework
-- **Minitest**: Complete Ruby project with failing tests and JUnit XML reporting
-  - Uses `ci_reporter_minitest` gem for JUnit XML format output
+- **Minitest**: Complete Ruby project with failing tests and WingCommanderReporter YAML output
+  - Uses `WingCommanderReporter` to write `.wing_commander/test_results/summary.yml`
   - Two failing test cases calling `Thing.new.boom` method
-  - Reports generated in `test/reports/` directory
+  - Summary generated in `.wing_commander/test_results/summary.yml`
   - Runnable with `bundle install` and `bundle exec rake test`
 
 ### 8. **Error Handling**

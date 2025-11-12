@@ -20,38 +20,20 @@ Wing Commander now uses a CLI-first configuration approach where command-line op
 - **Behavior**: Relative paths are automatically converted to absolute paths
 - **Example**: `--project-path /path/to/my/project`
 
-### `--test-command CMD`
+### `--run-command CMD`
 
-- **Purpose**: Specify the test runner command with template interpolation support
+- **Purpose**: Command that executes your test suite (WingCommanderReporter must be registered in `test_helper.rb`)
 - **Type**: String (command with optional template variables)
-- **Default**: Must be provided (no hardcoded default)
 - **Template Syntax**: Uses Go `text/template` syntax
 - **Available Variables**: `{{.Paths}}` (for test paths, empty by default)
-- **Example**: `--test-command "rails test {{.Paths}} --output .wing_commander/test_output.xml"`
+- **Example**: `--run-command "bundle exec rake test {{.Paths}}"`
 
-For Minitest using `minitest-reporters` JUnit reporter, point the command to generate JUnit XML. For example, when your `test_helper.rb` configures:
+### `--test-results-path FILE`
 
-```ruby
-require 'minitest/reporters'
-Minitest::Reporters.use! [
-  Minitest::Reporters::JUnitReporter.new('.wing_commander')
-]
-```
-
-run Wing Commander with the project path and a command that triggers your test suite (the reporter writes XML files to `.wing_commander/` which Wing Commander reads from combined output):
-
-```bash
-wing_commander run \
-  --project-path /path/to/project \
-  --test-command "bundle exec rake test"
-```
-
-### `--config PATH`
-
-- **Purpose**: Specify custom configuration file location
+- **Purpose**: Absolute or relative path to the YAML summary produced by `WingCommanderReporter`
 - **Type**: String (file path)
-- **Default**: `.wing_commander/config.yml`
-- **Example**: `--config /path/to/custom-config.yml`
+- **Validation**: Must point to an existing file when the CLI starts
+- **Example**: `--test-results-path ".wing_commander/test_results/summary.yml"`
 
 ## Configuration File Format
 
@@ -62,8 +44,11 @@ project_path: ""
 # Test framework (rspec, minitest, pytest, jest)
 test_framework: rspec
 
-# Test command with template interpolation
-test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out .wing_commander/test_output.xml"
+# Test command with template interpolation (WingCommanderReporter is responsible for writing the summary)
+test_command: "bundle exec rake test {{.Paths}}"
+
+# File written by WingCommanderReporter
+test_results_path: ".wing_commander/test_results/summary.yml"
 
 # Patterns to exclude from backtrace analysis
 exclude_patterns:
@@ -78,25 +63,24 @@ exclude_patterns:
 - **Syntax**: `{{.VariableName}}`
 - **Available Variables**:
   - `{{.Paths}}`: Test paths (empty by default, ready for future expansion)
-- **Example**: `rails test {{.Paths}} --output .wing_commander/test_output.xml`
+- **Example**: `--run-command "bundle exec rake test {{.Paths}}"`
 
 ## Usage Examples
 
 ```bash
 # CLI-first approach - override everything via command line
-wing_commander run --project-path /path/to/project --test-command "rails test {{.Paths}} --output .wing_commander/test_output.xml"
+wing_commander start /path/to/project \
+  --run-command "bundle exec rake test" \
+  --test-file-pattern "test/**/*_test.rb" \
+  --test-results-path ".wing_commander/test_results/summary.yml"
 
-# Mix CLI and config - project path from CLI, test command from config
-wing_commander run --project-path /path/to/project
+# Mix CLI and config - project path from CLI, rest from config
+wing_commander start /path/to/project
 
 # Custom config file with CLI overrides
-wing_commander run --config custom-config.yml --test-command "pytest {{.Paths}} --junit-xml=.wing_commander/test_output.xml"
-
-# Traditional approach - everything from config file
-wing_commander run
-
-# Show current configuration (includes CLI-applied settings)
-wing_commander config
+wing_commander start /path/to/project \
+  --config custom-config.yml \
+  --run-command "bundle exec rake test {{.Paths}}"
 ```
 
 ## Implementation Details

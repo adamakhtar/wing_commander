@@ -53,12 +53,11 @@ make dev-minitest
 ### Production Usage
 
 ```bash
-# Run tests and analyze failures
-wing_commander run --project-path /path/to/project --test-command "rails test --output .wing_commander/test_output.xml"
-
-# Show configuration
-wing_commander config
-
+# Run tests and analyze failures (WingCommanderReporter must write the summary file)
+wing_commander start /path/to/project \
+  --run-command "bundle exec rake test" \
+  --test-file-pattern "test/**/*_test.rb" \
+  --test-results-path ".wing_commander/test_results/summary.yml"
 ```
 
 ## Supported Test Frameworks

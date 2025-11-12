@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -42,9 +41,9 @@ func (r *TestRunner) ExecuteTests(testRunId int, filepaths []string, testResults
 		TestFilePattern: r.config.TestFilePattern,
 	}
 
-	parsed, err := parser.ParseYAMLFile(testResultsPath, parseOpts)
+	parsed, err := parser.ParseFile(testResultsPath, parseOpts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse YAML test output: %w", err)
+		return nil, fmt.Errorf("failed to parse test output summary: %w", err)
 	}
 	testResults = parsed.Tests
 
@@ -132,40 +131,6 @@ func (r *TestRunner) executeTestCommand(filepaths []string) (string, error) {
 	return string(output), nil
 }
 
-// parseTestResultsFromXMLFiles reads JUnit XML files from the project's test results directory
-// and returns aggregated test results. Errors if no XML files are found.
-func (r *TestRunner) parseTestResultsFromXMLFiles(testResultsPath string) ([]types.TestResult, error) {
-	globPattern := filepath.Join(testResultsPath, "*.xml")
-
-	files, err := filepath.Glob(globPattern)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list JUnit XML files in %s: %w", testResultsPath, err)
-	}
-	if len(files) == 0 {
-		return nil, fmt.Errorf("no JUnit XML files found in %s (expected reporter to write XML)", testResultsPath)
-	}
-
-	parseOpts := &parser.ParseOptions{
-		ProjectPath:     r.config.ProjectPath,
-		TestFilePattern: r.config.TestFilePattern,
-	}
-
-	var aggregated []types.TestResult
-	for _, fp := range files {
-		parsed, err := parser.ParseFile(fp, parseOpts)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse JUnit XML file %s: %w", fp, err)
-		}
-		aggregated = append(aggregated, parsed.Tests...)
-	}
-
-	if len(aggregated) == 0 {
-		return nil, fmt.Errorf("parsed 0 test results from %s", testResultsPath)
-	}
-
-	return aggregated, nil
-}
-
 // TestExecutionResult represents the complete result of a test execution
 type TestExecutionResult struct {
 	TestRunId     int                // The ID of the test run that was executed
@@ -222,24 +187,8 @@ func (r *TestRunner) ValidateConfig() error {
 		return fmt.Errorf("test_command must be specified either via CLI option --test-command or in config file")
 	}
 
-	// Check if test framework is supported
-	supportedFrameworks := []config.TestFramework{
-		config.FrameworkRSpec,
-		config.FrameworkMinitest,
-		config.FrameworkPytest,
-		config.FrameworkJest,
-	}
-	found := false
-	for _, framework := range supportedFrameworks {
-		if r.config.TestFramework == framework {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return fmt.Errorf("unsupported test framework: %s (supported: %s)",
-			r.config.TestFramework, strings.Join([]string{"rspec", "minitest", "pytest", "jest"}, ", "))
+	if r.config.TestFramework != config.FrameworkMinitest {
+		return fmt.Errorf("unsupported test framework: %s (Wing Commander currently requires WingCommanderReporter YAML output)", r.config.TestFramework)
 	}
 
 	return nil

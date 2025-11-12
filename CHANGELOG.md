@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced test grouping by error location
 - Updated UI with better navigation and status display
 - TUI layout updated: Panel 1 shows error + bottom frame, Panel 2 shows test + tail frames, Panel 3 shows full test backtrace with highlighting
+- Parser now exclusively supports WingCommanderReporter YAML summaries (removed JUnit XML handling)
 
 ### Fixed
 
@@ -39,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 - Core test failure analysis functionality
-- JUnit XML parsing support
+- WingCommanderReporter YAML parsing support
 - Interactive TUI with Bubbletea
 - Support for RSpec, Minitest, Pytest, Jest
 - Backtrace filtering and normalization
@@ -51,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-- **Test Parsing**: Parse JUnit XML output from multiple test frameworks
+- **Test Parsing**: Parse WingCommanderReporter YAML summaries
 - **Failure Grouping**: Group tests by backtrace similarity using error location strategy
 - **Interactive TUI**: Navigate through failure groups, tests, and backtraces
 - **Git Integration**: Highlight recently changed files with 3 intensity levels
@@ -60,10 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Supported Test Frameworks
 
-- RSpec (Ruby)
-- Minitest (Ruby)
-- Pytest (Python)
-- Jest (JavaScript)
+- Minitest (Ruby via WingCommanderReporter)
 
 ### Supported Editors
 

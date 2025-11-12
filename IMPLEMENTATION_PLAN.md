@@ -32,7 +32,7 @@ A CLI/TUI tool for running tests and reviewing failure details with normalized b
 ### ✅ **Step 7: Test Runner Service** (COMPLETED)
 
 - TestRunner service for GUI-driven test execution
-- Execute test commands from config and parse JUnit XML output
+- Execute test commands from config and parse WingCommanderReporter YAML summaries
 - Complete workflow integration (parse → normalize → detect changes)
 - CLI `run` command implementation with `--config` flag support
 - Config file path customization via command line flags
@@ -45,9 +45,9 @@ A CLI/TUI tool for running tests and reviewing failure details with normalized b
   - `dummy/minitest/lib/thing.rb`: Simple class with `boom` method that raises error
   - `dummy/minitest/test/thing_test.rb`: Two failing test cases
   - `dummy/minitest/Gemfile`: Dependencies (minitest, ci_reporter_minitest)
-  - `dummy/minitest/test/test_helper.rb`: JUnit XML reporting configuration
-  - `dummy/minitest/Rakefile`: Test execution with XML output
-  - Generates JUnit XML reports in `test/reports/` directory
+- `dummy/minitest/test/test_helper.rb`: WingCommanderReporter configuration
+- `dummy/minitest/Rakefile`: Test execution producing YAML summary
+- Generates `.wing_commander/test_results/summary.yml`
   - Runnable with `bundle install` and `bundle exec rake test`
 
 ## ✅ **CLI-First Configuration System** (NEWLY COMPLETED)
@@ -87,7 +87,7 @@ wing_commander run --project-path /path/to/project --test-command "rails test {{
 wing_commander run --project-path /path/to/project
 
 # Custom config file with CLI overrides
-wing_commander run --config custom-config.yml --test-command "pytest {{.Paths}} --junit-xml=results.xml"
+wing_commander start /path/to/project --config custom-config.yml --run-command "bundle exec rake test {{.Paths}}"
 
 # Traditional approach - everything from config file
 wing_commander run
@@ -142,7 +142,7 @@ wing_commander run
 **Development workflow**:
 
 - `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
-- Real test execution with JUnit XML generation
+- Real test execution with WingCommanderReporter YAML summaries
 - Interactive TUI with actual test failures
 
 **Checkpoint**: Complete interactive TUI with file opening and test re-running capabilities
@@ -172,7 +172,7 @@ wing_commander run
 **Development workflow**:
 
 - `make dev-minitest`: Build dev version and launch TUI against dummy minitest app
-- Real test execution with JUnit XML generation
+- Real test execution with WingCommanderReporter YAML summaries
 - Interactive TUI with actual test failures
 
 **Checkpoint**: Complete interactive TUI with file opening and test re-running capabilities

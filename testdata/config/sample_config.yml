@@ -8,20 +8,18 @@
 # Default: current working directory
 project_path: ""
 
-# Test framework (rspec, minitest, pytest, jest)
-test_framework: rspec
+# Test framework (currently only minitest reporters are supported)
+test_framework: minitest
 
-# Command to run tests with template interpolation support
+# Command to run tests (WingCommanderReporter must be registered in test_helper.rb)
 # Use {{.Paths}} placeholder for test paths (empty by default)
-# Can be overridden with --test-command CLI option
-test_command: "bundle exec rspec {{.Paths}} --format RspecJunitFormatter --out .wing_commander/test_output.xml"
+test_command: "bundle exec rake test {{.Paths}}"
 
-# Alternative commands for other frameworks with interpolation:
-# Minitest: "bundle exec rake test {{.Paths}}"
+# Path to the summary file produced by WingCommanderReporter
+test_results_path: ".wing_commander/test_results/summary.yml"
 
 # Patterns to exclude from backtrace analysis
 exclude_patterns:
   - "/gems/"
   - "/lib/ruby/"
   - "/vendor/bundle/"
-  - "/custom/path/"
