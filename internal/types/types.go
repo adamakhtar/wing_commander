@@ -102,15 +102,26 @@ type TestResult struct {
 }
 
 func (tr *TestResult) AbbreviatedResult() string {
-	if tr.isFailed() {
+	if tr.IsFailed() {
 		return tr.FailureCause.Abbreviated()
 	} else {
 		return tr.Status.Abbreviated()
 	}
 }
 
-func (tr *TestResult) isFailed() bool {
+// IsFailed reports whether the test result represents a failure.
+func (tr *TestResult) IsFailed() bool {
 	return tr.Status == StatusFail
+}
+
+// IsPassed reports whether the test result represents a passing test.
+func (tr *TestResult) IsPassed() bool {
+	return tr.Status == StatusPass
+}
+
+// IsSkipped reports whether the test result represents a skipped test.
+func (tr *TestResult) IsSkipped() bool {
+	return tr.Status == StatusSkip
 }
 
 // NewStackFrame creates a new StackFrame

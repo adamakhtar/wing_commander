@@ -72,7 +72,7 @@ func (m Model) buildContent(innerWidth int) string {
 
 	sb.WriteString(m.renderTestHeading(innerWidth))
 	sb.WriteString("\n")
-	sb.WriteString(m.renderTestFailureType(innerWidth))
+	sb.WriteString(m.renderTestResult(innerWidth))
 	sb.WriteString("\n")
 	sb.WriteString(m.renderFailureMessage(innerWidth))
 	sb.WriteString("\n")
@@ -107,14 +107,23 @@ func (m Model) renderTestHeading(innerWidth int) string {
 	)
 }
 
-func (m Model) renderTestFailureType(innerWidth int) string {
-	switch m.testResult.FailureCause {
-	case types.FailureCauseTestDefinition:
-		return m.ctx.Styles.TestDefinitionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
-	case types.FailureCauseProductionCode:
-		return m.ctx.Styles.ProductionCodeErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
-	case types.FailureCauseAssertion:
-		return m.ctx.Styles.AssertionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+func (m Model) renderTestResult(innerWidth int) string {
+	switch {
+	case m.testResult.IsFailed():
+		switch m.testResult.FailureCause {
+		case types.FailureCauseTestDefinition:
+			return m.ctx.Styles.TestDefinitionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+		case types.FailureCauseProductionCode:
+			return m.ctx.Styles.ProductionCodeErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+		case types.FailureCauseAssertion:
+			return m.ctx.Styles.AssertionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
+		default:
+			return ""
+		}
+	case m.testResult.IsSkipped():
+		return m.ctx.Styles.SkipBadge.Width(innerWidth).Render(string(m.testResult.Status))
+	case m.testResult.IsPassed():
+		return m.ctx.Styles.PassBadge.Width(innerWidth).Render(string(m.testResult.Status))
 	default:
 		return ""
 	}

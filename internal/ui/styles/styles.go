@@ -113,6 +113,18 @@ var (
 	Indigo800 = lipgloss.Color("#3730a3")
 	Indigo900 = lipgloss.Color("#312e81")
 	Indigo950 = lipgloss.Color("#1e1b4b")
+
+	Cyan50 = lipgloss.Color("#ecfeff")
+	Cyan100 = lipgloss.Color("#cffafe")
+	Cyan200 = lipgloss.Color("#a5f3fc")
+	Cyan300 = lipgloss.Color("#67e8f9")
+	Cyan400 = lipgloss.Color("#22d3ee")
+	Cyan500 = lipgloss.Color("#06b6d4")
+	Cyan600 = lipgloss.Color("#0891b2")
+	Cyan700 = lipgloss.Color("#0e7490")
+	Cyan800 = lipgloss.Color("#155e75")
+	Cyan900 = lipgloss.Color("#164e63")
+	Cyan950 = lipgloss.Color("#08334")
 )
 
 type Theme struct {
@@ -193,9 +205,9 @@ func BuildStyles(theme Theme) Styles {
 		BorderActive: lipgloss.NewStyle().BorderForeground(theme.PrimaryBorderActiveColor),
 		PassBadge: lipgloss.NewStyle().Background(Green500).Foreground(White).Align(lipgloss.Center),
 		SkipBadge: lipgloss.NewStyle().Background(Gray700).Foreground(Gray300).Align(lipgloss.Center),
-		TestDefinitionErrorBadge: lipgloss.NewStyle().Background(Yellow600).Foreground(White).Align(lipgloss.Center),
-		ProductionCodeErrorBadge: lipgloss.NewStyle().Background(Black).Foreground(Red500).Align(lipgloss.Center),
-		AssertionErrorBadge: lipgloss.NewStyle().Background(Orange600).Foreground(White).Align(lipgloss.Center),
+		TestDefinitionErrorBadge: lipgloss.NewStyle().Background(Black).Foreground(Red500).Align(lipgloss.Center),
+		ProductionCodeErrorBadge: lipgloss.NewStyle().Background(Red500).Foreground(Black).Align(lipgloss.Center),
+		AssertionErrorBadge: lipgloss.NewStyle().Background(Cyan600).Foreground(White).Align(lipgloss.Center),
 	}
 
 	s.Preview.AlertStyle = lipgloss.NewStyle().Background(theme.ErrorBackground).Foreground(theme.ErrorText)
