@@ -31,13 +31,10 @@ type TestPattern struct {
 }
 
 // NewTestPattern creates a new TestPattern with validation
-// Path is required. LineNumber and TestCaseName cannot both be set.
+// Path is required.
 func NewTestPattern(path string, lineNumber *int, testCaseName *string) (TestPattern, error) {
 	if path == "" {
 		return TestPattern{}, fmt.Errorf("path is required")
-	}
-	if lineNumber != nil && testCaseName != nil {
-		return TestPattern{}, fmt.Errorf("lineNumber and testCaseName cannot both be set")
 	}
 	return TestPattern{
 		Path:         path,
