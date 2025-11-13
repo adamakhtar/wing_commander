@@ -10,6 +10,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/backtrace"
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/parser"
+	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
@@ -26,7 +27,7 @@ func NewTestRunner(cfg *config.Config) *TestRunner {
 }
 
 // ExecuteTests runs the configured test command and returns parsed results
-func (r *TestRunner) ExecuteTests(testRun types.TestRun) (*TestExecutionResult, error) {
+func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult, error) {
 	// Execute the test command
 	output, err := r.executeTestCommand(testRun.Filepaths)
 	if err != nil {

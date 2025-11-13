@@ -1,48 +1,48 @@
-package testruns
+package testrunssection
 
 import (
 	"testing"
 
-	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/adamakhtar/wing_commander/internal/testrun"
 )
 
-func TestTestRunLabel(t *testing.T) {
+func TestLabel(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name      string
-		mode      Mode
+		mode      testrun.Mode
 		filepaths []string
 		want      string
 	}{
 		{
 			name: "whole suite",
-			mode: ModeRunWholeSuite,
-			want: "Whole suite",
+			mode: testrun.ModeRunWholeSuite,
+			want: "Run whole suite",
 		},
 		{
 			name:      "single selected pattern",
-			mode:      ModeRunSelectedPatterns,
+			mode:      testrun.ModeRunSelectedPatterns,
 			filepaths: []string{"test/example_test.rb"},
-			want:      "1 test pattern",
+			want:      "Run 1 pattern",
 		},
 		{
 			name:      "multiple selected patterns",
-			mode:      ModeRunSelectedPatterns,
+			mode:      testrun.ModeRunSelectedPatterns,
 			filepaths: []string{"test/a.rb", "test/b.rb", "test/c.rb"},
-			want:      "3 test patterns",
+			want:      "Run 3 patterns",
 		},
 		{
 			name:      "re-run single failure",
-			mode:      ModeReRunSingleFailure,
+			mode:      testrun.ModeReRunSingleFailure,
 			filepaths: []string{"test/failure.rb"},
-			want:      "Re-run single failure",
+			want:      "Re-run failure",
 		},
 		{
 			name:      "re-run all failures",
-			mode:      ModeReRunAllFailures,
+			mode:      testrun.ModeReRunAllFailures,
 			filepaths: []string{"test/failure_a.rb", "test/failure_b.rb"},
-			want:      "Re-run failed",
+			want:      "Re-run all failed",
 		},
 	}
 
@@ -50,14 +50,12 @@ func TestTestRunLabel(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			run := TestRun{
-				TestRun: types.TestRun{
-					Filepaths: tt.filepaths,
-					Mode:      string(tt.mode),
-				},
+			run := testrun.TestRun{
+				Filepaths: tt.filepaths,
+				Mode:      string(tt.mode),
 			}
 
-			if got := run.Label(); got != tt.want {
+			if got := Label(run); got != tt.want {
 				t.Fatalf("Label() = %q, want %q", got, tt.want)
 			}
 		})

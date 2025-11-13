@@ -145,10 +145,3 @@ func NewTestResult(groupName string, testCaseName string, status TestStatus) Tes
 		FilteredBacktrace: []StackFrame{},
 	}
 }
-
-// TestRun captures the metadata needed to execute a run of tests.
-type TestRun struct {
-	Id        int      // Unique identifier for the test run
-	Filepaths []string // Specific test file patterns to execute
-	Mode      string   // High-level mode describing how the run was initiated (optional)
-}

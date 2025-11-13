@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
+	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/filepicker"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/previewsection"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/resultssection"
-	"github.com/adamakhtar/wing_commander/internal/ui/results/testruns"
 	"github.com/adamakhtar/wing_commander/internal/ui/results/testrunssection"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,7 +24,7 @@ import (
 
 type Model struct {
 	ctx                 *context.Context
-	testRuns            testruns.TestRuns
+	testRuns            testrun.TestRuns
 	testRunner          *runner.TestRunner
 	testExecutionResult *runner.TestExecutionResult
 	resultsSection      resultssection.Model
@@ -41,7 +41,7 @@ type Model struct {
 
 func NewModel(ctx *context.Context) Model {
 	testRunner := runner.NewTestRunner(ctx.Config)
-	testRuns := testruns.NewTestRuns()
+	testRuns := testrun.NewTestRuns()
 
 	model := Model{
 		ctx:             ctx,
@@ -70,7 +70,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		testRun, err := m.testRuns.Add(
 			[]string{msg.TestPattern},
-			testruns.ModeReRunSingleFailure,
+			testrun.ModeReRunSingleFailure,
 		)
 		if err != nil {
 			// TODO - handle error
@@ -81,7 +81,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.CurrentScreen = context.ResultsScreen
 		// TODO - consider running a command here that the results screen listens to and it then
 		//  performs the test run
-		testRun, err := m.testRuns.Add(msg.Filepaths, testruns.ModeRunSelectedPatterns)
+		testRun, err := m.testRuns.Add(msg.Filepaths, testrun.ModeRunSelectedPatterns)
 		if err != nil {
 			// TODO - handle error
 			return m, nil
@@ -102,7 +102,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.resultsSection.ToggleFocus()
 			m.previewSection.ToggleFocus()
 		case key.Matches(msg, keys.ResultsKeys.RunAllTests):
-			testRun, err := m.testRuns.Add([]string{""}, testruns.ModeRunWholeSuite)
+			testRun, err := m.testRuns.Add([]string{""}, testrun.ModeRunWholeSuite)
 			if err != nil {
 				// TODO - handle error
 				return m, nil
@@ -174,7 +174,7 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 
 		log.Debugf("Executing tests for test run %d: %v", testRunId, testRun.Filepaths)
 
-		testExecutionResult, err := m.testRunner.ExecuteTests(testRun.TestRun)
+		testExecutionResult, err := m.testRunner.ExecuteTests(testRun)
 		if err != nil {
 			log.Debugf("Failed to execute tests for test run %d: %v", testRunId, err)
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
@@ -188,21 +188,21 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 // EXTERNAL FUNCTIONS
 //================================================
 
-func (m *Model) AddTestRunForFailedTests() (testruns.TestRun, error) {
+func (m *Model) AddTestRunForFailedTests() (testrun.TestRun, error) {
 	// TODO - create a TestResultsCollection type and move this logic to that type
 	var filepaths []string
 
 	if m.testExecutionResult == nil {
-		return testruns.TestRun{}, fmt.Errorf("no previous test execution available")
+		return testrun.TestRun{}, fmt.Errorf("no previous test execution available")
 	}
 
 	for _, testResult := range m.testExecutionResult.FailedTests {
 		filepaths = append(filepaths, testResult.TestFilePath)
 	}
 
-	testRun, err := m.testRuns.Add(filepaths, testruns.ModeReRunAllFailures)
+	testRun, err := m.testRuns.Add(filepaths, testrun.ModeReRunAllFailures)
 	if err != nil {
-		return testruns.TestRun{}, err
+		return testrun.TestRun{}, err
 	}
 	return testRun, nil
 }

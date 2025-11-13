@@ -1,10 +1,8 @@
-package testruns
+package testrun
 
 import (
 	"fmt"
 	"sort"
-
-	"github.com/adamakhtar/wing_commander/internal/types"
 )
 
 var testRunIDCounter int
@@ -14,8 +12,7 @@ func generateTestRunID() int {
 	return testRunIDCounter
 }
 
-type Option func(*TestRun)
-
+// Mode represents the high-level mode describing how a test run was initiated
 type Mode string
 
 const (
@@ -25,33 +22,38 @@ const (
 	ModeReRunAllFailures    Mode = "rerun_all_failures"
 )
 
+// TestRun captures the metadata needed to execute a run of tests
+type TestRun struct {
+	Id        int      // Unique identifier for the test run
+	Filepaths []string // Specific test file patterns to execute
+	Mode      string   // High-level mode describing how the run was initiated (optional)
+}
+
+// TestRuns is a collection of test runs
 type TestRuns struct {
 	testRuns map[int]TestRun
 }
 
-type TestRun struct {
-	types.TestRun
-}
-
+// NewTestRuns creates a new TestRuns collection
 func NewTestRuns() TestRuns {
 	return TestRuns{
 		testRuns: make(map[int]TestRun),
 	}
 }
 
+// Add creates and adds a new test run to the collection
 func (tr *TestRuns) Add(filepaths []string, mode Mode) (TestRun, error) {
 	testRun := TestRun{
-		TestRun: types.TestRun{
-			Id:        generateTestRunID(),
-			Filepaths: filepaths,
-			Mode:      string(mode),
-		},
+		Id:        generateTestRunID(),
+		Filepaths: filepaths,
+		Mode:      string(mode),
 	}
 
 	tr.testRuns[testRun.Id] = testRun
 	return testRun, nil
 }
 
+// Get retrieves a test run by ID
 func (tr *TestRuns) Get(id int) (TestRun, error) {
 	testRun, ok := tr.testRuns[id]
 	if !ok {
@@ -60,6 +62,7 @@ func (tr *TestRuns) Get(id int) (TestRun, error) {
 	return testRun, nil
 }
 
+// MostRecent returns the most recent test run (highest ID)
 func (tr *TestRuns) MostRecent() (TestRun, bool) {
 	if len(tr.testRuns) == 0 {
 		return TestRun{}, false
@@ -76,6 +79,7 @@ func (tr *TestRuns) MostRecent() (TestRun, bool) {
 	return testRun, ok
 }
 
+// AllRecentFirst returns all test runs ordered by most recent first
 func (tr *TestRuns) AllRecentFirst() []TestRun {
 	orderedRecentFirst := make([]TestRun, 0, len(tr.testRuns))
 	for _, testRun := range tr.testRuns {
@@ -87,30 +91,4 @@ func (tr *TestRuns) AllRecentFirst() []TestRun {
 	})
 
 	return orderedRecentFirst
-}
-
-func (t TestRun) Label() string {
-	switch Mode(t.Mode) {
-	case ModeRunWholeSuite:
-		return "Run whole suite"
-	case ModeRunSelectedPatterns:
-		return formatSelectedPatternsLabel(len(t.Filepaths))
-	case ModeReRunSingleFailure:
-		return "Re-run failure"
-	case ModeReRunAllFailures:
-		return "Re-run all failed"
-	default:
-		return formatSelectedPatternsLabel(len(t.Filepaths))
-	}
-}
-
-func formatSelectedPatternsLabel(count int) string {
-	switch count {
-	case 0:
-		return "Run 0 patterns"
-	case 1:
-		return "Run 1 pattern"
-	default:
-		return fmt.Sprintf("Run %d patterns", count)
-	}
 }

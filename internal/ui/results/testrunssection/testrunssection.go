@@ -1,10 +1,11 @@
 package testrunssection
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
-	"github.com/adamakhtar/wing_commander/internal/ui/results/testruns"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,13 +15,13 @@ const (
 
 type Model struct {
 	ctx      *context.Context
-	testRuns *testruns.TestRuns
+	testRuns *testrun.TestRuns
 	focus    bool
 	width    int
 	height   int
 }
 
-func NewModel(ctx *context.Context, testRuns *testruns.TestRuns) Model {
+func NewModel(ctx *context.Context, testRuns *testrun.TestRuns) Model {
 	return Model{
 		ctx:      ctx,
 		testRuns: testRuns,
@@ -46,7 +47,7 @@ func (m Model) View() string {
 	sb.WriteString("\n")
 
 	for _, testRun := range m.testRuns.AllRecentFirst() {
-		sb.WriteString(m.ctx.Styles.TestRunsSection.Label.Width(innerWidth).Render(testRun.Label()))
+		sb.WriteString(m.ctx.Styles.TestRunsSection.Label.Width(innerWidth).Render(testRunLabel(testRun)))
 	}
 
 	return m.ctx.Styles.Border.Padding(0, paddingX).Inherit(m.ctx.Styles.BorderMuted).Width(m.width).Height(m.height).Render(sb.String())
@@ -67,4 +68,30 @@ func (m Model) isBlurred() bool {
 
 func (m Model) isFocused() bool {
 	return m.focus
+}
+
+func testRunLabel(t testrun.TestRun) string {
+	switch testrun.Mode(t.Mode) {
+	case testrun.ModeRunWholeSuite:
+		return "Run whole suite"
+	case testrun.ModeRunSelectedPatterns:
+		return formatSelectedPatternsLabel(len(t.Filepaths))
+	case testrun.ModeReRunSingleFailure:
+		return "Re-run failure"
+	case testrun.ModeReRunAllFailures:
+		return "Re-run all failed"
+	default:
+		return formatSelectedPatternsLabel(len(t.Filepaths))
+	}
+}
+
+func formatSelectedPatternsLabel(count int) string {
+	switch count {
+	case 0:
+		return "Run 0 patterns"
+	case 1:
+		return "Run 1 pattern"
+	default:
+		return fmt.Sprintf("Run %d patterns", count)
+	}
 }
