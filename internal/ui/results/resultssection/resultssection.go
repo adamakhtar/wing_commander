@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
+	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
@@ -123,14 +124,14 @@ func (m Model) View() string {
 //================================================
 
 type RunTestMsg struct {
-	TestPattern string
+	TestPattern testrun.TestPattern
 }
 
 //
 // COMMANDS
 //================================================
 
-func runTestCmd(testPattern string) tea.Cmd {
+func runTestCmd(testPattern testrun.TestPattern) tea.Cmd {
 	return func() tea.Msg {
 		return RunTestMsg{TestPattern: testPattern}
 	}
@@ -220,16 +221,20 @@ func (m Model) getSelectedRow() (table.Row, bool) {
 	return row, true
 }
 
-func (m Model) getSelectedTestPattern() (string, bool) {
+func (m Model) getSelectedTestPattern() (testrun.TestPattern, bool) {
 	row, ok := m.getSelectedRow()
 	if !ok {
-		return "", false
+		return testrun.TestPattern{}, false
 	}
 	path, ok := row.Data[columnKeyMetaTestPattern]
 	if !ok {
-		return "", false
+		return testrun.TestPattern{}, false
 	}
-	return path.(string), ok
+	pattern, err := testrun.ParsePatternFromString(path.(string))
+	if err != nil {
+		return testrun.TestPattern{}, false
+	}
+	return pattern, true
 }
 
 func (m *Model) ToggleFocus() {

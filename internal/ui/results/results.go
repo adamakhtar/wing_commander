@@ -67,13 +67,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case resultssection.RunTestMsg:
-		pattern, err := testrun.ParsePatternFromString(msg.TestPattern)
-		if err != nil {
-			// TODO - handle error
-			return m, nil
-		}
 		testRun, err := m.testRuns.Add(
-			[]testrun.TestPattern{pattern},
+			[]testrun.TestPattern{msg.TestPattern},
 			testrun.ModeReRunSingleFailure,
 		)
 		if err != nil {
