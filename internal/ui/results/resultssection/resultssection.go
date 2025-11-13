@@ -1,7 +1,6 @@
 package resultssection
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -188,11 +187,20 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 
 	rows := []table.Row{}
 	for _, test := range results {
+		testPattern, err := testrun.NewTestPattern(
+			test.TestFilePath,
+			&test.TestLineNumber,
+			&test.TestCaseName,
+		)
+		if err != nil {
+			continue
+		}
+
 		row := table.NewRow(table.RowData{
 			columnKeyTestResult:    renderFailureType(test.AbbreviatedResult(), &m.ctx.Styles),
 			columnKeyTestName:        test.GroupName + " " + test.TestCaseName,
 			columnKeyMetaId:          test.Id,
-			columnKeyMetaTestPattern: test.TestFilePath + ":" + fmt.Sprintf("%d", test.TestLineNumber),
+			columnKeyMetaTestPattern: testPattern,
 		}).WithStyle(lipgloss.NewStyle().Foreground(m.ctx.Styles.ResultsSection.TableRowTextColor))
 		rows = append(rows, row)
 	}
@@ -226,12 +234,12 @@ func (m Model) getSelectedTestPattern() (testrun.TestPattern, bool) {
 	if !ok {
 		return testrun.TestPattern{}, false
 	}
-	path, ok := row.Data[columnKeyMetaTestPattern]
+	patternData, ok := row.Data[columnKeyMetaTestPattern]
 	if !ok {
 		return testrun.TestPattern{}, false
 	}
-	pattern, err := testrun.ParsePatternFromString(path.(string))
-	if err != nil {
+	pattern, ok := patternData.(testrun.TestPattern)
+	if !ok {
 		return testrun.TestPattern{}, false
 	}
 	return pattern, true
