@@ -29,7 +29,7 @@ func NewTestRunner(cfg *config.Config) *TestRunner {
 // ExecuteTests runs the configured test command and returns parsed results
 func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult, error) {
 	// Execute the test command
-	output, err := r.executeTestCommand(testRun.Patterns)
+	output, err := r.executeTestCommand(testRun)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
@@ -83,12 +83,19 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 }
 
 // executeTestCommand runs the configured test command and returns the output
-func (r *TestRunner) executeTestCommand(patterns []testrun.TestPattern) (string, error) {
-	// Build the full command string
-	commandStr := r.config.TestCommand
-	if len(patterns) > 0 {
-		filepaths := testrun.PatternsToStrings(patterns)
-		commandStr = commandStr + " " + strings.Join(filepaths, " ")
+func (r *TestRunner) executeTestCommand(testRun testrun.TestRun) (string, error) {
+	var commandStr string
+
+	// Check if we should use RunTestCaseCommand for single failure reruns
+	if testRun.Mode == string(testrun.ModeReRunSingleFailure) {
+		commandStr = BuildRunTestCaseCommand(r.config.RunTestCaseCommand, testRun.Patterns[0])
+	} else {
+		// Build the full command string using TestCommand
+		commandStr = r.config.TestCommand
+		if len(testRun.Patterns) > 0 {
+			filepaths := testrun.PatternsToStrings(testRun.Patterns)
+			commandStr = commandStr + " " + strings.Join(filepaths, " ")
+		}
 	}
 
 	// Execute via shell to handle multi-word commands like "bundle exec rake test"

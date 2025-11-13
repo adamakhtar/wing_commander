@@ -100,6 +100,13 @@ func NewTestRuns() TestRuns {
 
 // Add creates and adds a new test run to the collection
 func (tr *TestRuns) Add(patterns []TestPattern, mode Mode) (TestRun, error) {
+	// Validate mode-specific requirements
+	if mode == ModeReRunSingleFailure {
+		if len(patterns) != 1 {
+			return TestRun{}, fmt.Errorf("ModeReRunSingleFailure requires exactly one pattern, got %d", len(patterns))
+		}
+	}
+
 	testRun := TestRun{
 		Id:       generateTestRunID(),
 		Patterns: patterns,
