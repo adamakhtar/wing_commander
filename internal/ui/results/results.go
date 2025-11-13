@@ -67,9 +67,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case resultssection.RunTestMsg:
-
+		pattern, err := testrun.ParsePatternFromString(msg.TestPattern)
+		if err != nil {
+			// TODO - handle error
+			return m, nil
+		}
 		testRun, err := m.testRuns.Add(
-			[]string{msg.TestPattern},
+			[]testrun.TestPattern{pattern},
 			testrun.ModeReRunSingleFailure,
 		)
 		if err != nil {
@@ -81,7 +85,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.CurrentScreen = context.ResultsScreen
 		// TODO - consider running a command here that the results screen listens to and it then
 		//  performs the test run
-		testRun, err := m.testRuns.Add(msg.Filepaths, testrun.ModeRunSelectedPatterns)
+		patterns, err := testrun.PatternsFromStrings(msg.Filepaths)
+		if err != nil {
+			// TODO - handle error
+			return m, nil
+		}
+		testRun, err := m.testRuns.Add(patterns, testrun.ModeRunSelectedPatterns)
 		if err != nil {
 			// TODO - handle error
 			return m, nil
@@ -102,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.resultsSection.ToggleFocus()
 			m.previewSection.ToggleFocus()
 		case key.Matches(msg, keys.ResultsKeys.RunAllTests):
-			testRun, err := m.testRuns.Add([]string{""}, testrun.ModeRunWholeSuite)
+			testRun, err := m.testRuns.Add([]testrun.TestPattern{}, testrun.ModeRunWholeSuite)
 			if err != nil {
 				// TODO - handle error
 				return m, nil
@@ -172,7 +181,7 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 			return TestExecutionFailedMsg{TestRunId: testRunId, error: err}
 		}
 
-		log.Debugf("Executing tests for test run %d: %v", testRunId, testRun.Filepaths)
+		log.Debugf("Executing tests for test run %d: %v", testRunId, testRun.Patterns)
 
 		testExecutionResult, err := m.testRunner.ExecuteTests(testRun)
 		if err != nil {
@@ -190,17 +199,21 @@ func (m Model) ExecuteTestRunCmd(testRunId int) tea.Cmd {
 
 func (m *Model) AddTestRunForFailedTests() (testrun.TestRun, error) {
 	// TODO - create a TestResultsCollection type and move this logic to that type
-	var filepaths []string
+	var patterns []testrun.TestPattern
 
 	if m.testExecutionResult == nil {
 		return testrun.TestRun{}, fmt.Errorf("no previous test execution available")
 	}
 
 	for _, testResult := range m.testExecutionResult.FailedTests {
-		filepaths = append(filepaths, testResult.TestFilePath)
+		pattern, err := testrun.NewTestPattern(testResult.TestFilePath, nil, nil)
+		if err != nil {
+			return testrun.TestRun{}, err
+		}
+		patterns = append(patterns, pattern)
 	}
 
-	testRun, err := m.testRuns.Add(filepaths, testrun.ModeReRunAllFailures)
+	testRun, err := m.testRuns.Add(patterns, testrun.ModeReRunAllFailures)
 	if err != nil {
 		return testrun.TestRun{}, err
 	}

@@ -47,7 +47,7 @@ func (m Model) View() string {
 	sb.WriteString("\n")
 
 	for _, testRun := range m.testRuns.AllRecentFirst() {
-		sb.WriteString(m.ctx.Styles.TestRunsSection.Label.Width(innerWidth).Render(testRunLabel(testRun)))
+		sb.WriteString(m.ctx.Styles.TestRunsSection.Label.Width(innerWidth).Render(Label(testRun)))
 	}
 
 	return m.ctx.Styles.Border.Padding(0, paddingX).Inherit(m.ctx.Styles.BorderMuted).Width(m.width).Height(m.height).Render(sb.String())
@@ -70,18 +70,18 @@ func (m Model) isFocused() bool {
 	return m.focus
 }
 
-func testRunLabel(t testrun.TestRun) string {
+func Label(t testrun.TestRun) string {
 	switch testrun.Mode(t.Mode) {
 	case testrun.ModeRunWholeSuite:
 		return "Run whole suite"
 	case testrun.ModeRunSelectedPatterns:
-		return formatSelectedPatternsLabel(len(t.Filepaths))
+		return formatSelectedPatternsLabel(len(t.Patterns))
 	case testrun.ModeReRunSingleFailure:
 		return "Re-run failure"
 	case testrun.ModeReRunAllFailures:
 		return "Re-run all failed"
 	default:
-		return formatSelectedPatternsLabel(len(t.Filepaths))
+		return formatSelectedPatternsLabel(len(t.Patterns))
 	}
 }
 

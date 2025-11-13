@@ -29,7 +29,7 @@ func NewTestRunner(cfg *config.Config) *TestRunner {
 // ExecuteTests runs the configured test command and returns parsed results
 func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult, error) {
 	// Execute the test command
-	output, err := r.executeTestCommand(testRun.Filepaths)
+	output, err := r.executeTestCommand(testRun.Patterns)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
@@ -83,10 +83,11 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 }
 
 // executeTestCommand runs the configured test command and returns the output
-func (r *TestRunner) executeTestCommand(filepaths []string) (string, error) {
+func (r *TestRunner) executeTestCommand(patterns []testrun.TestPattern) (string, error) {
 	// Build the full command string
 	commandStr := r.config.TestCommand
-	if len(filepaths) > 0 {
+	if len(patterns) > 0 {
+		filepaths := testrun.PatternsToStrings(patterns)
 		commandStr = commandStr + " " + strings.Join(filepaths, " ")
 	}
 
