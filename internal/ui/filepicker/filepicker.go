@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	filewalker "github.com/adamakhtar/wing_commander/internal/file_walker"
+	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 
@@ -199,12 +200,16 @@ func cancelCmd() tea.Msg {
 }
 
 type TestsSelectedMsg struct {
-	Filepaths []string
+	TestPatterns []testrun.TestPattern
 }
 
 func confirmSelectonCmd(filepaths []string) tea.Cmd {
 	return func() tea.Msg {
-		return TestsSelectedMsg{Filepaths: filepaths}
+		patterns, err := testrun.PatternsFromStrings(filepaths)
+		if err != nil {
+			return errMsg{err: err}
+		}
+		return TestsSelectedMsg{TestPatterns: patterns}
 	}
 }
 

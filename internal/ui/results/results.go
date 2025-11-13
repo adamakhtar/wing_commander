@@ -85,12 +85,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx.CurrentScreen = context.ResultsScreen
 		// TODO - consider running a command here that the results screen listens to and it then
 		//  performs the test run
-		patterns, err := testrun.PatternsFromStrings(msg.Filepaths)
-		if err != nil {
-			// TODO - handle error
-			return m, nil
-		}
-		testRun, err := m.testRuns.Add(patterns, testrun.ModeRunSelectedPatterns)
+		testRun, err := m.testRuns.Add(msg.TestPatterns, testrun.ModeRunSelectedPatterns)
 		if err != nil {
 			// TODO - handle error
 			return m, nil
