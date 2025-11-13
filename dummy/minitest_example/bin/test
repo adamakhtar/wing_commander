@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require_relative "wing_commander_runner"
+
+
+require "optparse"
+
+options = {
+  test_file_patterns: ["test/**/*_test.rb", "test/**/test_*.rb"],
+  lib_dirs: %w[lib test .]
+}
+
+opt_parser = OptionParser.new do |opts|
+  opts.on("--test-file-patterns=PATTERNS", "Comma-separated glob patterns for test files") do |val|
+    options[:test_file_patterns] = val.split(",")
+  end
+  opts.on("--lib-dirs=DIRS", "Comma-separated list of library directories") do |val|
+    options[:lib_dirs] = val.split(",")
+  end
+end
+
+opt_parser.order!(ARGV)
+
+WingCommanderRunner.new(
+  test_file_patterns: options[:test_file_patterns],
+  lib_dirs: options[:lib_dirs]
+).call(ARGV)
