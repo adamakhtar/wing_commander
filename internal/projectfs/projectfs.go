@@ -16,24 +16,24 @@ var (
 // ProjectFS manages the project root path and provides path conversions
 type ProjectFS struct {
 	RootPath       types.AbsPath
-	testFileMatcher glob.Glob
+	testFileGlob glob.Glob
 }
 
 // InitProjectFS initializes the singleton with the project root path and optional test file pattern
-func InitProjectFS(rootPath types.AbsPath, testFilePattern string) error {
+func InitProjectFS(rootPath types.AbsPath, testFileGlob string) error {
 	fs := &ProjectFS{
 		RootPath: rootPath,
 	}
 
-	if testFilePattern != "" {
+	if testFileGlob != "" {
 		// Normalize pattern to forward slashes for cross-platform compatibility.
 		// The glob library expects forward slashes, and paths are normalized when matching.
-		pattern := filepath.ToSlash(testFilePattern)
+		pattern := filepath.ToSlash(testFileGlob)
 		compiled, err := glob.Compile(pattern)
 		if err != nil {
-			return fmt.Errorf("failed to compile test file pattern %q: %w", testFilePattern, err)
+			return fmt.Errorf("failed to compile test file pattern %q: %w", testFileGlob, err)
 		}
-		fs.testFileMatcher = compiled
+		fs.testFileGlob = compiled
 	}
 
 	instance = fs
@@ -88,7 +88,7 @@ func (fs *ProjectFS) IsProjectFile(absPath types.AbsPath) bool {
 // IsTestFile checks if the given absolute path matches the test file pattern.
 // Converts the absolute path to a relative path and matches against the compiled glob pattern.
 func (fs *ProjectFS) IsTestFile(absPath types.AbsPath) bool {
-	if fs.testFileMatcher == nil || absPath == "" {
+	if fs.testFileGlob == nil || absPath == "" {
 		return false
 	}
 
@@ -97,5 +97,5 @@ func (fs *ProjectFS) IsTestFile(absPath types.AbsPath) bool {
 		return false
 	}
 
-	return rel.MatchGlob(fs.testFileMatcher)
+	return rel.MatchGlob(fs.testFileGlob)
 }

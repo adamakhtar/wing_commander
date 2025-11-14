@@ -31,7 +31,7 @@ var startCmd = &cobra.Command{
 }
 
 var (
-	testFilePattern    string
+	testFileGlob    string
 	runCommand         string
 	runTestCaseCommand string
 	testResultsPath    string
@@ -42,7 +42,7 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 
 	startCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable logging to debug problems.")
-	startCmd.Flags().StringVarP(&testFilePattern, "test-file-pattern", "p", "", "A pattern to use to match test files in the project (e.g. 'test/**/*.rb')")
+	startCmd.Flags().StringVarP(&testFileGlob, "test-file-glob", "p", "", "A glob pattern to use to match test files in the project (e.g. 'test/**/*.rb')")
 
 	startCmd.Flags().StringVarP(&runCommand, "run-command", "r", "", "The command to execute tests on the command line (e.g. 'rake test')")
 	if err := startCmd.MarkFlagRequired("run-command"); err != nil {
@@ -62,7 +62,7 @@ func start(args []string) {
 	defer closeLogger()
 
 	projectPathAbs := processProjectPathArg(args)
-	if err := projectfs.InitProjectFS(projectPathAbs, testFilePattern); err != nil {
+	if err := projectfs.InitProjectFS(projectPathAbs, testFileGlob); err != nil {
 		fmt.Printf("❌ Error initializing ProjectFS: %v\n", err)
 		os.Exit(1)
 	}
@@ -74,7 +74,7 @@ func start(args []string) {
 		rtcCommand = runCommand
 	}
 
-	config := config.NewConfig(runCommand, testFilePattern, testResultsPath, rtcCommand, debug)
+	config := config.NewConfig(runCommand, testFileGlob, testResultsPath, rtcCommand, debug)
 	styles := styles.BuildStyles(styles.DefaultTheme)
 	model := ui.NewModel(config, styles)
 
