@@ -82,7 +82,10 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 
 // executeTestCommand runs the configured test command and returns the output
 func (r *TestRunner) executeTestCommand(testRun testrun.TestRun) (string, error) {
-	commandStr := BuildRunTestCaseCommand(r.config.TestCommand, testRun.Patterns)
+	commandStr, err := BuildRunTestCaseCommand(r.config.TestCommand, testRun)
+	if err != nil {
+		return "", fmt.Errorf("failed to build test command: %w", err)
+	}
 
 	log.Debug("executeTestCommand", "command", commandStr)
 	// Execute via shell to handle multi-word commands like "bundle exec rake test"

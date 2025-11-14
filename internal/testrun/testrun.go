@@ -176,3 +176,40 @@ func (tr *TestRuns) AllRecentFirst() []TestRun {
 
 	return orderedRecentFirst
 }
+
+func (tr TestRun) PatternsToFilePaths() []string {
+	filePathStrings := make([]string, len(tr.Patterns))
+	for i, pattern := range tr.Patterns {
+		filePathStrings[i] = pattern.Path
+	}
+	return filePathStrings
+}
+
+func (tr TestRun) PatternsToTestCaseIdentifiers() []string {
+	testCaseIdentifierStrings := make([]string, len(tr.Patterns))
+	for i, pattern := range tr.Patterns {
+		testCaseIdentifierStrings[i] = *pattern.TestGroupName + "#" + *pattern.TestCaseName
+	}
+	return testCaseIdentifierStrings
+}
+
+
+func (tr TestRun) IsRunningWholeSuite() bool {
+	return tr.Mode == string(ModeRunWholeSuite)
+}
+
+func (tr TestRun) IsRunningSelectedPatterns() bool {
+	return tr.Mode == string(ModeRunSelectedPatterns)
+}
+
+func (tr TestRun) IsRunningReRunSingleFailure() bool {
+	return tr.Mode == string(ModeReRunSingleFailure)
+}
+
+func (tr TestRun) IsRunningReRunAllFailures() bool {
+	return tr.Mode == string(ModeReRunAllFailures)
+}
+
+func (tr TestRun) IsRunningSpecificTestCases() bool {
+	return tr.IsRunningReRunSingleFailure() || tr.IsRunningReRunAllFailures()
+}
