@@ -10,6 +10,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/backtrace"
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/parser"
+	"github.com/adamakhtar/wing_commander/internal/projectfs"
 	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/charmbracelet/log"
@@ -39,7 +40,6 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 
 	// Parse YAML summary file
 	parseOpts := &parser.ParseOptions{
-		ProjectPath:     r.config.ProjectPath,
 		TestFilePattern: r.config.TestFilePattern,
 	}
 
@@ -50,7 +50,7 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 	testResults = parsed.Tests
 
 	// Normalize backtraces
-	normalizer := backtrace.NewNormalizer(r.config)
+	normalizer := backtrace.NewNormalizer()
 	normalizedResults := normalizer.NormalizeTestResults(testResults)
 
 	// Partition results by status (no backtrace grouping)
@@ -92,7 +92,8 @@ func (r *TestRunner) executeTestCommand(testRun testrun.TestRun) (string, error)
 	cmd := exec.Command("sh", "-c", commandStr)
 
 	// Set working directory to project path
-	cmd.Dir = r.config.ProjectPath
+	fs := projectfs.GetProjectFS()
+	cmd.Dir = fs.RootPath.String()
 	// Execute command and capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {

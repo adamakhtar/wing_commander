@@ -196,7 +196,7 @@ func (m *Model) AddTestRunForFailedTests() (testrun.TestRun, error) {
 	}
 
 	for _, testResult := range m.testExecutionResult.FailedTests {
-		pattern, err := testrun.NewTestPattern(testResult.TestFilePath, &testResult.TestLineNumber, &testResult.TestCaseName, &testResult.GroupName)
+		pattern, err := testrun.NewTestPattern(testResult.TestFilePath.String(), &testResult.TestLineNumber, &testResult.TestCaseName, &testResult.GroupName)
 		if err != nil {
 			return testrun.TestRun{}, err
 		}

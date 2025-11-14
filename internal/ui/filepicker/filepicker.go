@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	filewalker "github.com/adamakhtar/wing_commander/internal/file_walker"
+	"github.com/adamakhtar/wing_commander/internal/projectfs"
 	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
@@ -182,7 +183,7 @@ func (m *Model) onSearchInputChanged(value string) {
 //===============================================================
 
 func (m Model) getTestFilePathsCmd() tea.Msg {
-	filePaths, err := getTestFilePaths(m.ctx.Config.ProjectPath, m.ctx.Config.TestFilePattern)
+	filePaths, err := getTestFilePaths(m.ctx.Config.TestFilePattern)
 
 	if err != nil {
 		return errMsg{err: err}
@@ -255,8 +256,9 @@ func (s *UniqueFilesSet) String() string {
 //  METHODS
 //===============================================================
 
-func getTestFilePaths(projectPath string, testFilePattern string) ([]string, error) {
-	filePaths := filewalker.FileEntriesRecursive(projectPath, []string{testFilePattern}, []string{})
+func getTestFilePaths(testFilePattern string) ([]string, error) {
+	fs := projectfs.GetProjectFS()
+	filePaths := filewalker.FileEntriesRecursive(fs.RootPath.String(), []string{testFilePattern}, []string{})
 
 	fmt.Println("getTestFilePaths End")
 	return filePaths, nil

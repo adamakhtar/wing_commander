@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/filesnippet"
+	"github.com/adamakhtar/wing_commander/internal/projectfs"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -78,11 +79,18 @@ func (m Model) buildContent(innerWidth int) string {
 	sb.WriteString("\n")
 
 	for _, frame := range m.testResult.FilteredBacktrace {
-
-		line := frame.RelativeFilePath(m.ctx.Config.ProjectPath) + ":" + fmt.Sprintf("%d", frame.Line)
+		fs := projectfs.GetProjectFS()
+		relPath, err := fs.Rel(frame.File)
+		var line string
+		if err != nil {
+			// Fallback to absolute path
+			line = frame.File.String() + ":" + fmt.Sprintf("%d", frame.Line)
+		} else {
+			line = relPath.String() + ":" + fmt.Sprintf("%d", frame.Line)
+		}
 		sb.WriteString(m.ctx.Styles.PreviewSection.BacktracePath.Width(innerWidth).Render(line))
 
-		snippet, err := filesnippet.ExtractLines(frame.File, frame.Line, 5)
+		snippet, err := filesnippet.ExtractLines(frame.File.String(), frame.Line, 5)
 		if err != nil {
 			log.Error("failed to extract lines", "error", err)
 			continue
@@ -99,7 +107,7 @@ func (m Model) buildContent(innerWidth int) string {
 
 func (m Model) renderTestHeading(innerWidth int) string {
 	testName := m.testResult.GroupName + " " + m.testResult.TestCaseName
-	testPath := m.testResult.TestFilePath + ":" + fmt.Sprintf("%d", m.testResult.TestLineNumber)
+	testPath := m.testResult.TestFilePath.String() + ":" + fmt.Sprintf("%d", m.testResult.TestLineNumber)
 
 	return lipgloss.JoinVertical(lipgloss.Top,
 		m.ctx.Styles.HeadingTextStyle.Width(innerWidth).Render(testName),

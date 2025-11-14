@@ -1,27 +1,12 @@
 package types
 
-import (
-	"path/filepath"
-)
-
 // StackFrame represents a single frame in a backtrace
 type StackFrame struct {
-	File            string // File path
-	Line            int    // Line number
-	Function        string // Function/method name (may be empty)
-	ChangeIntensity int    // 0-3 (0 = no highlight, 3 = strongest)
-	ChangeReason    string // "uncommitted" | "last_commit" | "previous_commit"
-}
-
-func (s StackFrame) RelativeFilePath(absolutePath string) string {
-	if filepath.IsAbs(s.File) {
-		rel, err := filepath.Rel(absolutePath, s.File)
-		if err != nil {
-			return s.File
-		}
-		return rel
-	}
-	return s.File
+	File            AbsPath
+	Line            int
+	Function        string
+	ChangeIntensity int
+	ChangeReason    string
 }
 
 // TestStatus represents the status of a test
@@ -86,19 +71,19 @@ const (
 
 // TestResult represents a single test execution result
 type TestResult struct {
-	Id                int          // Unique ID for the test result
-	GroupName         string       // Test group name
-	TestCaseName      string       // Test case name
-	Status            TestStatus   // Test status (pass, fail, skip)
-	FailureCause      FailureCause // Cause of the failure, derived from failure details/backtrace
-	FailureDetails    string       // Human-readable description of the failure
-	FailureFilePath   string       // File path where the failure originated
-	FailureLineNumber int          // Line number where the failure originated
-	TestFilePath      string       // File path of the test
-	TestLineNumber    int          // Line number of the test definition
-	FullBacktrace     []StackFrame // Complete backtrace (up to 50 frames)
-	FilteredBacktrace []StackFrame // Filtered backtrace (project frames only)
-	Duration          float64      // Duration of the test in seconds
+	Id                int
+	GroupName         string
+	TestCaseName      string
+	Status            TestStatus
+	FailureCause      FailureCause
+	FailureDetails    string
+	FailureFilePath   AbsPath
+	FailureLineNumber int
+	TestFilePath      AbsPath
+	TestLineNumber    int
+	FullBacktrace     []StackFrame
+	FilteredBacktrace []StackFrame
+	Duration          float64
 }
 
 func (tr *TestResult) AbbreviatedResult() string {
@@ -125,7 +110,7 @@ func (tr *TestResult) IsSkipped() bool {
 }
 
 // NewStackFrame creates a new StackFrame
-func NewStackFrame(file string, line int, function string) StackFrame {
+func NewStackFrame(file AbsPath, line int, function string) StackFrame {
 	return StackFrame{
 		File:            file,
 		Line:            line,

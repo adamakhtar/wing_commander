@@ -32,7 +32,6 @@ var defaultExcludePatterns = []string{
 
 // Config represents the Wing Commander configuration.
 type Config struct {
-	ProjectPath        string        `yaml:"project_path"`
 	TestFramework      TestFramework `yaml:"test_framework"`
 	TestCommand        string        `yaml:"test_command"`
 	RunTestCaseCommand string        `yaml:"run_test_case_command"`
@@ -44,12 +43,9 @@ type Config struct {
 
 // NewConfig creates a new configuration instance, applying sensible defaults for
 // WingCommanderReporter-based YAML summaries when values are omitted.
-func NewConfig(projectPath string, testCommand string, testFilePattern string, testResultsPath string, runTestCaseCommand string, debug bool) *Config {
+func NewConfig(testCommand string, testFilePattern string, testResultsPath string, runTestCaseCommand string, debug bool) *Config {
 	cfg := DefaultConfig()
 
-	if projectPath != "" {
-		cfg.ProjectPath = projectPath
-	}
 	if testCommand != "" {
 		cfg.TestCommand = testCommand
 	}
@@ -71,7 +67,6 @@ func NewConfig(projectPath string, testCommand string, testFilePattern string, t
 // DefaultConfig returns the baseline configuration for the Wing Commander CLI.
 func DefaultConfig() *Config {
 	cfg := &Config{
-		ProjectPath:        "",
 		TestFramework:      FrameworkMinitest,
 		TestCommand:        defaultMinitestCommand,
 		RunTestCaseCommand: "",
@@ -116,9 +111,6 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file %s: %w", configPath, err)
 	}
 
-	if loaded.ProjectPath != "" {
-		cfg.ProjectPath = loaded.ProjectPath
-	}
 	if loaded.TestFramework != "" {
 		cfg.TestFramework = loaded.TestFramework
 	}

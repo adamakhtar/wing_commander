@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"path/filepath"
+
+	"github.com/gobwas/glob"
 )
 
 // AbsPath represents an absolute file path
@@ -32,6 +34,17 @@ func (p AbsPath) String() string {
 	return string(p)
 }
 
+// MatchGlob checks if the AbsPath matches the given glob pattern.
+// The path is normalized (forward slashes) before matching to ensure
+// cross-platform compatibility. Matching is case-sensitive.
+func (p AbsPath) MatchGlob(g glob.Glob) bool {
+	if g == nil || p == "" {
+		return false
+	}
+	normalized := filepath.ToSlash(string(p))
+	return g.Match(normalized)
+}
+
 // RelPath represents a relative file path
 type RelPath string
 
@@ -52,4 +65,15 @@ func NewRelPath(path string) (RelPath, error) {
 
 func (p RelPath) String() string {
 	return string(p)
+}
+
+// MatchGlob checks if the RelPath matches the given glob pattern.
+// The path is normalized (forward slashes) before matching to ensure
+// cross-platform compatibility. Matching is case-sensitive.
+func (p RelPath) MatchGlob(g glob.Glob) bool {
+	if g == nil || p == "" {
+		return false
+	}
+	normalized := filepath.ToSlash(string(p))
+	return g.Match(normalized)
 }

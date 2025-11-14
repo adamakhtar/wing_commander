@@ -3,26 +3,24 @@ package backtrace
 import (
 	"strings"
 
-	"github.com/adamakhtar/wing_commander/internal/config"
+	"github.com/adamakhtar/wing_commander/internal/projectfs"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/charmbracelet/log"
 )
 
 // Normalizer handles backtrace filtering and normalization.
 type Normalizer struct {
-	projectPath string
 }
 
-// NewNormalizer creates a new Normalizer with the given config.
-func NewNormalizer(cfg *config.Config) *Normalizer {
-	return &Normalizer{
-		projectPath: cfg.ProjectPath,
-	}
+// NewNormalizer creates a new Normalizer.
+func NewNormalizer() *Normalizer {
+	return &Normalizer{}
 }
 
 // NormalizeTestResults processes all test results and filters their backtraces.
 func (n *Normalizer) NormalizeTestResults(results []types.TestResult) []types.TestResult {
-	log.Debug("Normalizing test results", "projectPath", n.projectPath)
+	fs := projectfs.GetProjectFS()
+	log.Debug("Normalizing test results", "projectPath", fs.RootPath.String())
 	normalized := make([]types.TestResult, len(results))
 
 	for i, result := range results {
@@ -52,8 +50,6 @@ func (n *Normalizer) filterBacktrace(frames []types.StackFrame) []types.StackFra
 }
 
 func (n *Normalizer) shouldExclude(frame types.StackFrame) bool {
-	if n.projectPath == "" {
-		return false
-	}
-	return !strings.HasPrefix(frame.File, n.projectPath)
+	fs := projectfs.GetProjectFS()
+	return !strings.HasPrefix(frame.File.String(), fs.RootPath.String())
 }

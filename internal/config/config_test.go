@@ -57,7 +57,6 @@ run_test_case_command: "bundle exec ruby -Itest %{test_case_name}"`
 	config, err := LoadConfig("")
 	require.NoError(t, err)
 
-	assert.Equal(t, "/tmp/project", config.ProjectPath)
 	assert.Equal(t, FrameworkMinitest, config.TestFramework)
 	assert.Equal(t, "bundle exec rake test test/workers/user_worker_test.rb", config.TestCommand)
 	assert.Equal(t, "bundle exec ruby -Itest %{test_case_name}", config.RunTestCaseCommand)
@@ -89,7 +88,6 @@ invalid: yaml: content`
 
 func TestSaveConfig(t *testing.T) {
 	cfg := &Config{
-		ProjectPath:        "/tmp/project",
 		TestFramework:      FrameworkMinitest,
 		TestCommand:        "bundle exec rake test test/models/user_test.rb",
 		RunTestCaseCommand: "bundle exec ruby -Itest %{test_case_name}",
@@ -107,7 +105,6 @@ func TestSaveConfig(t *testing.T) {
 
 	loaded, err := LoadConfig("")
 	require.NoError(t, err)
-	assert.Equal(t, cfg.ProjectPath, loaded.ProjectPath)
 	assert.Equal(t, cfg.TestCommand, loaded.TestCommand)
 	assert.Equal(t, cfg.RunTestCaseCommand, loaded.RunTestCaseCommand)
 	assert.Equal(t, cfg.TestResultsPath, loaded.TestResultsPath)
@@ -184,11 +181,11 @@ func TestConfigWithMissingFieldsUsesDefaults(t *testing.T) {
 }
 
 func TestRunTestCaseCommandFallsBackToTestCommand(t *testing.T) {
-	cfg := NewConfig("/tmp/project", "bundle exec rake test", "", defaultResultsPath, "", false)
+	cfg := NewConfig("bundle exec rake test", "", defaultResultsPath, "", false)
 	assert.Equal(t, cfg.TestCommand, cfg.RunTestCaseCommand)
 }
 
 func TestRunTestCaseCommandOverride(t *testing.T) {
-	cfg := NewConfig("/tmp/project", "bundle exec rake test", "", defaultResultsPath, "bundle exec ruby -Itest %{test_case_name}", false)
+	cfg := NewConfig("bundle exec rake test", "", defaultResultsPath, "bundle exec ruby -Itest %{test_case_name}", false)
 	assert.Equal(t, "bundle exec ruby -Itest %{test_case_name}", cfg.RunTestCaseCommand)
 }

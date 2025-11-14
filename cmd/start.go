@@ -71,7 +71,7 @@ func start(args []string) {
 		rtcCommand = runCommand
 	}
 
-	config := config.NewConfig(projectPathAbs.String(), runCommand, testFilePattern, testResultsPath, rtcCommand, debug)
+	config := config.NewConfig(runCommand, testFilePattern, testResultsPath, rtcCommand, debug)
 	styles := styles.BuildStyles(styles.DefaultTheme)
 	model := ui.NewModel(config, styles)
 

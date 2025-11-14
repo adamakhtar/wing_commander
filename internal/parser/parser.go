@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/adamakhtar/wing_commander/internal/projectfs"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/gobwas/glob"
 	"gopkg.in/yaml.v3"
@@ -31,12 +32,10 @@ var frameworkPathIndicators = []string{
 
 // ParseOptions controls optional parsing behaviour.
 type ParseOptions struct {
-	ProjectPath     string
 	TestFilePattern string
 }
 
 type parseContext struct {
-	projectPath     string
 	testFileMatcher glob.Glob
 }
 
@@ -45,12 +44,10 @@ func newParseContext(opts *ParseOptions) (*parseContext, error) {
 		return &parseContext{}, nil
 	}
 
-	ctx := &parseContext{
-		projectPath: opts.ProjectPath,
-	}
+	ctx := &parseContext{}
 
 	if opts.TestFilePattern != "" {
-		pattern := strings.ToLower(filepath.ToSlash(opts.TestFilePattern))
+		pattern := filepath.ToSlash(opts.TestFilePattern)
 		compiled, err := glob.Compile(pattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compile test file pattern %q: %w", opts.TestFilePattern, err)
@@ -66,15 +63,18 @@ func (c *parseContext) matchesTestFile(path string) bool {
 		return false
 	}
 
-	normalized := strings.ToLower(filepath.ToSlash(path))
-	if c.testFileMatcher.Match(normalized) {
-		return true
-	}
+	// Try matching as absolute path first
+	absPath, err := types.NewAbsPath(path)
+	if err == nil {
+		if absPath.MatchGlob(c.testFileMatcher) {
+			return true
+		}
 
-	if c.projectPath != "" {
-		if rel, err := filepath.Rel(c.projectPath, path); err == nil {
-			relNormalized := strings.ToLower(filepath.ToSlash(rel))
-			if c.testFileMatcher.Match(relNormalized) {
+		// Use ProjectFS to convert absolute path to relative for pattern matching
+		fs := projectfs.GetProjectFS()
+		rel, err := fs.Rel(absPath)
+		if err == nil {
+			if rel.MatchGlob(c.testFileMatcher) {
 				return true
 			}
 		}
@@ -145,7 +145,7 @@ func Parse(data []byte, opts *ParseOptions) (*ParseResult, error) {
 
 func firstFrameWithFile(frames []types.StackFrame) *types.StackFrame {
 	for _, frame := range frames {
-		if frame.File != "" {
+		if frame.File.String() != "" {
 			frameCopy := frame
 			return &frameCopy
 		}
@@ -167,15 +167,15 @@ func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseConte
 	}
 
 	// If we have no frames, treat as test definition error (runner/setup/teardown/unmapped)
-	if topFrame == nil || topFrame.File == "" {
+	if topFrame == nil || topFrame.File.String() == "" {
 		return types.FailureCauseTestDefinition
 	}
 
-	if ctx != nil && ctx.matchesTestFile(topFrame.File) {
+	if ctx != nil && ctx.matchesTestFile(topFrame.File.String()) {
 		return types.FailureCauseTestDefinition
 	}
 
-	lp := strings.ToLower(topFrame.File)
+	lp := strings.ToLower(topFrame.File.String())
 	for _, ind := range testPathIndicators {
 		if strings.Contains(lp, ind) || strings.HasSuffix(lp, ind) {
 			return types.FailureCauseTestDefinition
@@ -199,8 +199,9 @@ func parseStackFrame(frameStr string) types.StackFrame {
 
 	// Handle Python format first
 	if strings.HasPrefix(frameStr, "File \"") {
+		absPath, _ := types.NewAbsPath(frameStr)
 		return types.StackFrame{
-			File:     frameStr,
+			File:     absPath,
 			Line:     0,
 			Function: "",
 		}
@@ -208,7 +209,8 @@ func parseStackFrame(frameStr string) types.StackFrame {
 
 	parts := strings.Split(frameStr, ":")
 	if len(parts) < 2 {
-		return types.StackFrame{File: frameStr}
+		absPath, _ := types.NewAbsPath(frameStr)
+		return types.StackFrame{File: absPath}
 	}
 
 	file := parts[0]
@@ -220,7 +222,8 @@ func parseStackFrame(frameStr string) types.StackFrame {
 	if len(parts) >= 2 {
 		// Parse line number
 		if _, err := fmt.Sscanf(parts[1], "%d", &line); err != nil {
-			return types.StackFrame{File: file}
+			absPath, _ := types.NewAbsPath(file)
+			return types.StackFrame{File: absPath}
 		}
 	}
 
@@ -237,8 +240,9 @@ func parseStackFrame(frameStr string) types.StackFrame {
 		}
 	}
 
+	absPath, _ := types.NewAbsPath(file)
 	return types.StackFrame{
-		File:     file,
+		File:     absPath,
 		Line:     line,
 		Function: function,
 	}
@@ -339,7 +343,7 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 	for _, frameStr := range backtraceStrings {
 		frame := parseStackFrame(frameStr)
 		// Only add frames that have a valid file:line format (check for colon separator)
-		if frame.File != "" && strings.Contains(frameStr, ":") {
+		if frame.File.String() != "" && strings.Contains(frameStr, ":") {
 			fullBacktrace = append(fullBacktrace, frame)
 		}
 	}
@@ -353,12 +357,30 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 	if status == types.StatusFail {
 		topFrame := firstFrameWithFile(fullBacktrace)
 		if topFrame == nil && failureFilePath != "" {
-			topFrame = &types.StackFrame{
-				File: failureFilePath,
-				Line: failureLineNumber,
+			absPath, err := types.NewAbsPath(failureFilePath)
+			if err == nil {
+				topFrame = &types.StackFrame{
+					File: absPath,
+					Line: failureLineNumber,
+				}
 			}
 		}
 		failureCause = classifyFailure(failureDetails, topFrame, ctx)
+	}
+
+	// Convert file paths to AbsPath
+	var failureFilePathAbs types.AbsPath
+	if failureFilePath != "" {
+		if abs, err := types.NewAbsPath(failureFilePath); err == nil {
+			failureFilePathAbs = abs
+		}
+	}
+
+	var testFilePathAbs types.AbsPath
+	if testFilePath != "" {
+		if abs, err := types.NewAbsPath(testFilePath); err == nil {
+			testFilePathAbs = abs
+		}
 	}
 
 	return types.TestResult{
@@ -368,9 +390,9 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 		Status:            status,
 		FailureCause:      failureCause,
 		FailureDetails:    failureDetails,
-		FailureFilePath:   failureFilePath,
+		FailureFilePath:   failureFilePathAbs,
 		FailureLineNumber: failureLineNumber,
-		TestFilePath:      testFilePath,
+		TestFilePath:      testFilePathAbs,
 		TestLineNumber:    testLineNumber,
 		FullBacktrace:     fullBacktrace,
 		FilteredBacktrace: make([]types.StackFrame, 0),

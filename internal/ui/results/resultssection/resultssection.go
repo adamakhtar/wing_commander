@@ -188,7 +188,7 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 	rows := []table.Row{}
 	for _, test := range results {
 		testPattern, err := testrun.NewTestPattern(
-			test.TestFilePath,
+			test.TestFilePath.String(),
 			&test.TestLineNumber,
 			&test.TestCaseName,
 			&test.GroupName,
