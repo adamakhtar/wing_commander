@@ -11,7 +11,6 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/projectfs"
 	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/types"
-	"github.com/gobwas/glob"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,66 +33,13 @@ var frameworkPathIndicators = []string{
 
 // ParseOptions controls optional parsing behaviour.
 type ParseOptions struct {
-	TestFilePattern string
 }
 
 type parseContext struct {
-	testFileMatcher glob.Glob
 }
 
 func newParseContext(opts *ParseOptions) (*parseContext, error) {
-	if opts == nil {
-		return &parseContext{}, nil
-	}
-
-	ctx := &parseContext{}
-
-	if opts.TestFilePattern != "" {
-		pattern := filepath.ToSlash(opts.TestFilePattern)
-		compiled, err := glob.Compile(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("failed to compile test file pattern %q: %w", opts.TestFilePattern, err)
-		}
-		ctx.testFileMatcher = compiled
-	}
-
-	return ctx, nil
-}
-
-func (c *parseContext) matchesTestFile(path string) bool {
-	if c == nil || c.testFileMatcher == nil || path == "" {
-		return false
-	}
-
-	// Try matching as absolute path first
-	absPath, err := parseFilePath(path)
-	if err == nil {
-		return c.matchesTestFileFromAbs(absPath)
-	}
-
-	return false
-}
-
-func (c *parseContext) matchesTestFileFromAbs(absPath types.AbsPath) bool {
-	if c == nil || c.testFileMatcher == nil || absPath == "" {
-		return false
-	}
-
-	// Try matching absolute path first
-	if absPath.MatchGlob(c.testFileMatcher) {
-		return true
-	}
-
-	// Use ProjectFS to convert absolute path to relative for pattern matching
-	fs := projectfs.GetProjectFS()
-	rel, err := fs.Rel(absPath)
-	if err == nil {
-		if rel.MatchGlob(c.testFileMatcher) {
-			return true
-		}
-	}
-
-	return false
+	return &parseContext{}, nil
 }
 
 // ParseResult contains parsed test results and metadata.
@@ -184,7 +130,8 @@ func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseConte
 		return testresult.FailureCauseTestDefinition
 	}
 
-	if ctx != nil && ctx.matchesTestFileFromAbs(topFrame.FilePath) {
+	fs := projectfs.GetProjectFS()
+	if fs.IsTestFile(topFrame.FilePath) {
 		return testresult.FailureCauseTestDefinition
 	}
 

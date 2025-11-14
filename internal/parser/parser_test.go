@@ -12,6 +12,11 @@ import (
 )
 
 func TestClassifyFailure_Heuristics(t *testing.T) {
+	// Setup ProjectFS singleton for tests
+	rootPath, _ := types.NewAbsPath("/path/to")
+	err := projectfs.InitProjectFS(rootPath, "")
+	require.NoError(t, err)
+
 	cases := []struct {
 		name     string
 		message  string
@@ -27,7 +32,7 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 			name:    "test definition by spec path",
 			message: "NoMethodError: undefined method",
 			topFrame: &types.StackFrame{
-				FilePath: types.AbsPath("spec/models/user_spec.rb"),
+				FilePath: types.AbsPath("/path/to/spec/models/user_spec.rb"),
 				Line:     10,
 			},
 			want: testresult.FailureCauseTestDefinition,
@@ -36,7 +41,7 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 			name:    "production by app path",
 			message: "NoMethodError: undefined method",
 			topFrame: &types.StackFrame{
-				FilePath: types.AbsPath("app/models/user.rb"),
+				FilePath: types.AbsPath("/path/to/app/models/user.rb"),
 				Line:     20,
 			},
 			want: testresult.FailureCauseProductionCode,
@@ -50,7 +55,9 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := classifyFailure(tc.message, tc.topFrame, nil)
+			ctx, err := newParseContext(&ParseOptions{})
+			require.NoError(t, err)
+			got := classifyFailure(tc.message, tc.topFrame, ctx)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -59,11 +66,10 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/abs/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "test/**/*.rb")
+	require.NoError(t, err)
 
-	ctx, err := newParseContext(&ParseOptions{
-		TestFilePattern: "test/**/*.rb",
-	})
+	ctx, err := newParseContext(&ParseOptions{})
 	require.NoError(t, err)
 
 	cases := []struct {
@@ -108,7 +114,8 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 func TestParseStackFrame(t *testing.T) {
 	// Setup ProjectFS for relative path conversion
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	require.NoError(t, err)
 
 	tests := []struct {
 		name     string
@@ -393,24 +400,23 @@ func TestParse_AssertionFields(t *testing.T) {
 func TestParse_FailureCause_UsesPattern(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/abs/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "custom_specs/**/*.rb")
+	require.NoError(t, err)
 
 	yamlData := `---
 - test_group_name: CustomSuite
   test_status: failed
   duration: '0.10'
-  test_file_path: "/abs/project/custom_specs/user_case.rb"
+  test_file_path: "/abs/project/custom_specs/models/user_case.rb"
   test_line_number: 5
   failure_details: "Boom"
-  failure_file_path: "/abs/project/custom_specs/user_case.rb"
+  failure_file_path: "/abs/project/custom_specs/models/user_case.rb"
   failure_line_number: 7
   full_backtrace:
-    - "/abs/project/custom_specs/user_case.rb:7:in 'test_case'"
+    - "/abs/project/custom_specs/models/user_case.rb:7:in 'test_case'"
 `
 
-	opts := &ParseOptions{
-		TestFilePattern: "custom_specs/**/*.rb",
-	}
+	opts := &ParseOptions{}
 
 	result, err := Parse([]byte(yamlData), opts)
 	require.NoError(t, err)

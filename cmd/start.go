@@ -62,7 +62,10 @@ func start(args []string) {
 	defer closeLogger()
 
 	projectPathAbs := processProjectPathArg(args)
-	projectfs.InitProjectFS(projectPathAbs)
+	if err := projectfs.InitProjectFS(projectPathAbs, testFilePattern); err != nil {
+		fmt.Printf("❌ Error initializing ProjectFS: %v\n", err)
+		os.Exit(1)
+	}
 
 	testResultsPath := processTestResultsPathOption(projectPathAbs, testResultsPath)
 

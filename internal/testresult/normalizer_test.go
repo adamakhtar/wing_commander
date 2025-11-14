@@ -12,7 +12,10 @@ import (
 func TestNewNormalizer(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	normalizer := NewNormalizer()
 
@@ -22,7 +25,10 @@ func TestNewNormalizer(t *testing.T) {
 func TestNormalizeTestResults(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	normalizer := NewNormalizer()
 

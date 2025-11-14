@@ -12,7 +12,10 @@ import (
 
 func setupTestProjectFS(t *testing.T, rootPath types.AbsPath) {
 	t.Helper()
-	InitProjectFS(rootPath)
+	err := InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 }
 
 func teardownTestProjectFS(t *testing.T) {
@@ -27,7 +30,8 @@ func TestInitProjectFS(t *testing.T) {
 		rootPath, err := types.NewAbsPath("/tmp/test-project")
 		require.NoError(t, err)
 
-		InitProjectFS(rootPath)
+		err = InitProjectFS(rootPath, "")
+		require.NoError(t, err)
 
 		fs := GetProjectFS()
 		require.NotNil(t, fs)
@@ -54,7 +58,8 @@ func TestGetProjectFS(t *testing.T) {
 		rootPath, err := types.NewAbsPath("/tmp/test-project")
 		require.NoError(t, err)
 
-		InitProjectFS(rootPath)
+		err = InitProjectFS(rootPath, "")
+		require.NoError(t, err)
 		fs := GetProjectFS()
 		assert.NotNil(t, fs)
 		assert.Equal(t, rootPath, fs.RootPath)
@@ -299,6 +304,78 @@ func TestProjectFS_IsProjectFile(t *testing.T) {
 
 			fs := GetProjectFS()
 			got := fs.IsProjectFile(absPath)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestProjectFS_IsTestFile(t *testing.T) {
+	tests := []struct {
+		name            string
+		rootPath        string
+		testFilePattern string
+		absPath         string
+		want            bool
+	}{
+		{
+			name:            "matches test file pattern",
+			rootPath:        "/tmp/project",
+			testFilePattern: "test/**/*.rb",
+			absPath:         "/tmp/project/test/models/user_test.rb",
+			want:            true,
+		},
+		{
+			name:            "matches nested test file pattern",
+			rootPath:        "/tmp/project",
+			testFilePattern: "test/**/*.rb",
+			absPath:         "/tmp/project/test/unit/models/user_test.rb",
+			want:            true,
+		},
+		{
+			name:            "does not match non-test file",
+			rootPath:        "/tmp/project",
+			testFilePattern: "test/**/*.rb",
+			absPath:         "/tmp/project/app/models/user.rb",
+			want:            false,
+		},
+		{
+			name:            "returns false when pattern not set",
+			rootPath:        "/tmp/project",
+			testFilePattern: "",
+			absPath:         "/tmp/project/test/models/user_test.rb",
+			want:            false,
+		},
+		{
+			name:            "returns false for path outside project",
+			rootPath:        "/tmp/project",
+			testFilePattern: "test/**/*.rb",
+			absPath:         "/tmp/other/test.rb",
+			want:            false,
+		},
+		{
+			name:            "matches custom pattern",
+			rootPath:        "/tmp/project",
+			testFilePattern: "spec/**/*_spec.rb",
+			absPath:         "/tmp/project/spec/models/user_spec.rb",
+			want:            true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer teardownTestProjectFS(t)
+
+			rootPath, err := types.NewAbsPath(tt.rootPath)
+			require.NoError(t, err)
+			err = InitProjectFS(rootPath, tt.testFilePattern)
+			require.NoError(t, err)
+
+			absPath, err := types.NewAbsPath(tt.absPath)
+			require.NoError(t, err)
+
+			fs := GetProjectFS()
+			got := fs.IsTestFile(absPath)
 
 			assert.Equal(t, tt.want, got)
 		})

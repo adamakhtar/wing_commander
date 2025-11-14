@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/gobwas/glob"
 )
 
 var (
@@ -14,14 +15,29 @@ var (
 
 // ProjectFS manages the project root path and provides path conversions
 type ProjectFS struct {
-	RootPath types.AbsPath
+	RootPath       types.AbsPath
+	testFileMatcher glob.Glob
 }
 
-// InitProjectFS initializes the singleton with the project root path
-func InitProjectFS(rootPath types.AbsPath) {
-	instance = &ProjectFS{
+// InitProjectFS initializes the singleton with the project root path and optional test file pattern
+func InitProjectFS(rootPath types.AbsPath, testFilePattern string) error {
+	fs := &ProjectFS{
 		RootPath: rootPath,
 	}
+
+	if testFilePattern != "" {
+		// Normalize pattern to forward slashes for cross-platform compatibility.
+		// The glob library expects forward slashes, and paths are normalized when matching.
+		pattern := filepath.ToSlash(testFilePattern)
+		compiled, err := glob.Compile(pattern)
+		if err != nil {
+			return fmt.Errorf("failed to compile test file pattern %q: %w", testFilePattern, err)
+		}
+		fs.testFileMatcher = compiled
+	}
+
+	instance = fs
+	return nil
 }
 
 // GetProjectFS returns the singleton instance
@@ -42,7 +58,8 @@ func (fs *ProjectFS) Abs(rel types.RelPath) types.AbsPath {
 	return types.AbsPath(absPath)
 }
 
-// Rel converts an absolute path to a relative path using RootPath
+// Rel converts an absolute path to a relative path using RootPath.
+// Returns an error if the path is outside the project root.
 func (fs *ProjectFS) Rel(abs types.AbsPath) (types.RelPath, error) {
 	rel, err := filepath.Rel(fs.RootPath.String(), abs.String())
 	if err != nil {
@@ -66,4 +83,19 @@ func (fs *ProjectFS) Rel(abs types.AbsPath) (types.RelPath, error) {
 func (fs *ProjectFS) IsProjectFile(absPath types.AbsPath) bool {
 	_, err := fs.Rel(absPath)
 	return err == nil
+}
+
+// IsTestFile checks if the given absolute path matches the test file pattern.
+// Converts the absolute path to a relative path and matches against the compiled glob pattern.
+func (fs *ProjectFS) IsTestFile(absPath types.AbsPath) bool {
+	if fs.testFileMatcher == nil || absPath == "" {
+		return false
+	}
+
+	rel, err := fs.Rel(absPath)
+	if err != nil {
+		return false
+	}
+
+	return rel.MatchGlob(fs.testFileMatcher)
 }

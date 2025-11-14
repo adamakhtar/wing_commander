@@ -17,7 +17,10 @@ func TestNewBacktrace(t *testing.T) {
 func TestAppend_RelativePath(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("app/models/user.rb:42:in 'create_user'")
@@ -33,7 +36,10 @@ func TestAppend_RelativePath(t *testing.T) {
 func TestAppend_AbsolutePath(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("/absolute/path/file.rb:10")
@@ -47,7 +53,10 @@ func TestAppend_AbsolutePath(t *testing.T) {
 func TestAppend_RubyFormat(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("app/models/user.rb:42:in 'create_user'")
@@ -63,7 +72,10 @@ func TestAppend_RubyFormat(t *testing.T) {
 func TestAppend_RubyFormatWithoutMethod(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("app/models/user.rb:42")
@@ -77,7 +89,10 @@ func TestAppend_RubyFormatWithoutMethod(t *testing.T) {
 func TestAppend_PythonFormat(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("File \"app/models/user.py\", line 42, in create_user")
@@ -91,7 +106,10 @@ func TestAppend_PythonFormat(t *testing.T) {
 func TestAppend_EmptyString(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("")
@@ -105,7 +123,10 @@ func TestAppend_EmptyString(t *testing.T) {
 func TestAppend_InvalidFormat(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("invalid_frame")
@@ -119,7 +140,10 @@ func TestAppend_InvalidFormat(t *testing.T) {
 func TestFilterProjectStackFramesOnly(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("/path/to/project/app/test.rb:10")
@@ -137,7 +161,10 @@ func TestFilterProjectStackFramesOnly(t *testing.T) {
 func TestFilterProjectStackFramesOnly_EmptyBacktrace(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	filtered := bt.FilterProjectStackFramesOnly()
@@ -148,7 +175,10 @@ func TestFilterProjectStackFramesOnly_EmptyBacktrace(t *testing.T) {
 func TestFilterProjectStackFramesOnly_NoProjectFrames(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("/gems/rspec.rb:20")
@@ -163,7 +193,10 @@ func TestFilterProjectStackFramesOnly_NoProjectFrames(t *testing.T) {
 func TestFilterProjectStackFramesOnly_AllProjectFrames(t *testing.T) {
 	// Setup ProjectFS singleton for tests
 	rootPath, _ := types.NewAbsPath("/path/to/project")
-	projectfs.InitProjectFS(rootPath)
+	err := projectfs.InitProjectFS(rootPath, "")
+	if err != nil {
+		t.Fatalf("failed to initialize ProjectFS: %v", err)
+	}
 
 	bt := NewBacktrace()
 	bt.Append("/path/to/project/app/test.rb:10")

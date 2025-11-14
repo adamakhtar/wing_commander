@@ -38,9 +38,7 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 	var testResults []testresult.TestResult
 
 	// Parse YAML summary file
-	parseOpts := &parser.ParseOptions{
-		TestFilePattern: r.config.TestFilePattern,
-	}
+	parseOpts := &parser.ParseOptions{}
 
 	parsed, err := parser.ParseFile(r.config.TestResultsPath, parseOpts)
 	if err != nil {
