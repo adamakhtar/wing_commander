@@ -32,12 +32,17 @@ I'm aiming to solve all these with this tool.
 
 Currently supports Ruby and minitest. Will expand to RSpec and perhaps JavaScript.
 
-## Ugly screenshots of early prototype
+## Screenshots of early prototype
 
 Viewing a test run and the results - note the ability to see a preview of actual code in the backtrace
-<img width="2790" height="1068" alt="CleanShot 2025-11-06 at 18 31 00@2x" src="https://github.com/user-attachments/assets/7640c478-02e8-46cf-8da3-d7d439f2e65f" />
+<img width="3244" height="1778" alt="CleanShot 2025-11-14 at 21 07 22@2x" src="https://github.com/user-attachments/assets/8920fb0a-8c9b-4cd7-8e4e-4a5ee04a75a2" />
 
-Picking mutiple files to run via fuzzy search (only test files come up in the results)
+1. Results Table: View test results at a glance and grouped by tests either failing due to errors in your project code, errors in your test code or assertion failures, and then passing and skipped tests.
+2. Preview: Clearly see important details for a failing test 
+3. Backtrace: See offending lines and their code. Uncomitted changed files are highlighted (TBI)
+4. Run history: Run previous runs again easily
+
+Picking mutiple files to run via fuzzy search 
 
 <img width="1400" height="374" alt="CleanShot 2025-11-06 at 18 34 39@2x" src="https://github.com/user-attachments/assets/6ac9c3aa-4ff9-47dc-b991-04875fa7aef6" />
 
