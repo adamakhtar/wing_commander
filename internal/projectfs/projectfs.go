@@ -60,3 +60,10 @@ func (fs *ProjectFS) Rel(abs types.AbsPath) (types.RelPath, error) {
 
 	return relPath, nil
 }
+
+// IsProjectFile checks if the given absolute path is within the project root.
+// Uses Rel() for cross-platform path comparison.
+func (fs *ProjectFS) IsProjectFile(absPath types.AbsPath) bool {
+	_, err := fs.Rel(absPath)
+	return err == nil
+}

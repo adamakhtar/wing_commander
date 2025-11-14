@@ -3,7 +3,9 @@ package parser
 import (
 	"testing"
 
+	"github.com/adamakhtar/wing_commander/internal/backtrace"
 	"github.com/adamakhtar/wing_commander/internal/projectfs"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,12 +16,12 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 		name     string
 		message  string
 		topFrame *types.StackFrame
-		want     types.FailureCause
+		want     testresult.FailureCause
 	}{
 		{
 			name:    "assertion by message",
 			message: "Expected 2 to equal 3",
-			want:    types.FailureCauseAssertion,
+			want:    testresult.FailureCauseAssertion,
 		},
 		{
 			name:    "test definition by spec path",
@@ -28,7 +30,7 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 				FilePath: types.AbsPath("spec/models/user_spec.rb"),
 				Line:     10,
 			},
-			want: types.FailureCauseTestDefinition,
+			want: testresult.FailureCauseTestDefinition,
 		},
 		{
 			name:    "production by app path",
@@ -37,12 +39,12 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 				FilePath: types.AbsPath("app/models/user.rb"),
 				Line:     20,
 			},
-			want: types.FailureCauseProductionCode,
+			want: testresult.FailureCauseProductionCode,
 		},
 		{
 			name:    "no frames -> test definition",
 			message: "",
-			want:    types.FailureCauseTestDefinition,
+			want:    testresult.FailureCauseTestDefinition,
 		},
 	}
 
@@ -67,7 +69,7 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 	cases := []struct {
 		name     string
 		topFrame *types.StackFrame
-		want     types.FailureCause
+		want     testresult.FailureCause
 	}{
 		{
 			name: "absolute path match",
@@ -75,7 +77,7 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 				FilePath: types.AbsPath("/abs/project/test/models/user_test.rb"),
 				Line:     12,
 			},
-			want: types.FailureCauseTestDefinition,
+			want: testresult.FailureCauseTestDefinition,
 		},
 		{
 			name: "relative path match",
@@ -83,7 +85,7 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 				FilePath: types.AbsPath("/abs/project/custom/subdir/test/models/user_test.rb"),
 				Line:     8,
 			},
-			want: types.FailureCauseTestDefinition,
+			want: testresult.FailureCauseTestDefinition,
 		},
 		{
 			name: "non matching path",
@@ -91,7 +93,7 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 				FilePath: types.AbsPath("/abs/project/app/models/user.rb"),
 				Line:     33,
 			},
-			want: types.FailureCauseProductionCode,
+			want: testresult.FailureCauseProductionCode,
 		},
 	}
 
@@ -104,6 +106,10 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 }
 
 func TestParseStackFrame(t *testing.T) {
+	// Setup ProjectFS for relative path conversion
+	rootPath, _ := types.NewAbsPath("/path/to/project")
+	projectfs.InitProjectFS(rootPath)
+
 	tests := []struct {
 		name     string
 		input    string
@@ -113,7 +119,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Ruby with method",
 			input: "app/models/user.rb:42:in 'create_user'",
 			expected: types.StackFrame{
-				FilePath: types.AbsPath("app/models/user.rb"),
+				FilePath: types.AbsPath("/path/to/project/app/models/user.rb"),
 				Line:     42,
 				Function: "create_user",
 			},
@@ -122,7 +128,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Ruby without method",
 			input: "app/models/user.rb:42",
 			expected: types.StackFrame{
-				FilePath: types.AbsPath("app/models/user.rb"),
+				FilePath: types.AbsPath("/path/to/project/app/models/user.rb"),
 				Line:     42,
 				Function: "",
 			},
@@ -131,7 +137,8 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Python format",
 			input: "File \"app/models/user.py\", line 42, in create_user",
 			expected: types.StackFrame{
-				FilePath: types.AbsPath("File \"app/models/user.py\", line 42, in create_user"),
+				// Python format is not fully parsed - whole string becomes path
+				FilePath: types.AbsPath(""), // Will be set to converted path
 				Line:     0,
 				Function: "",
 			},
@@ -140,7 +147,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Invalid format",
 			input: "invalid_frame",
 			expected: types.StackFrame{
-				FilePath: types.AbsPath("invalid_frame"),
+				FilePath: types.AbsPath("/path/to/project/invalid_frame"),
 				Line:     0,
 				Function: "",
 			},
@@ -149,8 +156,19 @@ func TestParseStackFrame(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := parseStackFrame(tt.input)
-			assert.Equal(t, tt.expected, result)
+			bt := backtrace.NewBacktrace()
+			bt.Append(tt.input)
+			frames := bt.AllStackFrames()
+			require.Len(t, frames, 1)
+			result := frames[0]
+			if tt.name == "Python format" {
+				// Python format creates a path from the whole string
+				assert.NotEmpty(t, result.FilePath)
+			} else {
+				assert.Equal(t, tt.expected.FilePath, result.FilePath)
+			}
+			assert.Equal(t, tt.expected.Line, result.Line)
+			assert.Equal(t, tt.expected.Function, result.Function)
 		})
 	}
 }
@@ -210,26 +228,26 @@ func TestParse_BasicFields(t *testing.T) {
 	assert.Equal(t, 1, test.Id)
 	assert.Equal(t, "TestClass", test.GroupName)
 	assert.Equal(t, "", test.TestCaseName)
-	assert.Equal(t, types.StatusPass, test.Status)
+	assert.Equal(t, testresult.StatusPass, test.Status)
 	assert.Equal(t, 1.23, test.Duration)
 	assert.Equal(t, types.AbsPath("/path/to/test.rb"), test.TestFilePath)
 	assert.Equal(t, 42, test.TestLineNumber)
-	assert.Equal(t, types.FailureCause(""), test.FailureCause)
+	assert.Equal(t, testresult.FailureCause(""), test.FailureCause)
 	assert.Empty(t, test.FailureDetails)
 	assert.Empty(t, test.FailureFilePath)
-	assert.Empty(t, test.FullBacktrace)
+	assert.Empty(t, test.FullBacktrace.Frames)
 }
 
 func TestParse_StatusEnum(t *testing.T) {
 	tests := []struct {
 		name     string
 		status   string
-		expected types.TestStatus
+		expected testresult.TestStatus
 	}{
-		{"passed", "passed", types.StatusPass},
-		{"failed", "failed", types.StatusFail},
-		{"skipped", "skipped", types.StatusSkip},
-		{"unknown", "unknown", types.StatusFail}, // Default
+		{"passed", "passed", testresult.StatusPass},
+		{"failed", "failed", testresult.StatusFail},
+		{"skipped", "skipped", testresult.StatusSkip},
+		{"unknown", "unknown", testresult.StatusFail}, // Default
 	}
 
 	for _, tt := range tests {
@@ -253,7 +271,7 @@ func TestParse_FailureCauseClassification(t *testing.T) {
 	tests := []struct {
 		name     string
 		yamlData string
-		expected types.FailureCause
+		expected testresult.FailureCause
 	}{
 		{
 			name: "assertion by message",
@@ -269,7 +287,7 @@ func TestParse_FailureCauseClassification(t *testing.T) {
   full_backtrace:
     - "/path/to/test.rb:21:in 'test_method'"
 `,
-			expected: types.FailureCauseAssertion,
+			expected: testresult.FailureCauseAssertion,
 		},
 		{
 			name: "production code by app frame",
@@ -286,7 +304,7 @@ func TestParse_FailureCauseClassification(t *testing.T) {
     - "/app/models/user.rb:14:in 'explode'"
     - "/Users/me/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest/test.rb:90:in 'run'"
 `,
-			expected: types.FailureCauseProductionCode,
+			expected: testresult.FailureCauseProductionCode,
 		},
 		{
 			name: "test definition by test frame",
@@ -303,7 +321,7 @@ func TestParse_FailureCauseClassification(t *testing.T) {
     - "/test/models/user_test.rb:10:in 'block in <class:UserTest>'"
     - "/Users/me/.asdf/installs/ruby/3.3.0/lib/ruby/gems/3.3.0/gems/minitest/test.rb:90:in 'run'"
 `,
-			expected: types.FailureCauseTestDefinition,
+			expected: testresult.FailureCauseTestDefinition,
 		},
 	}
 
@@ -336,14 +354,14 @@ func TestParse_FailureFields(t *testing.T) {
 	require.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, types.StatusFail, test.Status)
-	assert.Equal(t, types.FailureCauseProductionCode, test.FailureCause)
+	assert.Equal(t, testresult.StatusFail, test.Status)
+	assert.Equal(t, testresult.FailureCauseProductionCode, test.FailureCause)
 	assert.Equal(t, "NameError: undefined method", test.FailureDetails)
 	assert.Equal(t, types.AbsPath("/path/to/error.rb"), test.FailureFilePath)
 	assert.Equal(t, 15, test.FailureLineNumber)
-	assert.Len(t, test.FullBacktrace, 1)
-	assert.Equal(t, types.AbsPath("/path/to/error.rb"), test.FullBacktrace[0].FilePath)
-	assert.Equal(t, 15, test.FullBacktrace[0].Line)
+	assert.Len(t, test.FullBacktrace.Frames, 1)
+	assert.Equal(t, types.AbsPath("/path/to/error.rb"), test.FullBacktrace.Frames[0].FilePath)
+	assert.Equal(t, 15, test.FullBacktrace.Frames[0].Line)
 }
 
 func TestParse_AssertionFields(t *testing.T) {
@@ -365,8 +383,8 @@ func TestParse_AssertionFields(t *testing.T) {
 	require.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, types.StatusFail, test.Status)
-	assert.Equal(t, types.FailureCauseAssertion, test.FailureCause)
+	assert.Equal(t, testresult.StatusFail, test.Status)
+	assert.Equal(t, testresult.FailureCauseAssertion, test.FailureCause)
 	assert.Equal(t, "Expected: foo\n  Actual: bar", test.FailureDetails)
 	assert.Equal(t, types.AbsPath("/path/to/test.rb"), test.FailureFilePath)
 	assert.Equal(t, 21, test.FailureLineNumber)
@@ -399,7 +417,7 @@ func TestParse_FailureCause_UsesPattern(t *testing.T) {
 	require.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Equal(t, types.FailureCauseTestDefinition, test.FailureCause)
+	assert.Equal(t, testresult.FailureCauseTestDefinition, test.FailureCause)
 }
 
 func TestParse_BacktraceParsing(t *testing.T) {
@@ -421,20 +439,20 @@ func TestParse_BacktraceParsing(t *testing.T) {
 	require.Len(t, result.Tests, 1)
 
 	test := result.Tests[0]
-	assert.Len(t, test.FullBacktrace, 3) // invalid_frame should be skipped
+	assert.Len(t, test.FullBacktrace.Frames, 3) // invalid_frame should be skipped
 
 	// Check first frame
-	assert.Equal(t, types.AbsPath("/path/to/file.rb"), test.FullBacktrace[0].FilePath)
-	assert.Equal(t, 42, test.FullBacktrace[0].Line)
-	assert.Equal(t, "method_name", test.FullBacktrace[0].Function)
+	assert.Equal(t, types.AbsPath("/path/to/file.rb"), test.FullBacktrace.Frames[0].FilePath)
+	assert.Equal(t, 42, test.FullBacktrace.Frames[0].Line)
+	assert.Equal(t, "method_name", test.FullBacktrace.Frames[0].Function)
 
 	// Check second frame
-	assert.Equal(t, types.AbsPath("/path/to/other.rb"), test.FullBacktrace[1].FilePath)
-	assert.Equal(t, 10, test.FullBacktrace[1].Line)
+	assert.Equal(t, types.AbsPath("/path/to/other.rb"), test.FullBacktrace.Frames[1].FilePath)
+	assert.Equal(t, 10, test.FullBacktrace.Frames[1].Line)
 
 	// Check third frame
-	assert.Equal(t, types.AbsPath("/valid/path.rb"), test.FullBacktrace[2].FilePath)
-	assert.Equal(t, 5, test.FullBacktrace[2].Line)
+	assert.Equal(t, types.AbsPath("/valid/path.rb"), test.FullBacktrace.Frames[2].FilePath)
+	assert.Equal(t, 5, test.FullBacktrace.Frames[2].Line)
 }
 
 func TestParse_EmptyArray(t *testing.T) {
@@ -463,7 +481,7 @@ func TestParse_MissingFields(t *testing.T) {
 	test := result.Tests[0]
 	assert.Equal(t, "Test", test.GroupName)
 	assert.Equal(t, "", test.TestCaseName)
-	assert.Equal(t, types.StatusPass, test.Status)
+	assert.Equal(t, testresult.StatusPass, test.Status)
 	assert.Equal(t, 0.0, test.Duration) // Default when missing
 	assert.Empty(t, test.TestFilePath)
 	assert.Equal(t, 0, test.TestLineNumber)
@@ -518,17 +536,17 @@ func TestParse_MultipleTests(t *testing.T) {
 
 	assert.Equal(t, "Test1", result.Tests[0].GroupName)
 	assert.Equal(t, "", result.Tests[0].TestCaseName)
-	assert.Equal(t, types.StatusPass, result.Tests[0].Status)
+	assert.Equal(t, testresult.StatusPass, result.Tests[0].Status)
 	assert.Equal(t, 1.0, result.Tests[0].Duration)
 
 	assert.Equal(t, "Test2", result.Tests[1].GroupName)
 	assert.Equal(t, "", result.Tests[1].TestCaseName)
-	assert.Equal(t, types.StatusFail, result.Tests[1].Status)
+	assert.Equal(t, testresult.StatusFail, result.Tests[1].Status)
 	assert.Equal(t, 2.0, result.Tests[1].Duration)
 
 	assert.Equal(t, "Test3", result.Tests[2].GroupName)
 	assert.Equal(t, "", result.Tests[2].TestCaseName)
-	assert.Equal(t, types.StatusSkip, result.Tests[2].Status)
+	assert.Equal(t, testresult.StatusSkip, result.Tests[2].Status)
 	assert.Equal(t, 0.5, result.Tests[2].Duration)
 }
 

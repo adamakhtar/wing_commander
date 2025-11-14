@@ -6,7 +6,7 @@ import (
 
 	"github.com/adamakhtar/wing_commander/internal/filesnippet"
 	"github.com/adamakhtar/wing_commander/internal/projectfs"
-	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,7 +24,7 @@ type Model struct {
 	focus      bool
 	width      int
 	height     int
-	testResult *types.TestResult
+	testResult *testresult.TestResult
 	viewport   viewport.Model
 }
 
@@ -78,7 +78,7 @@ func (m Model) buildContent(innerWidth int) string {
 	sb.WriteString(m.renderFailureMessage(innerWidth))
 	sb.WriteString("\n")
 
-	for _, frame := range m.testResult.FilteredBacktrace {
+	for _, frame := range m.testResult.FilteredBacktrace.Frames {
 		fs := projectfs.GetProjectFS()
 		relPath, err := fs.Rel(frame.FilePath)
 		var line string
@@ -119,11 +119,11 @@ func (m Model) renderTestResult(innerWidth int) string {
 	switch {
 	case m.testResult.IsFailed():
 		switch m.testResult.FailureCause {
-		case types.FailureCauseTestDefinition:
+		case testresult.FailureCauseTestDefinition:
 			return m.ctx.Styles.TestDefinitionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
-		case types.FailureCauseProductionCode:
+		case testresult.FailureCauseProductionCode:
 			return m.ctx.Styles.ProductionCodeErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
-		case types.FailureCauseAssertion:
+		case testresult.FailureCauseAssertion:
 			return m.ctx.Styles.AssertionErrorBadge.Width(innerWidth).Render(m.testResult.FailureCause.String())
 		default:
 			return ""
@@ -191,7 +191,7 @@ func (m *Model) SetSize(width int, height int) {
 	m.viewport.SetContent(m.buildContent(innerWidth))
 }
 
-func (m *Model) SetTestResult(testResult *types.TestResult) {
+func (m *Model) SetTestResult(testResult *testresult.TestResult) {
 	m.testResult = testResult
 
 	innerWidth, _ := m.innerDimensions(m.width, m.height)

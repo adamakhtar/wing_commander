@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/testrun"
-	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
 	"github.com/adamakhtar/wing_commander/internal/ui/styles"
@@ -160,7 +160,7 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 		return
 	}
 
-	results := make([]types.TestResult, len(testExecutionResult.TestResults))
+	results := make([]testresult.TestResult, len(testExecutionResult.TestResults))
 	copy(results, testExecutionResult.TestResults)
 
 	sort.SliceStable(results, func(i, j int) bool {
@@ -294,22 +294,22 @@ func renderFailureType(result string, styles *styles.Styles) string {
 	}
 }
 
-func sortPriority(result types.TestResult) int {
+func sortPriority(result testresult.TestResult) int {
 	switch result.Status {
-	case types.StatusFail:
+	case testresult.StatusFail:
 		switch result.FailureCause {
-		case types.FailureCauseProductionCode:
+		case testresult.FailureCauseProductionCode:
 			return 0
-		case types.FailureCauseTestDefinition:
+		case testresult.FailureCauseTestDefinition:
 			return 1
-		case types.FailureCauseAssertion:
+		case testresult.FailureCauseAssertion:
 			return 2
 		default:
 			return 3
 		}
-	case types.StatusPass:
+	case testresult.StatusPass:
 		return 3
-	case types.StatusSkip:
+	case testresult.StatusSkip:
 		return 4
 	default:
 		return 5

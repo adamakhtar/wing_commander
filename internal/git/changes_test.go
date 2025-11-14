@@ -81,20 +81,22 @@ index 1234567..abcdefg 100644
 func TestChangeDetector_AssignChangeIntensities(t *testing.T) {
 	detector := NewChangeDetector()
 
+	userPath, _ := types.NewAbsPath("app/models/user.rb")
+	productPath, _ := types.NewAbsPath("app/models/product.rb")
 	frames := []types.StackFrame{
-		{FilePath: "app/models/user.rb", Line: 42, Function: "create_user"},
-		{FilePath: "app/models/user.rb", Line: 50, Function: "validate"},
-		{FilePath: "app/models/product.rb", Line: 30, Function: "create_product"},
-		{FilePath: "app/models/user.rb", Line: 60, Function: "save"},
+		{FilePath: userPath, Line: 42, Function: "create_user"},
+		{FilePath: userPath, Line: 50, Function: "validate"},
+		{FilePath: productPath, Line: 30, Function: "create_product"},
+		{FilePath: userPath, Line: 60, Function: "save"},
 	}
 
 	fileChanges := map[string]*FileChanges{
-		"app/models/user.rb": {
+		userPath.String(): {
 			UncommittedLines:    map[int]bool{42: true},
 			LastCommitLines:     map[int]bool{50: true},
 			PreviousCommitLines: map[int]bool{60: true},
 		},
-		"app/models/product.rb": {
+		productPath.String(): {
 			UncommittedLines:    map[int]bool{},
 			LastCommitLines:     map[int]bool{},
 			PreviousCommitLines: map[int]bool{},
@@ -121,12 +123,13 @@ func TestChangeDetector_AssignChangeIntensities_Priority(t *testing.T) {
 	detector := NewChangeDetector()
 
 	// Frame with line that has changes in multiple commits
+	userPath, _ := types.NewAbsPath("app/models/user.rb")
 	frames := []types.StackFrame{
-		{FilePath: "app/models/user.rb", Line: 42, Function: "create_user"},
+		{FilePath: userPath, Line: 42, Function: "create_user"},
 	}
 
 	fileChanges := map[string]*FileChanges{
-		"app/models/user.rb": {
+		userPath.String(): {
 			UncommittedLines:    map[int]bool{42: true},
 			LastCommitLines:     map[int]bool{42: true},
 			PreviousCommitLines: map[int]bool{42: true},
@@ -143,21 +146,23 @@ func TestChangeDetector_AssignChangeIntensities_Priority(t *testing.T) {
 func TestChangeDetector_DetectChanges(t *testing.T) {
 	detector := NewChangeDetector()
 
+	userPath, _ := types.NewAbsPath("app/models/user.rb")
+	productPath, _ := types.NewAbsPath("app/models/product.rb")
 	frames := []types.StackFrame{
-		{FilePath: "app/models/user.rb", Line: 42, Function: "create_user"},
-		{FilePath: "app/models/product.rb", Line: 30, Function: "create_product"},
-		{FilePath: "app/models/user.rb", Line: 50, Function: "validate"},
+		{FilePath: userPath, Line: 42, Function: "create_user"},
+		{FilePath: productPath, Line: 30, Function: "create_product"},
+		{FilePath: userPath, Line: 50, Function: "validate"},
 	}
 
 	// This test would require actual git commands, so we'll test the structure
 	fileChanges := detector.DetectChanges(frames)
 
 	// Should have entries for both files
-	assert.Contains(t, fileChanges, "app/models/user.rb")
-	assert.Contains(t, fileChanges, "app/models/product.rb")
+	assert.Contains(t, fileChanges, userPath.String())
+	assert.Contains(t, fileChanges, productPath.String())
 
 	// Each file should have the three change types
-	userChanges := fileChanges["app/models/user.rb"]
+	userChanges := fileChanges[userPath.String()]
 	assert.NotNil(t, userChanges)
 	assert.NotNil(t, userChanges.UncommittedLines)
 	assert.NotNil(t, userChanges.LastCommitLines)
@@ -186,9 +191,10 @@ func TestFileChanges_Structure(t *testing.T) {
 }
 
 func TestStackFrame_NewFields(t *testing.T) {
-	frame := types.NewStackFrame("test.rb", 42, "test_function")
+	absPath, _ := types.NewAbsPath("test.rb")
+	frame := types.NewStackFrame(absPath, 42, "test_function")
 
-	assert.Equal(t, "test.rb", frame.FilePath)
+	assert.Equal(t, absPath, frame.FilePath)
 	assert.Equal(t, 42, frame.Line)
 	assert.Equal(t, "test_function", frame.Function)
 	assert.Equal(t, 0, frame.ChangeIntensity)
@@ -196,15 +202,16 @@ func TestStackFrame_NewFields(t *testing.T) {
 }
 
 func TestStackFrame_ManualCreation(t *testing.T) {
+	absPath, _ := types.NewAbsPath("app/models/user.rb")
 	frame := types.StackFrame{
-		FilePath:        "app/models/user.rb",
+		FilePath:        absPath,
 		Line:            42,
 		Function:        "create_user",
 		ChangeIntensity: 3,
 		ChangeReason:    "uncommitted",
 	}
 
-	assert.Equal(t, "app/models/user.rb", frame.FilePath)
+	assert.Equal(t, absPath, frame.FilePath)
 	assert.Equal(t, 42, frame.Line)
 	assert.Equal(t, "create_user", frame.Function)
 	assert.Equal(t, 3, frame.ChangeIntensity)

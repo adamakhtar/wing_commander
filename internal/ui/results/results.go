@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/adamakhtar/wing_commander/internal/runner"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/testrun"
-	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/context"
 	"github.com/adamakhtar/wing_commander/internal/ui/filepicker"
 	"github.com/adamakhtar/wing_commander/internal/ui/keys"
@@ -210,7 +210,7 @@ func (m *Model) AddTestRunForFailedTests() (testrun.TestRun, error) {
 	return testRun, nil
 }
 
-func (m Model) GetSelectedTestResultId() *types.TestResult {
+func (m Model) GetSelectedTestResultId() *testresult.TestResult {
 	testResultId := m.resultsSection.GetSelectedTestResultId()
 
 	if testResultId == -1 {

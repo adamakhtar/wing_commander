@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/adamakhtar/wing_commander/internal/config"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -140,12 +141,12 @@ func TestTestRunner_GetWorkingDirectory(t *testing.T) {
 
 func TestTestExecutionResult_GetSummary(t *testing.T) {
 	result := &TestExecutionResult{
-		TestResults: []types.TestResult{
-			{GroupName: "Test 1", TestCaseName: "", Status: types.StatusPass},
-			{GroupName: "Test 2", TestCaseName: "", Status: types.StatusFail},
-			{GroupName: "Test 3", TestCaseName: "", Status: types.StatusSkip},
-			{GroupName: "Test 4", TestCaseName: "", Status: types.StatusPass},
-			{GroupName: "Test 5", TestCaseName: "", Status: types.StatusFail},
+		TestResults: []testresult.TestResult{
+			{GroupName: "Test 1", TestCaseName: "", Status: testresult.StatusPass},
+			{GroupName: "Test 2", TestCaseName: "", Status: testresult.StatusFail},
+			{GroupName: "Test 3", TestCaseName: "", Status: testresult.StatusSkip},
+			{GroupName: "Test 4", TestCaseName: "", Status: testresult.StatusPass},
+			{GroupName: "Test 5", TestCaseName: "", Status: testresult.StatusFail},
 		},
 		ExecutionTime: time.Now(),
 	}
@@ -160,7 +161,7 @@ func TestTestExecutionResult_GetSummary(t *testing.T) {
 
 func TestTestExecutionResult_EmptyResults(t *testing.T) {
 	result := &TestExecutionResult{
-		TestResults:   []types.TestResult{},
+		TestResults:   []testresult.TestResult{},
 		ExecutionTime: time.Now(),
 	}
 

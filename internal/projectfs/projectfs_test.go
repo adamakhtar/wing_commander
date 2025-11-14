@@ -234,3 +234,73 @@ func TestProjectFS_Integration(t *testing.T) {
 		assert.Equal(t, "src/file.go", relPath.String())
 	})
 }
+
+func TestProjectFS_IsProjectFile(t *testing.T) {
+	tests := []struct {
+		name     string
+		rootPath string
+		absPath  string
+		want     bool
+	}{
+		{
+			name:     "file within project",
+			rootPath: "/tmp/project",
+			absPath:  "/tmp/project/test/file.go",
+			want:     true,
+		},
+		{
+			name:     "file at project root",
+			rootPath: "/tmp/project",
+			absPath:  "/tmp/project/file.go",
+			want:     true,
+		},
+		{
+			name:     "exact project root match",
+			rootPath: "/tmp/project",
+			absPath:  "/tmp/project",
+			want:     true,
+		},
+		{
+			name:     "file outside project",
+			rootPath: "/tmp/project",
+			absPath:  "/tmp/other/file.go",
+			want:     false,
+		},
+		{
+			name:     "file above project root",
+			rootPath: "/tmp/project",
+			absPath:  "/tmp/file.go",
+			want:     false,
+		},
+		{
+			name:     "completely different path",
+			rootPath: "/tmp/project",
+			absPath:  "/usr/lib/file.go",
+			want:     false,
+		},
+		{
+			name:     "nested subdirectory",
+			rootPath: "/tmp/project",
+			absPath:  "/tmp/project/src/internal/types.go",
+			want:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer teardownTestProjectFS(t)
+
+			rootPath, err := types.NewAbsPath(tt.rootPath)
+			require.NoError(t, err)
+			setupTestProjectFS(t, rootPath)
+
+			absPath, err := types.NewAbsPath(tt.absPath)
+			require.NoError(t, err)
+
+			fs := GetProjectFS()
+			got := fs.IsProjectFile(absPath)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

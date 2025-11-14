@@ -3,4 +3,4 @@ alwaysApply: true
 ---
 
 - When planning consult @CONTEXT.md and @IMPLEMENTATION_PLAN.md and make sure to keep them updated.
-- At the end of producing a plan, give me a list of resolved questions if any. Make questions super concise and sacrifice grammar for brevity.
+- At the end of producing a plan, give me a list of unresolved questions if any. Make questions super concise and sacrifice grammar for brevity.

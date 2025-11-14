@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/adamakhtar/wing_commander/internal/backtrace"
 	"github.com/adamakhtar/wing_commander/internal/projectfs"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/gobwas/glob"
 	"gopkg.in/yaml.v3"
@@ -85,7 +87,7 @@ func (c *parseContext) matchesTestFile(path string) bool {
 
 // ParseResult contains parsed test results and metadata.
 type ParseResult struct {
-	Tests   []types.TestResult
+	Tests   []testresult.TestResult
 	Summary TestSummary
 }
 
@@ -131,11 +133,11 @@ func Parse(data []byte, opts *ParseOptions) (*ParseResult, error) {
 
 		result.Summary.Total++
 		switch testResult.Status {
-		case types.StatusPass:
+		case testresult.StatusPass:
 			result.Summary.Passed++
-		case types.StatusFail:
+		case testresult.StatusFail:
 			result.Summary.Failed++
-		case types.StatusSkip:
+		case testresult.StatusSkip:
 			result.Summary.Skipped++
 		}
 	}
@@ -158,94 +160,36 @@ func firstFrameWithFile(frames []types.StackFrame) *types.StackFrame {
 // 1) Assertion-like messages -> AssertionFailure
 // 2) If no frames or top frames point to test/spec -> TestDefinitionError
 // 3) Otherwise -> ProductionCodeError
-func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseContext) types.FailureCause {
+func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseContext) testresult.FailureCause {
 	m := strings.ToLower(message)
 	if m != "" {
 		if strings.Contains(m, "assertionerror") || strings.Contains(m, "expected ") || strings.HasPrefix(m, "expected:") || strings.Contains(m, "expected:") {
-			return types.FailureCauseAssertion
+			return testresult.FailureCauseAssertion
 		}
 	}
 
 	// If we have no frames, treat as test definition error (runner/setup/teardown/unmapped)
 	if topFrame == nil || topFrame.FilePath.String() == "" {
-		return types.FailureCauseTestDefinition
+		return testresult.FailureCauseTestDefinition
 	}
 
 	if ctx != nil && ctx.matchesTestFile(topFrame.FilePath.String()) {
-		return types.FailureCauseTestDefinition
+		return testresult.FailureCauseTestDefinition
 	}
 
 	lp := strings.ToLower(topFrame.FilePath.String())
 	for _, ind := range testPathIndicators {
 		if strings.Contains(lp, ind) || strings.HasSuffix(lp, ind) {
-			return types.FailureCauseTestDefinition
+			return testresult.FailureCauseTestDefinition
 		}
 	}
 	for _, ind := range frameworkPathIndicators {
 		if strings.Contains(lp, ind) {
-			return types.FailureCauseTestDefinition
+			return testresult.FailureCauseTestDefinition
 		}
 	}
 
-	return types.FailureCauseProductionCode
-}
-
-// parseStackFrame parses a backtrace frame string into a StackFrame.
-func parseStackFrame(frameStr string) types.StackFrame {
-	// Common formats:
-	// "app/models/user.rb:42:in `create_user'"
-	// "app/models/user.rb:42"
-	// "File \"app/models/user.rb\", line 42, in create_user"
-
-	// Handle Python format first
-	if strings.HasPrefix(frameStr, "File \"") {
-		absPath, _ := types.NewAbsPath(frameStr)
-		return types.StackFrame{
-			FilePath: absPath,
-			Line:     0,
-			Function: "",
-		}
-	}
-
-	parts := strings.Split(frameStr, ":")
-	if len(parts) < 2 {
-		absPath, _ := types.NewAbsPath(frameStr)
-		return types.StackFrame{FilePath: absPath}
-	}
-
-	file := parts[0]
-
-	// Try to extract line number
-	var line int
-	var function string
-
-	if len(parts) >= 2 {
-		// Parse line number
-		if _, err := fmt.Sscanf(parts[1], "%d", &line); err != nil {
-			absPath, _ := types.NewAbsPath(file)
-			return types.StackFrame{FilePath: absPath}
-		}
-	}
-
-	// Try to extract function name
-	if len(parts) >= 3 {
-		funcPart := parts[2]
-		// Remove "in `" and "`" wrapper, or "in '" and "'" wrapper
-		if strings.HasPrefix(funcPart, "in `") && strings.HasSuffix(funcPart, "'") {
-			function = funcPart[4 : len(funcPart)-1]
-		} else if strings.HasPrefix(funcPart, "in '") && strings.HasSuffix(funcPart, "'") {
-			function = funcPart[4 : len(funcPart)-1]
-		} else if strings.HasPrefix(funcPart, "in ") {
-			function = funcPart[3:]
-		}
-	}
-
-	absPath, _ := types.NewAbsPath(file)
-	return types.StackFrame{
-		FilePath: absPath,
-		Line:     line,
-		Function: function,
-	}
+	return testresult.FailureCauseProductionCode
 }
 
 // extractString safely extracts a string value from a map.
@@ -301,7 +245,7 @@ func extractStringSlice(m map[string]interface{}, key string) []string {
 }
 
 // convertMapToTestResult converts a summary map into a TestResult.
-func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseContext) types.TestResult {
+func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseContext) testresult.TestResult {
 	// Extract basic fields
 	groupName := extractString(summary, "test_group_name")
 	testCaseName := extractString(summary, "test_case_name")
@@ -310,16 +254,16 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 
 	// Parse status
 	statusStr := extractString(summary, "test_status")
-	var status types.TestStatus
+	var status testresult.TestStatus
 	switch statusStr {
 	case "passed":
-		status = types.StatusPass
+		status = testresult.StatusPass
 	case "failed":
-		status = types.StatusFail
+		status = testresult.StatusFail
 	case "skipped":
-		status = types.StatusSkip
+		status = testresult.StatusSkip
 	default:
-		status = types.StatusFail
+		status = testresult.StatusFail
 	}
 
 	// Parse duration
@@ -339,23 +283,23 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 
 	// Parse backtrace
 	backtraceStrings := extractStringSlice(summary, "full_backtrace")
-	var fullBacktrace []types.StackFrame
+	fullBacktrace := backtrace.NewBacktrace()
+	frameCount := 0
 	for _, frameStr := range backtraceStrings {
-		frame := parseStackFrame(frameStr)
+		// Cap at 50 frames
+		if frameCount >= 50 {
+			break
+		}
 		// Only add frames that have a valid file:line format (check for colon separator)
-		if frame.FilePath.String() != "" && strings.Contains(frameStr, ":") {
-			fullBacktrace = append(fullBacktrace, frame)
+		if strings.Contains(frameStr, ":") {
+			fullBacktrace.Append(frameStr)
+			frameCount++
 		}
 	}
 
-	// Cap at 50 frames
-	if len(fullBacktrace) > 50 {
-		fullBacktrace = fullBacktrace[:50]
-	}
-
-	var failureCause types.FailureCause
-	if status == types.StatusFail {
-		topFrame := firstFrameWithFile(fullBacktrace)
+	var failureCause testresult.FailureCause
+	if status == testresult.StatusFail {
+		topFrame := firstFrameWithFile(fullBacktrace.AllStackFrames())
 		if topFrame == nil && failureFilePath != "" {
 			absPath, err := types.NewAbsPath(failureFilePath)
 			if err == nil {
@@ -383,7 +327,7 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 		}
 	}
 
-	return types.TestResult{
+	return testresult.TestResult{
 		Id:                id,
 		GroupName:         groupName,
 		TestCaseName:      testCaseName,
@@ -395,7 +339,7 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 		TestFilePath:      testFilePathAbs,
 		TestLineNumber:    testLineNumber,
 		FullBacktrace:     fullBacktrace,
-		FilteredBacktrace: make([]types.StackFrame, 0),
+		FilteredBacktrace: backtrace.NewBacktrace(),
 		Duration:          duration,
 	}
 }

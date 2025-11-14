@@ -2,7 +2,7 @@ package context
 
 import (
 	"github.com/adamakhtar/wing_commander/internal/config"
-	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/ui/styles"
 )
 
@@ -19,5 +19,5 @@ type Context struct {
 	ScreenWidth int
 	ScreenHeight int
 	CurrentScreen ScreenType
-	SelectedTestResult *types.TestResult
+	SelectedTestResult *testresult.TestResult
 }

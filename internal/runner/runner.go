@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adamakhtar/wing_commander/internal/backtrace"
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/parser"
 	"github.com/adamakhtar/wing_commander/internal/projectfs"
+	"github.com/adamakhtar/wing_commander/internal/testresult"
 	"github.com/adamakhtar/wing_commander/internal/testrun"
-	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/charmbracelet/log"
 )
 
@@ -36,7 +35,7 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 		return nil, fmt.Errorf("failed to execute test command: %w", err)
 	}
 
-	var testResults []types.TestResult
+	var testResults []testresult.TestResult
 
 	// Parse YAML summary file
 	parseOpts := &parser.ParseOptions{
@@ -50,21 +49,21 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 	testResults = parsed.Tests
 
 	// Normalize backtraces
-	normalizer := backtrace.NewNormalizer()
+	normalizer := testresult.NewNormalizer()
 	normalizedResults := normalizer.NormalizeTestResults(testResults)
 
 	// Partition results by status (no backtrace grouping)
-	var passedTests []types.TestResult
-	var failedTests []types.TestResult
-	var skippedTests []types.TestResult
+	var passedTests []testresult.TestResult
+	var failedTests []testresult.TestResult
+	var skippedTests []testresult.TestResult
 
 	for _, tr := range normalizedResults {
 		switch tr.Status {
-		case types.StatusPass:
+		case testresult.StatusPass:
 			passedTests = append(passedTests, tr)
-		case types.StatusFail:
+		case testresult.StatusFail:
 			failedTests = append(failedTests, tr)
-		case types.StatusSkip:
+		case testresult.StatusSkip:
 			skippedTests = append(skippedTests, tr)
 		}
 	}
@@ -133,18 +132,18 @@ func (r *TestRunner) executeTestCommand(testRun testrun.TestRun) (string, error)
 
 // TestExecutionResult represents the complete result of a test execution
 type TestExecutionResult struct {
-	TestRunId     int                // The ID of the test run that was executed
-	TestResults   []types.TestResult // All test results (normalized)
-	PassedTests   []types.TestResult // Passed tests
-	FailedTests   []types.TestResult // Failed tests
-	SkippedTests  []types.TestResult // Skipped tests
-	ExecutionTime time.Time          // When the tests were executed
-	Metrics       Metrics            // Metrics of the test execution
-	CommandOutput string             // Raw output from test command
+	TestRunId     int                      // The ID of the test run that was executed
+	TestResults   []testresult.TestResult // All test results (normalized)
+	PassedTests   []testresult.TestResult // Passed tests
+	FailedTests   []testresult.TestResult // Failed tests
+	SkippedTests  []testresult.TestResult // Skipped tests
+	ExecutionTime time.Time                // When the tests were executed
+	Metrics       Metrics                  // Metrics of the test execution
+	CommandOutput string                   // Raw output from test command
 }
 
 // GetSummary returns a summary of the test execution
-func calculateMetrics(testResults []types.TestResult) Metrics {
+func calculateMetrics(testResults []testresult.TestResult) Metrics {
 	totalTests := len(testResults)
 	failedTests := 0
 	passedTests := 0
@@ -152,11 +151,11 @@ func calculateMetrics(testResults []types.TestResult) Metrics {
 
 	for _, result := range testResults {
 		switch result.Status {
-		case types.StatusFail:
+		case testresult.StatusFail:
 			failedTests++
-		case types.StatusPass:
+		case testresult.StatusPass:
 			passedTests++
-		case types.StatusSkip:
+		case testresult.StatusSkip:
 			skippedTests++
 		}
 	}
