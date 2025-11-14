@@ -16,6 +16,7 @@ func TestBuildRunTestCaseCommand(t *testing.T) {
 			Path:         "test/user_test.rb",
 			TestCaseName: &testCaseName,
 			LineNumber:   &lineNumber,
+			TestGroupName: nil,
 		},
 	)
 
@@ -31,6 +32,7 @@ func TestBuildRunTestCaseCommandWithFilePath(t *testing.T) {
 			Path:         "test/user_test.rb",
 			TestCaseName: &testCaseName,
 			LineNumber:   &lineNumber,
+			TestGroupName: nil,
 		},
 	)
 
@@ -44,6 +46,7 @@ func TestBuildRunTestCaseCommandEmptyTemplate(t *testing.T) {
 		Path:         "test/user_test.rb",
 		TestCaseName: &testCaseName,
 		LineNumber:   &lineNumber,
+		TestGroupName: nil,
 	})
 
 	assert.Equal(t, "", cmd)
@@ -54,6 +57,7 @@ func TestBuildRunTestCaseCommandMissingValues(t *testing.T) {
 		Path:         "test/user_test.rb",
 		TestCaseName: nil,
 		LineNumber:   nil,
+		TestGroupName: nil,
 	})
 
 	assert.Equal(t, "bundle exec ruby :", cmd)
@@ -67,6 +71,7 @@ func TestBuildRunTestCaseCommandNilTestCaseName(t *testing.T) {
 			Path:         "test/user_test.rb",
 			TestCaseName: nil,
 			LineNumber:   &lineNumber,
+			TestGroupName: nil,
 		},
 	)
 
@@ -81,6 +86,7 @@ func TestBuildRunTestCaseCommandNilLineNumber(t *testing.T) {
 			Path:         "test/user_test.rb",
 			TestCaseName: &testCaseName,
 			LineNumber:   nil,
+			TestGroupName: nil,
 		},
 	)
 

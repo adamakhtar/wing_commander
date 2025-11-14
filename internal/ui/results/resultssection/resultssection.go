@@ -191,6 +191,7 @@ func (m *Model) SetRows(testExecutionResult *runner.TestExecutionResult) {
 			test.TestFilePath,
 			&test.TestLineNumber,
 			&test.TestCaseName,
+			&test.GroupName,
 		)
 		if err != nil {
 			continue

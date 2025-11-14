@@ -28,11 +28,12 @@ type TestPattern struct {
 	Path         string  // Required: directory or file path
 	LineNumber   *int    // Optional: line number for future RSpec support
 	TestCaseName *string // Optional: test case name for future support
+	TestGroupName *string // Optional: test group name for future support
 }
 
 // NewTestPattern creates a new TestPattern with validation
 // Path is required.
-func NewTestPattern(path string, lineNumber *int, testCaseName *string) (TestPattern, error) {
+func NewTestPattern(path string, lineNumber *int, testCaseName *string, testGroupName *string) (TestPattern, error) {
 	if path == "" {
 		return TestPattern{}, fmt.Errorf("path is required")
 	}
@@ -40,6 +41,7 @@ func NewTestPattern(path string, lineNumber *int, testCaseName *string) (TestPat
 		Path:         path,
 		LineNumber:   lineNumber,
 		TestCaseName: testCaseName,
+		TestGroupName: testGroupName,
 	}, nil
 }
 
@@ -54,14 +56,14 @@ func ParsePatternFromString(patternStr string) (TestPattern, error) {
 	// For now, just extract the path (before the colon if present)
 	parts := strings.Split(patternStr, ":")
 	path := parts[0]
-	return NewTestPattern(path, nil, nil)
+	return NewTestPattern(path, nil, nil, nil)
 }
 
 // PatternsFromStrings converts a slice of string paths to TestPatterns
 func PatternsFromStrings(paths []string) ([]TestPattern, error) {
 	patterns := make([]TestPattern, 0, len(paths))
 	for _, path := range paths {
-		pattern, err := NewTestPattern(path, nil, nil)
+		pattern, err := NewTestPattern(path, nil, nil, nil)
 		if err != nil {
 			return nil, err
 		}
