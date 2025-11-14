@@ -82,10 +82,10 @@ func TestChangeDetector_AssignChangeIntensities(t *testing.T) {
 	detector := NewChangeDetector()
 
 	frames := []types.StackFrame{
-		{File: "app/models/user.rb", Line: 42, Function: "create_user"},
-		{File: "app/models/user.rb", Line: 50, Function: "validate"},
-		{File: "app/models/product.rb", Line: 30, Function: "create_product"},
-		{File: "app/models/user.rb", Line: 60, Function: "save"},
+		{FilePath: "app/models/user.rb", Line: 42, Function: "create_user"},
+		{FilePath: "app/models/user.rb", Line: 50, Function: "validate"},
+		{FilePath: "app/models/product.rb", Line: 30, Function: "create_product"},
+		{FilePath: "app/models/user.rb", Line: 60, Function: "save"},
 	}
 
 	fileChanges := map[string]*FileChanges{
@@ -122,7 +122,7 @@ func TestChangeDetector_AssignChangeIntensities_Priority(t *testing.T) {
 
 	// Frame with line that has changes in multiple commits
 	frames := []types.StackFrame{
-		{File: "app/models/user.rb", Line: 42, Function: "create_user"},
+		{FilePath: "app/models/user.rb", Line: 42, Function: "create_user"},
 	}
 
 	fileChanges := map[string]*FileChanges{
@@ -144,9 +144,9 @@ func TestChangeDetector_DetectChanges(t *testing.T) {
 	detector := NewChangeDetector()
 
 	frames := []types.StackFrame{
-		{File: "app/models/user.rb", Line: 42, Function: "create_user"},
-		{File: "app/models/product.rb", Line: 30, Function: "create_product"},
-		{File: "app/models/user.rb", Line: 50, Function: "validate"},
+		{FilePath: "app/models/user.rb", Line: 42, Function: "create_user"},
+		{FilePath: "app/models/product.rb", Line: 30, Function: "create_product"},
+		{FilePath: "app/models/user.rb", Line: 50, Function: "validate"},
 	}
 
 	// This test would require actual git commands, so we'll test the structure
@@ -188,7 +188,7 @@ func TestFileChanges_Structure(t *testing.T) {
 func TestStackFrame_NewFields(t *testing.T) {
 	frame := types.NewStackFrame("test.rb", 42, "test_function")
 
-	assert.Equal(t, "test.rb", frame.File)
+	assert.Equal(t, "test.rb", frame.FilePath)
 	assert.Equal(t, 42, frame.Line)
 	assert.Equal(t, "test_function", frame.Function)
 	assert.Equal(t, 0, frame.ChangeIntensity)
@@ -197,14 +197,14 @@ func TestStackFrame_NewFields(t *testing.T) {
 
 func TestStackFrame_ManualCreation(t *testing.T) {
 	frame := types.StackFrame{
-		File:            "app/models/user.rb",
+		FilePath:        "app/models/user.rb",
 		Line:            42,
 		Function:        "create_user",
 		ChangeIntensity: 3,
 		ChangeReason:    "uncommitted",
 	}
 
-	assert.Equal(t, "app/models/user.rb", frame.File)
+	assert.Equal(t, "app/models/user.rb", frame.FilePath)
 	assert.Equal(t, 42, frame.Line)
 	assert.Equal(t, "create_user", frame.Function)
 	assert.Equal(t, 3, frame.ChangeIntensity)

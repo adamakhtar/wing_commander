@@ -27,7 +27,7 @@ func (cd *ChangeDetector) DetectChanges(frames []types.StackFrame) map[string]*F
 	// Get all unique files from frames
 	files := make(map[string]bool)
 	for _, frame := range frames {
-		files[frame.File] = true
+		files[frame.FilePath.String()] = true
 	}
 
 	// Detect changes for each file
@@ -147,7 +147,7 @@ func (cd *ChangeDetector) parseDiffOutput(diffOutput string) []int {
 func (cd *ChangeDetector) AssignChangeIntensities(frames []types.StackFrame, fileChanges map[string]*FileChanges) {
 	for i := range frames {
 		frame := &frames[i]
-		changes, exists := fileChanges[frame.File]
+		changes, exists := fileChanges[frame.FilePath.String()]
 		if !exists {
 			continue
 		}

@@ -51,5 +51,5 @@ func (n *Normalizer) filterBacktrace(frames []types.StackFrame) []types.StackFra
 
 func (n *Normalizer) shouldExclude(frame types.StackFrame) bool {
 	fs := projectfs.GetProjectFS()
-	return !strings.HasPrefix(frame.File.String(), fs.RootPath.String())
+	return !strings.HasPrefix(frame.FilePath.String(), fs.RootPath.String())
 }

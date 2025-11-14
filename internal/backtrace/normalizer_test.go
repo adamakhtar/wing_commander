@@ -30,15 +30,15 @@ func TestNormalizeTestResults(t *testing.T) {
 			GroupName: "Test 1",
 			Status:    types.StatusFail,
 			FullBacktrace: []types.StackFrame{
-				{File: types.AbsPath("/path/to/project/app/test.rb"), Line: 10},
-				{File: types.AbsPath("/gems/rspec.rb"), Line: 20},
+				{FilePath: types.AbsPath("/path/to/project/app/test.rb"), Line: 10},
+				{FilePath: types.AbsPath("/gems/rspec.rb"), Line: 20},
 			},
 		},
 		{
 			GroupName: "Test 2",
 			Status:    types.StatusFail,
 			FullBacktrace: []types.StackFrame{
-				{File: types.AbsPath("/path/to/project/app/another.rb"), Line: 30},
+				{FilePath: types.AbsPath("/path/to/project/app/another.rb"), Line: 30},
 			},
 		},
 	}
@@ -47,9 +47,9 @@ func TestNormalizeTestResults(t *testing.T) {
 
 	assert.Len(t, normalized, 2)
 	assert.Len(t, normalized[0].FilteredBacktrace, 1)
-	assert.Equal(t, types.AbsPath("/path/to/project/app/test.rb"), normalized[0].FilteredBacktrace[0].File)
+	assert.Equal(t, types.AbsPath("/path/to/project/app/test.rb"), normalized[0].FilteredBacktrace[0].FilePath)
 	assert.Len(t, normalized[1].FilteredBacktrace, 1)
-	assert.Equal(t, types.AbsPath("/path/to/project/app/another.rb"), normalized[1].FilteredBacktrace[0].File)
+	assert.Equal(t, types.AbsPath("/path/to/project/app/another.rb"), normalized[1].FilteredBacktrace[0].FilePath)
 }
 
 func TestShouldExclude(t *testing.T) {
@@ -60,7 +60,7 @@ func TestShouldExclude(t *testing.T) {
 
 		normalizer := NewNormalizer()
 
-		frame := types.StackFrame{File: types.AbsPath("/gems/rspec.rb"), Line: 20}
+		frame := types.StackFrame{FilePath: types.AbsPath("/gems/rspec.rb"), Line: 20}
 		assert.True(t, normalizer.shouldExclude(frame))
 	})
 
@@ -71,7 +71,7 @@ func TestShouldExclude(t *testing.T) {
 
 		normalizer := NewNormalizer()
 
-		frame := types.StackFrame{File: types.AbsPath("/path/to/project/app/test.rb"), Line: 10}
+		frame := types.StackFrame{FilePath: types.AbsPath("/path/to/project/app/test.rb"), Line: 10}
 		assert.False(t, normalizer.shouldExclude(frame))
 	})
 
@@ -82,7 +82,7 @@ func TestShouldExclude(t *testing.T) {
 
 		normalizer := NewNormalizer()
 
-		frame := types.StackFrame{File: types.AbsPath("/path/to/project"), Line: 10}
+		frame := types.StackFrame{FilePath: types.AbsPath("/path/to/project"), Line: 10}
 		assert.False(t, normalizer.shouldExclude(frame))
 	})
 }

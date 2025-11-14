@@ -25,8 +25,8 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 			name:    "test definition by spec path",
 			message: "NoMethodError: undefined method",
 			topFrame: &types.StackFrame{
-				File: types.AbsPath("spec/models/user_spec.rb"),
-				Line: 10,
+				FilePath: types.AbsPath("spec/models/user_spec.rb"),
+				Line:     10,
 			},
 			want: types.FailureCauseTestDefinition,
 		},
@@ -34,8 +34,8 @@ func TestClassifyFailure_Heuristics(t *testing.T) {
 			name:    "production by app path",
 			message: "NoMethodError: undefined method",
 			topFrame: &types.StackFrame{
-				File: types.AbsPath("app/models/user.rb"),
-				Line: 20,
+				FilePath: types.AbsPath("app/models/user.rb"),
+				Line:     20,
 			},
 			want: types.FailureCauseProductionCode,
 		},
@@ -72,24 +72,24 @@ func TestClassifyFailure_UsesTestFilePattern(t *testing.T) {
 		{
 			name: "absolute path match",
 			topFrame: &types.StackFrame{
-				File: types.AbsPath("/abs/project/test/models/user_test.rb"),
-				Line: 12,
+				FilePath: types.AbsPath("/abs/project/test/models/user_test.rb"),
+				Line:     12,
 			},
 			want: types.FailureCauseTestDefinition,
 		},
 		{
 			name: "relative path match",
 			topFrame: &types.StackFrame{
-				File: types.AbsPath("/abs/project/custom/subdir/test/models/user_test.rb"),
-				Line: 8,
+				FilePath: types.AbsPath("/abs/project/custom/subdir/test/models/user_test.rb"),
+				Line:     8,
 			},
 			want: types.FailureCauseTestDefinition,
 		},
 		{
 			name: "non matching path",
 			topFrame: &types.StackFrame{
-				File: types.AbsPath("/abs/project/app/models/user.rb"),
-				Line: 33,
+				FilePath: types.AbsPath("/abs/project/app/models/user.rb"),
+				Line:     33,
 			},
 			want: types.FailureCauseProductionCode,
 		},
@@ -113,7 +113,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Ruby with method",
 			input: "app/models/user.rb:42:in 'create_user'",
 			expected: types.StackFrame{
-				File:     types.AbsPath("app/models/user.rb"),
+				FilePath: types.AbsPath("app/models/user.rb"),
 				Line:     42,
 				Function: "create_user",
 			},
@@ -122,7 +122,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Ruby without method",
 			input: "app/models/user.rb:42",
 			expected: types.StackFrame{
-				File:     types.AbsPath("app/models/user.rb"),
+				FilePath: types.AbsPath("app/models/user.rb"),
 				Line:     42,
 				Function: "",
 			},
@@ -131,7 +131,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Python format",
 			input: "File \"app/models/user.py\", line 42, in create_user",
 			expected: types.StackFrame{
-				File:     types.AbsPath("File \"app/models/user.py\", line 42, in create_user"),
+				FilePath: types.AbsPath("File \"app/models/user.py\", line 42, in create_user"),
 				Line:     0,
 				Function: "",
 			},
@@ -140,7 +140,7 @@ func TestParseStackFrame(t *testing.T) {
 			name:  "Invalid format",
 			input: "invalid_frame",
 			expected: types.StackFrame{
-				File:     types.AbsPath("invalid_frame"),
+				FilePath: types.AbsPath("invalid_frame"),
 				Line:     0,
 				Function: "",
 			},
@@ -342,7 +342,7 @@ func TestParse_FailureFields(t *testing.T) {
 	assert.Equal(t, types.AbsPath("/path/to/error.rb"), test.FailureFilePath)
 	assert.Equal(t, 15, test.FailureLineNumber)
 	assert.Len(t, test.FullBacktrace, 1)
-	assert.Equal(t, types.AbsPath("/path/to/error.rb"), test.FullBacktrace[0].File)
+	assert.Equal(t, types.AbsPath("/path/to/error.rb"), test.FullBacktrace[0].FilePath)
 	assert.Equal(t, 15, test.FullBacktrace[0].Line)
 }
 
@@ -424,16 +424,16 @@ func TestParse_BacktraceParsing(t *testing.T) {
 	assert.Len(t, test.FullBacktrace, 3) // invalid_frame should be skipped
 
 	// Check first frame
-	assert.Equal(t, types.AbsPath("/path/to/file.rb"), test.FullBacktrace[0].File)
+	assert.Equal(t, types.AbsPath("/path/to/file.rb"), test.FullBacktrace[0].FilePath)
 	assert.Equal(t, 42, test.FullBacktrace[0].Line)
 	assert.Equal(t, "method_name", test.FullBacktrace[0].Function)
 
 	// Check second frame
-	assert.Equal(t, types.AbsPath("/path/to/other.rb"), test.FullBacktrace[1].File)
+	assert.Equal(t, types.AbsPath("/path/to/other.rb"), test.FullBacktrace[1].FilePath)
 	assert.Equal(t, 10, test.FullBacktrace[1].Line)
 
 	// Check third frame
-	assert.Equal(t, types.AbsPath("/valid/path.rb"), test.FullBacktrace[2].File)
+	assert.Equal(t, types.AbsPath("/valid/path.rb"), test.FullBacktrace[2].FilePath)
 	assert.Equal(t, 5, test.FullBacktrace[2].Line)
 }
 

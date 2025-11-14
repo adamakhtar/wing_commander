@@ -9,7 +9,7 @@ import (
 func TestNewStackFrame(t *testing.T) {
 	frame := NewStackFrame("app/models/user.rb", 42, "create_user")
 
-	assert.Equal(t, "app/models/user.rb", frame.File)
+	assert.Equal(t, "app/models/user.rb", frame.FilePath)
 	assert.Equal(t, 42, frame.Line)
 	assert.Equal(t, "create_user", frame.Function)
 }
@@ -33,12 +33,12 @@ func TestTestStatusConstants(t *testing.T) {
 
 func TestStackFrameFields(t *testing.T) {
 	frame := StackFrame{
-		File:     "test.rb",
+		FilePath: "test.rb",
 		Line:     10,
 		Function: "test_method",
 	}
 
-	assert.Equal(t, "test.rb", frame.File)
+	assert.Equal(t, "test.rb", frame.FilePath)
 	assert.Equal(t, 10, frame.Line)
 	assert.Equal(t, "test_method", frame.Function)
 }

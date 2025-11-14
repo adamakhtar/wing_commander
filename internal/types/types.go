@@ -2,7 +2,7 @@ package types
 
 // StackFrame represents a single frame in a backtrace
 type StackFrame struct {
-	File            AbsPath
+	FilePath        AbsPath
 	Line            int
 	Function        string
 	ChangeIntensity int
@@ -112,7 +112,7 @@ func (tr *TestResult) IsSkipped() bool {
 // NewStackFrame creates a new StackFrame
 func NewStackFrame(file AbsPath, line int, function string) StackFrame {
 	return StackFrame{
-		File:            file,
+		FilePath:        file,
 		Line:            line,
 		Function:        function,
 		ChangeIntensity: 0,

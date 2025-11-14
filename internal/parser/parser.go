@@ -145,7 +145,7 @@ func Parse(data []byte, opts *ParseOptions) (*ParseResult, error) {
 
 func firstFrameWithFile(frames []types.StackFrame) *types.StackFrame {
 	for _, frame := range frames {
-		if frame.File.String() != "" {
+		if frame.FilePath.String() != "" {
 			frameCopy := frame
 			return &frameCopy
 		}
@@ -167,15 +167,15 @@ func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseConte
 	}
 
 	// If we have no frames, treat as test definition error (runner/setup/teardown/unmapped)
-	if topFrame == nil || topFrame.File.String() == "" {
+	if topFrame == nil || topFrame.FilePath.String() == "" {
 		return types.FailureCauseTestDefinition
 	}
 
-	if ctx != nil && ctx.matchesTestFile(topFrame.File.String()) {
+	if ctx != nil && ctx.matchesTestFile(topFrame.FilePath.String()) {
 		return types.FailureCauseTestDefinition
 	}
 
-	lp := strings.ToLower(topFrame.File.String())
+	lp := strings.ToLower(topFrame.FilePath.String())
 	for _, ind := range testPathIndicators {
 		if strings.Contains(lp, ind) || strings.HasSuffix(lp, ind) {
 			return types.FailureCauseTestDefinition
@@ -201,7 +201,7 @@ func parseStackFrame(frameStr string) types.StackFrame {
 	if strings.HasPrefix(frameStr, "File \"") {
 		absPath, _ := types.NewAbsPath(frameStr)
 		return types.StackFrame{
-			File:     absPath,
+			FilePath: absPath,
 			Line:     0,
 			Function: "",
 		}
@@ -210,7 +210,7 @@ func parseStackFrame(frameStr string) types.StackFrame {
 	parts := strings.Split(frameStr, ":")
 	if len(parts) < 2 {
 		absPath, _ := types.NewAbsPath(frameStr)
-		return types.StackFrame{File: absPath}
+		return types.StackFrame{FilePath: absPath}
 	}
 
 	file := parts[0]
@@ -223,7 +223,7 @@ func parseStackFrame(frameStr string) types.StackFrame {
 		// Parse line number
 		if _, err := fmt.Sscanf(parts[1], "%d", &line); err != nil {
 			absPath, _ := types.NewAbsPath(file)
-			return types.StackFrame{File: absPath}
+			return types.StackFrame{FilePath: absPath}
 		}
 	}
 
@@ -242,7 +242,7 @@ func parseStackFrame(frameStr string) types.StackFrame {
 
 	absPath, _ := types.NewAbsPath(file)
 	return types.StackFrame{
-		File:     absPath,
+		FilePath: absPath,
 		Line:     line,
 		Function: function,
 	}
@@ -343,7 +343,7 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 	for _, frameStr := range backtraceStrings {
 		frame := parseStackFrame(frameStr)
 		// Only add frames that have a valid file:line format (check for colon separator)
-		if frame.File.String() != "" && strings.Contains(frameStr, ":") {
+		if frame.FilePath.String() != "" && strings.Contains(frameStr, ":") {
 			fullBacktrace = append(fullBacktrace, frame)
 		}
 	}
@@ -360,8 +360,8 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 			absPath, err := types.NewAbsPath(failureFilePath)
 			if err == nil {
 				topFrame = &types.StackFrame{
-					File: absPath,
-					Line: failureLineNumber,
+					FilePath: absPath,
+					Line:     failureLineNumber,
 				}
 			}
 		}

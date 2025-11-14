@@ -80,17 +80,17 @@ func (m Model) buildContent(innerWidth int) string {
 
 	for _, frame := range m.testResult.FilteredBacktrace {
 		fs := projectfs.GetProjectFS()
-		relPath, err := fs.Rel(frame.File)
+		relPath, err := fs.Rel(frame.FilePath)
 		var line string
 		if err != nil {
 			// Fallback to absolute path
-			line = frame.File.String() + ":" + fmt.Sprintf("%d", frame.Line)
+			line = frame.FilePath.String() + ":" + fmt.Sprintf("%d", frame.Line)
 		} else {
 			line = relPath.String() + ":" + fmt.Sprintf("%d", frame.Line)
 		}
 		sb.WriteString(m.ctx.Styles.PreviewSection.BacktracePath.Width(innerWidth).Render(line))
 
-		snippet, err := filesnippet.ExtractLines(frame.File.String(), frame.Line, 5)
+		snippet, err := filesnippet.ExtractLines(frame.FilePath.String(), frame.Line, 5)
 		if err != nil {
 			log.Error("failed to extract lines", "error", err)
 			continue
