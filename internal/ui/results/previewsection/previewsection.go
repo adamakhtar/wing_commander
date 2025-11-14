@@ -107,7 +107,14 @@ func (m Model) buildContent(innerWidth int) string {
 
 func (m Model) renderTestHeading(innerWidth int) string {
 	testName := m.testResult.GroupName + " " + m.testResult.TestCaseName
-	testPath := m.testResult.TestFilePath.String() + ":" + fmt.Sprintf("%d", m.testResult.TestLineNumber)
+
+	fs := projectfs.GetProjectFS()
+	relPath, err := fs.Rel(m.testResult.TestFilePath)
+	if err != nil {
+		log.Error("failed to get relative path", "error", err)
+		return "Error handling test file path"
+	}
+	testPath := relPath.String() + ":" + fmt.Sprintf("%d", m.testResult.TestLineNumber)
 
 	return lipgloss.JoinVertical(lipgloss.Top,
 		m.ctx.Styles.HeadingTextStyle.Width(innerWidth).Render(testName),
