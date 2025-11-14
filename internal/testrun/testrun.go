@@ -45,9 +45,22 @@ func NewTestPattern(path string, lineNumber *int, testCaseName *string, testGrou
 	}, nil
 }
 
-// String returns the string representation of the pattern (just the path for now)
+// String returns the string representation of the pattern
+// Format rules:
+//   - Only path: "path"
+//   - Path + test case: "path:test_case_name"
+//   - Path + test case + group: "path:GroupName#test_case_name"
 func (tp TestPattern) String() string {
-	return tp.Path
+	if tp.TestCaseName == nil {
+		return tp.Path
+	}
+
+	testCaseName := *tp.TestCaseName
+	if tp.TestGroupName == nil {
+		return tp.Path + ":" + testCaseName
+	}
+
+	return tp.Path + ":" + *tp.TestGroupName + "#" + testCaseName
 }
 
 // ParsePatternFromString parses a pattern string like "path.rb:123" and extracts the path
@@ -88,10 +101,15 @@ type TestRun struct {
 	Mode     string        // High-level mode describing how the run was initiated (optional)
 }
 
+func (tr TestRun) isRunningSpecificTestCases() bool {
+	return tr.Mode == string(ModeRunSelectedPatterns) || tr.Mode == string(ModeReRunSingleFailure) || tr.Mode == string(ModeReRunAllFailures)
+}
+
 // TestRuns is a collection of test runs
 type TestRuns struct {
 	testRuns map[int]TestRun
 }
+
 
 // NewTestRuns creates a new TestRuns collection
 func NewTestRuns() TestRuns {

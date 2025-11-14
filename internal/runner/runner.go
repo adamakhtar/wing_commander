@@ -12,6 +12,7 @@ import (
 	"github.com/adamakhtar/wing_commander/internal/parser"
 	"github.com/adamakhtar/wing_commander/internal/testrun"
 	"github.com/adamakhtar/wing_commander/internal/types"
+	"github.com/charmbracelet/log"
 )
 
 // TestRunner handles execution of test commands and parsing of results
@@ -84,20 +85,9 @@ func (r *TestRunner) ExecuteTests(testRun testrun.TestRun) (*TestExecutionResult
 
 // executeTestCommand runs the configured test command and returns the output
 func (r *TestRunner) executeTestCommand(testRun testrun.TestRun) (string, error) {
-	var commandStr string
+	commandStr := BuildRunTestCaseCommand(r.config.TestCommand, testRun.Patterns)
 
-	// Check if we should use RunTestCaseCommand for single failure reruns
-	if testRun.Mode == string(testrun.ModeReRunSingleFailure) {
-		commandStr = BuildRunTestCaseCommand(r.config.RunTestCaseCommand, testRun.Patterns[0])
-	} else {
-		// Build the full command string using TestCommand
-		commandStr = r.config.TestCommand
-		if len(testRun.Patterns) > 0 {
-			filepaths := testrun.PatternsToStrings(testRun.Patterns)
-			commandStr = commandStr + " " + strings.Join(filepaths, " ")
-		}
-	}
-
+	log.Debug("executeTestCommand", "command", commandStr)
 	// Execute via shell to handle multi-word commands like "bundle exec rake test"
 	cmd := exec.Command("sh", "-c", commandStr)
 

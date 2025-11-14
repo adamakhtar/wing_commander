@@ -8,87 +8,84 @@ import (
 )
 
 func TestBuildRunTestCaseCommand(t *testing.T) {
-	testCaseName := "test_user_creation"
-	lineNumber := 42
 	cmd := BuildRunTestCaseCommand(
-		"bundle exec ruby -Itest %{test_case_name}:%{line_number}",
-		testrun.TestPattern{
-			Path:         "test/user_test.rb",
-			TestCaseName: &testCaseName,
-			LineNumber:   &lineNumber,
-			TestGroupName: nil,
-		},
+		"bundle exec rake test",
+		[]testrun.TestPattern{},
 	)
 
-	assert.Equal(t, "bundle exec ruby -Itest test_user_creation:42", cmd)
+	assert.Equal(t, "bundle exec rake test", cmd)
 }
 
-func TestBuildRunTestCaseCommandWithFilePath(t *testing.T) {
-	testCaseName := "test_user_creation"
-	lineNumber := 42
-	cmd := BuildRunTestCaseCommand(
-		"bundle exec rake test %{test_file_path} -n '/%{test_case_name}/'",
-		testrun.TestPattern{
-			Path:         "test/user_test.rb",
-			TestCaseName: &testCaseName,
-			LineNumber:   &lineNumber,
-			TestGroupName: nil,
-		},
-	)
-
-	assert.Equal(t, "bundle exec rake test test/user_test.rb -n '/test_user_creation/'", cmd)
-}
-
-func TestBuildRunTestCaseCommandEmptyTemplate(t *testing.T) {
-	testCaseName := "test_user_creation"
-	lineNumber := 42
-	cmd := BuildRunTestCaseCommand("", testrun.TestPattern{
-		Path:         "test/user_test.rb",
-		TestCaseName: &testCaseName,
-		LineNumber:   &lineNumber,
-		TestGroupName: nil,
+func TestBuildRunTestCaseCommandEmptyCommand(t *testing.T) {
+	cmd := BuildRunTestCaseCommand("", []testrun.TestPattern{
+		{Path: "test/user_test.rb"},
 	})
 
 	assert.Equal(t, "", cmd)
 }
 
-func TestBuildRunTestCaseCommandMissingValues(t *testing.T) {
-	cmd := BuildRunTestCaseCommand("bundle exec ruby %{test_case_name}:%{line_number}", testrun.TestPattern{
-		Path:         "test/user_test.rb",
-		TestCaseName: nil,
-		LineNumber:   nil,
-		TestGroupName: nil,
-	})
-
-	assert.Equal(t, "bundle exec ruby :", cmd)
-}
-
-func TestBuildRunTestCaseCommandNilTestCaseName(t *testing.T) {
-	lineNumber := 42
+func TestBuildRunTestCaseCommandWithOnlyPath(t *testing.T) {
 	cmd := BuildRunTestCaseCommand(
-		"bundle exec ruby %{test_file_path}:%{line_number}",
-		testrun.TestPattern{
-			Path:         "test/user_test.rb",
-			TestCaseName: nil,
-			LineNumber:   &lineNumber,
-			TestGroupName: nil,
+		"bundle exec rake test",
+		[]testrun.TestPattern{
+			{Path: "test/worker_test.rb"},
 		},
 	)
 
-	assert.Equal(t, "bundle exec ruby test/user_test.rb:42", cmd)
+	assert.Equal(t, "bundle exec rake test test/worker_test.rb", cmd)
 }
 
-func TestBuildRunTestCaseCommandNilLineNumber(t *testing.T) {
-	testCaseName := "test_user_creation"
+func TestBuildRunTestCaseCommandWithPathAndTestCase(t *testing.T) {
+	testCaseName := "test_success"
 	cmd := BuildRunTestCaseCommand(
-		"bundle exec ruby %{test_file_path} -n '/%{test_case_name}/'",
-		testrun.TestPattern{
-			Path:         "test/user_test.rb",
-			TestCaseName: &testCaseName,
-			LineNumber:   nil,
-			TestGroupName: nil,
+		"bundle exec rake test",
+		[]testrun.TestPattern{
+			{
+				Path:         "test/worker_test.rb",
+				TestCaseName: &testCaseName,
+			},
 		},
 	)
 
-	assert.Equal(t, "bundle exec ruby test/user_test.rb -n '/test_user_creation/'", cmd)
+	assert.Equal(t, "bundle exec rake test test/worker_test.rb:test_success", cmd)
+}
+
+func TestBuildRunTestCaseCommandWithPathTestCaseAndGroup(t *testing.T) {
+	testCaseName := "test_success"
+	groupName := "AGroupName"
+	cmd := BuildRunTestCaseCommand(
+		"bundle exec rake test",
+		[]testrun.TestPattern{
+			{
+				Path:          "test/worker_test.rb",
+				TestCaseName:  &testCaseName,
+				TestGroupName: &groupName,
+			},
+		},
+	)
+
+	assert.Equal(t, "bundle exec rake test test/worker_test.rb:AGroupName#test_success", cmd)
+}
+
+func TestBuildRunTestCaseCommandMultiplePatterns(t *testing.T) {
+	testCaseName1 := "test_one"
+	testCaseName2 := "test_two"
+	groupName := "MyGroup"
+	cmd := BuildRunTestCaseCommand(
+		"bundle exec rake test",
+		[]testrun.TestPattern{
+			{Path: "test/worker_test.rb"},
+			{
+				Path:         "test/user_test.rb",
+				TestCaseName: &testCaseName1,
+			},
+			{
+				Path:          "test/admin_test.rb",
+				TestCaseName:  &testCaseName2,
+				TestGroupName: &groupName,
+			},
+		},
+	)
+
+	assert.Equal(t, "bundle exec rake test test/worker_test.rb test/user_test.rb:test_one test/admin_test.rb:MyGroup#test_two", cmd)
 }
