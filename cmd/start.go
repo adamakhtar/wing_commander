@@ -10,6 +10,8 @@ import (
 
 	"github.com/adamakhtar/wing_commander/internal/config"
 	"github.com/adamakhtar/wing_commander/internal/logger"
+	"github.com/adamakhtar/wing_commander/internal/projectfs"
+	"github.com/adamakhtar/wing_commander/internal/types"
 	"github.com/adamakhtar/wing_commander/internal/ui/styles"
 
 	"github.com/adamakhtar/wing_commander/internal/ui"
@@ -59,15 +61,17 @@ func start(args []string) {
 	closeLogger := setupLogger()
 	defer closeLogger()
 
-	projectPath := processProjectPathArg(args)
-	testResultsPath := processTestResultsPathOption(projectPath, testResultsPath)
+	projectPathAbs := processProjectPathArg(args)
+	projectfs.InitProjectFS(projectPathAbs)
+
+	testResultsPath := processTestResultsPathOption(projectPathAbs, testResultsPath)
 
 	rtcCommand := runTestCaseCommand
 	if rtcCommand == "" {
 		rtcCommand = runCommand
 	}
 
-	config := config.NewConfig(projectPath, runCommand, testFilePattern, testResultsPath, rtcCommand, debug)
+	config := config.NewConfig(projectPathAbs.String(), runCommand, testFilePattern, testResultsPath, rtcCommand, debug)
 	styles := styles.BuildStyles(styles.DefaultTheme)
 	model := ui.NewModel(config, styles)
 
@@ -79,7 +83,7 @@ func start(args []string) {
 	}
 }
 
-func processProjectPathArg(args []string) string {
+func processProjectPathArg(args []string) types.AbsPath {
 	var projectPath string
 	var err error
 
@@ -108,15 +112,25 @@ func processProjectPathArg(args []string) string {
 		}
 	}
 
-	return projectPath
+	absPath, err := types.NewAbsPath(projectPath)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	return absPath
 }
 
-func processTestResultsPathOption(projectPath string, providedPath string) string {
+func processTestResultsPathOption(projectRoot types.AbsPath, providedPath string) string {
 	var absPath string
 	if filepath.IsAbs(providedPath) {
 		absPath = providedPath
 	} else {
-		absPath = filepath.Join(projectPath, providedPath)
+		relPath, err := types.NewRelPath(providedPath)
+		if err != nil {
+			fmt.Printf("❌ Error: testResultsPath %s must be relative or absolute\n", providedPath)
+			os.Exit(1)
+		}
+		absPath = projectfs.GetProjectFS().Abs(relPath).String()
 	}
 
 	info, err := os.Stat(absPath)
