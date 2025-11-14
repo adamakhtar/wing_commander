@@ -80,7 +80,8 @@ alwaysApply: true
 
 #### 10. **Documentation**
 
-- Add comments for all exported functions, types, and packages.
+- Add concise comments for all exported functions, types, and packages describing what the function does and the variables it takes.
+- Only add code comments when the code can't articulate some important information.
 - Keep README clear with installation, usage, and example commands.
 - Document assumptions, limitations, and error cases for each command.
 
