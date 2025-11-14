@@ -66,19 +66,30 @@ func (c *parseContext) matchesTestFile(path string) bool {
 	}
 
 	// Try matching as absolute path first
-	absPath, err := types.NewAbsPath(path)
+	absPath, err := parseFilePath(path)
 	if err == nil {
-		if absPath.MatchGlob(c.testFileMatcher) {
-			return true
-		}
+		return c.matchesTestFileFromAbs(absPath)
+	}
 
-		// Use ProjectFS to convert absolute path to relative for pattern matching
-		fs := projectfs.GetProjectFS()
-		rel, err := fs.Rel(absPath)
-		if err == nil {
-			if rel.MatchGlob(c.testFileMatcher) {
-				return true
-			}
+	return false
+}
+
+func (c *parseContext) matchesTestFileFromAbs(absPath types.AbsPath) bool {
+	if c == nil || c.testFileMatcher == nil || absPath == "" {
+		return false
+	}
+
+	// Try matching absolute path first
+	if absPath.MatchGlob(c.testFileMatcher) {
+		return true
+	}
+
+	// Use ProjectFS to convert absolute path to relative for pattern matching
+	fs := projectfs.GetProjectFS()
+	rel, err := fs.Rel(absPath)
+	if err == nil {
+		if rel.MatchGlob(c.testFileMatcher) {
+			return true
 		}
 	}
 
@@ -173,7 +184,7 @@ func classifyFailure(message string, topFrame *types.StackFrame, ctx *parseConte
 		return testresult.FailureCauseTestDefinition
 	}
 
-	if ctx != nil && ctx.matchesTestFile(topFrame.FilePath.String()) {
+	if ctx != nil && ctx.matchesTestFileFromAbs(topFrame.FilePath) {
 		return testresult.FailureCauseTestDefinition
 	}
 
@@ -208,7 +219,7 @@ func extractString(m map[string]interface{}, key string) string {
 func extractInt(m map[string]interface{}, key string) int {
 	val, ok := m[key]
 	if !ok {
-		return 0
+	return 0
 	}
 	switch v := val.(type) {
 	case int:
@@ -242,6 +253,30 @@ func extractStringSlice(m map[string]interface{}, key string) []string {
 		}
 	}
 	return result
+}
+
+// parseFilePath converts a file path string to AbsPath.
+// If the path is absolute, it uses NewAbsPath directly.
+// If the path is relative, it assumes it's relative to ProjectFS root and converts it using ProjectFS.Abs().
+func parseFilePath(path string) (types.AbsPath, error) {
+	if path == "" {
+		return types.AbsPath(""), fmt.Errorf("path cannot be empty")
+	}
+
+	cleaned := filepath.Clean(path)
+
+	if filepath.IsAbs(cleaned) {
+		return types.NewAbsPath(cleaned)
+	}
+
+	// Relative path - convert using ProjectFS
+	fs := projectfs.GetProjectFS()
+	relPath, err := types.NewRelPath(cleaned)
+	if err != nil {
+		return types.AbsPath(""), fmt.Errorf("failed to create RelPath: %w", err)
+	}
+
+	return fs.Abs(relPath), nil
 }
 
 // convertMapToTestResult converts a summary map into a TestResult.
@@ -301,7 +336,7 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 	if status == testresult.StatusFail {
 		topFrame := firstFrameWithFile(fullBacktrace.AllStackFrames())
 		if topFrame == nil && failureFilePath != "" {
-			absPath, err := types.NewAbsPath(failureFilePath)
+			absPath, err := parseFilePath(failureFilePath)
 			if err == nil {
 				topFrame = &types.StackFrame{
 					FilePath: absPath,
@@ -315,14 +350,14 @@ func convertMapToTestResult(id int, summary map[string]interface{}, ctx *parseCo
 	// Convert file paths to AbsPath
 	var failureFilePathAbs types.AbsPath
 	if failureFilePath != "" {
-		if abs, err := types.NewAbsPath(failureFilePath); err == nil {
+		if abs, err := parseFilePath(failureFilePath); err == nil {
 			failureFilePathAbs = abs
 		}
 	}
 
 	var testFilePathAbs types.AbsPath
 	if testFilePath != "" {
-		if abs, err := types.NewAbsPath(testFilePath); err == nil {
+		if abs, err := parseFilePath(testFilePath); err == nil {
 			testFilePathAbs = abs
 		}
 	}

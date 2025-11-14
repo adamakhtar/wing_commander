@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewStackFrame(t *testing.T) {
-	absPath, _ := NewAbsPath("app/models/user.rb")
+	absPath, _ := NewAbsPath("/app/models/user.rb")
 	frame := NewStackFrame(absPath, 42, "create_user")
 
 	assert.Equal(t, absPath, frame.FilePath)
@@ -16,7 +16,7 @@ func TestNewStackFrame(t *testing.T) {
 }
 
 func TestStackFrameFields(t *testing.T) {
-	absPath, _ := NewAbsPath("test.rb")
+	absPath, _ := NewAbsPath("/test.rb")
 	frame := StackFrame{
 		FilePath: absPath,
 		Line:     10,

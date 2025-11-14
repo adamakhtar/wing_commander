@@ -26,7 +26,7 @@ func TestTestStatusConstants(t *testing.T) {
 }
 
 func TestTestResultFields(t *testing.T) {
-	absPath, _ := types.NewAbsPath("test.rb")
+	absPath, _ := types.NewAbsPath("/test.rb")
 	frame := types.NewStackFrame(absPath, 1, "test")
 	test := TestResult{
 		GroupName:         "TestClass",

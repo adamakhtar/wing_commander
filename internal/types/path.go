@@ -22,12 +22,7 @@ func NewAbsPath(path string) (AbsPath, error) {
 		return AbsPath(cleaned), nil
 	}
 
-	absPath, err := filepath.Abs(cleaned)
-	if err != nil {
-		return AbsPath(""), fmt.Errorf("failed to get absolute path for %q: %w", path, err)
-	}
-
-	return AbsPath(absPath), nil
+	return AbsPath(""), fmt.Errorf("path %q is relative, expected absolute path", path)
 }
 
 func (p AbsPath) String() string {

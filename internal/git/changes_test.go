@@ -81,8 +81,8 @@ index 1234567..abcdefg 100644
 func TestChangeDetector_AssignChangeIntensities(t *testing.T) {
 	detector := NewChangeDetector()
 
-	userPath, _ := types.NewAbsPath("app/models/user.rb")
-	productPath, _ := types.NewAbsPath("app/models/product.rb")
+	userPath, _ := types.NewAbsPath("/app/models/user.rb")
+	productPath, _ := types.NewAbsPath("/app/models/product.rb")
 	frames := []types.StackFrame{
 		{FilePath: userPath, Line: 42, Function: "create_user"},
 		{FilePath: userPath, Line: 50, Function: "validate"},
@@ -123,7 +123,7 @@ func TestChangeDetector_AssignChangeIntensities_Priority(t *testing.T) {
 	detector := NewChangeDetector()
 
 	// Frame with line that has changes in multiple commits
-	userPath, _ := types.NewAbsPath("app/models/user.rb")
+	userPath, _ := types.NewAbsPath("/app/models/user.rb")
 	frames := []types.StackFrame{
 		{FilePath: userPath, Line: 42, Function: "create_user"},
 	}
@@ -146,8 +146,8 @@ func TestChangeDetector_AssignChangeIntensities_Priority(t *testing.T) {
 func TestChangeDetector_DetectChanges(t *testing.T) {
 	detector := NewChangeDetector()
 
-	userPath, _ := types.NewAbsPath("app/models/user.rb")
-	productPath, _ := types.NewAbsPath("app/models/product.rb")
+	userPath, _ := types.NewAbsPath("/app/models/user.rb")
+	productPath, _ := types.NewAbsPath("/app/models/product.rb")
 	frames := []types.StackFrame{
 		{FilePath: userPath, Line: 42, Function: "create_user"},
 		{FilePath: productPath, Line: 30, Function: "create_product"},
@@ -191,7 +191,7 @@ func TestFileChanges_Structure(t *testing.T) {
 }
 
 func TestStackFrame_NewFields(t *testing.T) {
-	absPath, _ := types.NewAbsPath("test.rb")
+	absPath, _ := types.NewAbsPath("/test.rb")
 	frame := types.NewStackFrame(absPath, 42, "test_function")
 
 	assert.Equal(t, absPath, frame.FilePath)
@@ -202,7 +202,7 @@ func TestStackFrame_NewFields(t *testing.T) {
 }
 
 func TestStackFrame_ManualCreation(t *testing.T) {
-	absPath, _ := types.NewAbsPath("app/models/user.rb")
+	absPath, _ := types.NewAbsPath("/app/models/user.rb")
 	frame := types.StackFrame{
 		FilePath:        absPath,
 		Line:            42,

@@ -40,18 +40,7 @@ func (b *Backtrace) Append(frameStr string) {
 // Common formats:
 // - "app/models/user.rb:42:in `create_user'"
 // - "app/models/user.rb:42"
-// - "File \"app/models/user.rb\", line 42, in create_user"
 func (b *Backtrace) parseStackFrame(frameStr string) types.StackFrame {
-	// Handle Python format first
-	if strings.HasPrefix(frameStr, "File \"") {
-		absPath, _ := types.NewAbsPath(frameStr)
-		return types.StackFrame{
-			FilePath: absPath,
-			Line:     0,
-			Function: "",
-		}
-	}
-
 	parts := strings.Split(frameStr, ":")
 	if len(parts) < 2 {
 		absPath, err := b.convertPath(frameStr)
@@ -96,6 +85,7 @@ func (b *Backtrace) parseStackFrame(frameStr string) types.StackFrame {
 	absPath, err := b.convertPath(file)
 	if err != nil {
 		log.Warn("failed to convert path in frame string", "frame", frameStr, "error", err)
+		return types.StackFrame{}
 	}
 
 	return types.StackFrame{

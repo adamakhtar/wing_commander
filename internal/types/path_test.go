@@ -34,14 +34,14 @@ func TestNewAbsPath(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "relative path becomes absolute",
+			name:    "relative path",
 			input:   "test",
-			wantErr: false, // Will be converted to absolute
+			wantErr: true,
 		},
 		{
 			name:    "current directory",
 			input:   ".",
-			wantErr: false, // Will be converted to absolute
+			wantErr: true,
 		},
 	}
 
@@ -148,18 +148,10 @@ func TestAbsPath_Integration(t *testing.T) {
 		assert.Equal(t, wd, absPath.String())
 	})
 
-	t.Run("relative to absolute conversion", func(t *testing.T) {
+	t.Run("relative path returns error", func(t *testing.T) {
 		relPath := "test"
 		absPath, err := NewAbsPath(relPath)
-		require.NoError(t, err)
-
-		// Should be absolute now
-		assert.True(t, filepath.IsAbs(absPath.String()))
-
-		// Should resolve to actual path
-		wd, err := os.Getwd()
-		require.NoError(t, err)
-		expected := filepath.Join(wd, "test")
-		assert.Equal(t, expected, absPath.String())
+		assert.Error(t, err)
+		assert.Equal(t, AbsPath(""), absPath)
 	})
 }
